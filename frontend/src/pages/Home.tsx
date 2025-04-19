@@ -11,36 +11,24 @@ import {
   useColorModeValue,
   Flex,
 } from '@chakra-ui/react';
-import * as FaIcons from 'react-icons/fa';
+import { FaHandshake, FaChartLine, FaUserCheck } from 'react-icons/fa';
 
-// Define features with direct DOM structure
+// Simple feature structure with direct JSX
 const features = [
   {
     title: 'Connect',
     description: 'Connect brands with influencers seamlessly',
-    iconElement: React.createElement(FaIcons.FaHandshake, { 
-      size: 40, 
-      color: '#4299E1',
-      style: { margin: '0 auto' }
-    }),
+    icon: <FaHandshake size={40} color="#4299E1" style={{ margin: '0 auto' }} />,
   },
   {
     title: 'Grow',
     description: 'Grow your business with targeted collaborations',
-    iconElement: React.createElement(FaIcons.FaChartLine, { 
-      size: 40, 
-      color: '#4299E1',
-      style: { margin: '0 auto' }
-    }),
+    icon: <FaChartLine size={40} color="#4299E1" style={{ margin: '0 auto' }} />,
   },
   {
     title: 'Verify',
     description: 'Work with verified and trusted partners',
-    iconElement: React.createElement(FaIcons.FaUserCheck, { 
-      size: 40, 
-      color: '#4299E1',
-      style: { margin: '0 auto' }
-    }),
+    icon: <FaUserCheck size={40} color="#4299E1" style={{ margin: '0 auto' }} />,
   },
 ];
 
@@ -112,7 +100,7 @@ export const Home: React.FC = () => {
                 textAlign="center"
               >
                 <Flex justify="center" mb={4}>
-                  {feature.iconElement}
+                  {feature.icon}
                 </Flex>
                 <Heading size="md" mb={2}>
                   {feature.title}
