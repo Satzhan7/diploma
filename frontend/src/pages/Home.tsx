@@ -13,22 +13,41 @@ import {
 } from '@chakra-ui/react';
 import { FaHandshake, FaChartLine, FaUserCheck } from 'react-icons/fa';
 
-// Simple feature structure with direct JSX
+// Create dedicated components for each icon
+const HandshakeIcon = () => (
+  <div style={{ margin: '0 auto' }}>
+    <FaHandshake size={40} color="#4299E1" />
+  </div>
+);
+
+const ChartLineIcon = () => (
+  <div style={{ margin: '0 auto' }}>
+    <FaChartLine size={40} color="#4299E1" />
+  </div>
+);
+
+const UserCheckIcon = () => (
+  <div style={{ margin: '0 auto' }}>
+    <FaUserCheck size={40} color="#4299E1" />
+  </div>
+);
+
+// Simple feature structure with component references
 const features = [
   {
     title: 'Connect',
     description: 'Connect brands with influencers seamlessly',
-    icon: <FaHandshake size={40} color="#4299E1" style={{ margin: '0 auto' }} />,
+    IconComponent: HandshakeIcon,
   },
   {
     title: 'Grow',
     description: 'Grow your business with targeted collaborations',
-    icon: <FaChartLine size={40} color="#4299E1" style={{ margin: '0 auto' }} />,
+    IconComponent: ChartLineIcon,
   },
   {
     title: 'Verify',
     description: 'Work with verified and trusted partners',
-    icon: <FaUserCheck size={40} color="#4299E1" style={{ margin: '0 auto' }} />,
+    IconComponent: UserCheckIcon,
   },
 ];
 
@@ -100,7 +119,7 @@ export const Home: React.FC = () => {
                 textAlign="center"
               >
                 <Flex justify="center" mb={4}>
-                  {feature.icon}
+                  <feature.IconComponent />
                 </Flex>
                 <Heading size="md" mb={2}>
                   {feature.title}
