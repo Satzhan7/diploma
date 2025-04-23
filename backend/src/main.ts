@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,6 +12,9 @@ async function bootstrap() {
   
   // Enable validation pipes
   app.useGlobalPipes(new ValidationPipe());
+  
+  // Enable global interceptor for handling circular references
+  app.useGlobalInterceptors(new TransformInterceptor());
 
   // Swagger configuration
   const config = new DocumentBuilder()

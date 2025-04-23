@@ -1,262 +1,95 @@
 import React from 'react';
-import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Flex,
-  Stack,
-  Link,
-  Icon,
-  Text,
-  Button,
-  Avatar,
-  Menu,
-  MenuButton,
-  MenuList,
-  MenuItem,
-  useDisclosure,
-  Drawer,
-  DrawerContent,
-  IconButton,
-  useColorModeValue,
-  BoxProps,
-  FlexProps,
-} from '@chakra-ui/react';
-import {
-  AiOutlineHome,
-  AiOutlineLineChart,
-  AiOutlineCompass,
-  AiOutlineStar,
-  AiOutlineSetting,
-  AiOutlineMenu,
-  AiOutlineDown,
-  AiOutlineMessage,
-} from 'react-icons/ai';
-import { useAuth } from '../contexts/AuthContext';
-import { User } from '../types/user';
-
-// Custom component to wrap React Icons
-const IconWrapper = ({ icon: IconComponent, ...props }: { icon: React.ComponentType<any> } & any) => {
-  return <IconComponent {...props} />;
-};
-
-// Custom component for IconButton
-const IconButtonWithIcon = ({ icon: IconComponent, ...props }: { icon: React.ComponentType<any> } & any) => {
-  return <IconButton icon={<IconWrapper icon={IconComponent} size={20} />} {...props} />;
-};
-
-interface LinkItemProps {
-  name: string;
-  icon: any;
-  path: string;
-}
-
-const BrandLinks: Array<LinkItemProps> = [
-  { name: 'Overview', icon: AiOutlineHome, path: '/dashboard/brand' },
-  { name: 'Find Influencers', icon: AiOutlineCompass, path: '/dashboard/brand/influencers' },
-  { name: 'Campaigns', icon: AiOutlineLineChart, path: '/dashboard/brand/campaigns' },
-  { name: 'Messages', icon: AiOutlineMessage, path: '/dashboard/brand/messages' },
-  { name: 'Settings', icon: AiOutlineSetting, path: '/dashboard/brand/settings' },
-];
-
-const InfluencerLinks: Array<LinkItemProps> = [
-  { name: 'Overview', icon: AiOutlineHome, path: '/dashboard/influencer' },
-  { name: 'Find Brands', icon: AiOutlineCompass, path: '/dashboard/influencer/brands' },
-  { name: 'My Campaigns', icon: AiOutlineStar, path: '/dashboard/influencer/campaigns' },
-  { name: 'Messages', icon: AiOutlineMessage, path: '/dashboard/influencer/messages' },
-  { name: 'Settings', icon: AiOutlineSetting, path: '/dashboard/influencer/settings' },
-];
+import { Box, Flex, Text, VStack, useColorModeValue, Icon } from '@chakra-ui/react';
+import { Link as RouterLink, useLocation } from 'react-router-dom';
+import { IconType } from 'react-icons';
+import { FiHome, FiList, FiMessageSquare, FiSettings, FiUsers, FiMenu, FiBell } from 'react-icons/fi';
+import { BsFileEarmarkPlus } from 'react-icons/bs';
+import { UserRole } from '../types/user';
+import { useAuth } from '../hooks/useAuth';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  userRole: 'brand' | 'influencer';
+  role?: UserRole;
 }
 
-export default function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const links = userRole === 'brand' ? BrandLinks : InfluencerLinks;
+interface NavItem {
+  label: string;
+  icon: IconType;
+  to: string;
+  roles: UserRole[];
+}
+
+const navItems: NavItem[] = [
+  { label: 'Overview', icon: FiHome, to: '/dashboard', roles: [UserRole.BRAND, UserRole.INFLUENCER] },
+  { label: 'My Orders', icon: FiList, to: '/orders', roles: [UserRole.BRAND, UserRole.INFLUENCER] },
+  { label: 'Create Order', icon: BsFileEarmarkPlus, to: '/orders/create', roles: [UserRole.BRAND] },
+  { label: 'Available Orders', icon: FiList, to: '/orders/available', roles: [UserRole.INFLUENCER] },
+  { label: 'My Applications', icon: FiList, to: '/applications', roles: [UserRole.INFLUENCER] },
+  { label: 'Messages', icon: FiMessageSquare, to: '/chats', roles: [UserRole.BRAND, UserRole.INFLUENCER] },
+  { label: 'Influencers', icon: FiUsers, to: '/influencers', roles: [UserRole.BRAND] },
+  { label: 'Brands', icon: FiUsers, to: '/brands', roles: [UserRole.INFLUENCER] },
+  { label: 'Settings', icon: FiSettings, to: '/settings', roles: [UserRole.BRAND, UserRole.INFLUENCER] },
+];
+
+const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => {
+  const location = useLocation();
+  const bg = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const activeBg = useColorModeValue('gray.100', 'gray.700');
+
+  const filteredNavItems = navItems.filter(item => item.roles.includes(role as UserRole));
 
   return (
-    <Box minH="100vh" bg={useColorModeValue('gray.100', 'gray.900')}>
-      <SidebarContent
-        onClose={() => onClose}
-        display={{ base: 'none', md: 'block' }}
-        links={links}
-      />
-      <Drawer
-        isOpen={isOpen}
-        placement="left"
-        onClose={onClose}
-        returnFocusOnClose={false}
-        onOverlayClick={onClose}
-        size="full"
+    <Flex minH="100vh">
+      <Box
+        w="250px"
+        bg={bg}
+        borderRight="1px"
+        borderColor={borderColor}
+        py={5}
+        position="fixed"
+        h="100vh"
+        overflowY="auto"
       >
-        <DrawerContent>
-          <SidebarContent onClose={onClose} links={links} />
-        </DrawerContent>
-      </Drawer>
-      {/* mobilenav */}
-      <MobileNav onOpen={onOpen} />
-      <Box ml={{ base: 0, md: 60 }} p="4">
+        <VStack spacing={1} align="stretch">
+          {filteredNavItems.map((item) => {
+            const isActive = location.pathname === item.to;
+            
+            return (
+              <Box
+                key={item.to}
+                as={RouterLink}
+                to={item.to}
+                px={4}
+                py={3}
+                display="flex"
+                alignItems="center"
+                bg={isActive ? activeBg : 'transparent'}
+                _hover={{ bg: activeBg }}
+                borderRadius="md"
+                mx={2}
+              >
+                <Flex alignItems="center">
+                  <Box
+                    as="span"
+                    display={{ base: 'none', md: 'flex' }}
+                    alignItems="center"
+                    mr={3}
+                  >
+                    {item.icon && <item.icon style={{ marginRight: '12px' }} />}
+                  </Box>
+                  <Text>{item.label}</Text>
+                </Flex>
+              </Box>
+            );
+          })}
+        </VStack>
+      </Box>
+      <Box ml="250px" p={8} flex={1}>
         {children}
       </Box>
-    </Box>
-  );
-}
-
-interface SidebarProps extends BoxProps {
-  onClose: () => void;
-  links: Array<LinkItemProps>;
-}
-
-const SidebarContent = ({ onClose, links, ...rest }: SidebarProps) => {
-  const location = useLocation();
-
-  return (
-    <Box
-      transition="3s ease"
-      bg={useColorModeValue('white', 'gray.900')}
-      borderRight="1px"
-      borderRightColor={useColorModeValue('gray.200', 'gray.700')}
-      w={{ base: 'full', md: 60 }}
-      pos="fixed"
-      h="full"
-      {...rest}
-    >
-      <Flex h="20" alignItems="center" mx="8" justifyContent="space-between">
-        <Text fontSize="2xl" fontFamily="monospace" fontWeight="bold">
-          Logo
-        </Text>
-      </Flex>
-      {links.map((link) => (
-        <NavItem
-          key={link.name}
-          icon={link.icon}
-          path={link.path}
-          isActive={location.pathname === link.path}
-        >
-          {link.name}
-        </NavItem>
-      ))}
-    </Box>
-  );
-};
-
-interface NavItemProps extends FlexProps {
-  icon: any;
-  path: string;
-  isActive?: boolean;
-  children: React.ReactNode;
-}
-
-const NavItem = ({ icon, path, isActive, children, ...rest }: NavItemProps) => {
-  return (
-    <Link
-      as={RouterLink}
-      to={path}
-      style={{ textDecoration: 'none' }}
-      _focus={{ boxShadow: 'none' }}
-    >
-      <Flex
-        align="center"
-        p="4"
-        mx="4"
-        borderRadius="lg"
-        role="group"
-        cursor="pointer"
-        bg={isActive ? 'cyan.400' : 'transparent'}
-        color={isActive ? 'white' : 'inherit'}
-        _hover={{
-          bg: 'cyan.400',
-          color: 'white',
-        }}
-        {...rest}
-      >
-        {icon && (
-          <Icon
-            mr="4"
-            fontSize="16"
-            _groupHover={{
-              color: 'white',
-            }}
-            as={icon}
-          />
-        )}
-        {children}
-      </Flex>
-    </Link>
-  );
-};
-
-interface MobileProps extends FlexProps {
-  onOpen: () => void;
-}
-
-const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  return (
-    <Flex
-      ml={{ base: 0, md: 60 }}
-      px={{ base: 4, md: 4 }}
-      height="20"
-      alignItems="center"
-      bg={useColorModeValue('white', 'gray.900')}
-      borderBottomWidth="1px"
-      borderBottomColor={useColorModeValue('gray.200', 'gray.700')}
-      justifyContent={{ base: 'space-between', md: 'flex-end' }}
-      {...rest}
-    >
-      <IconButtonWithIcon
-        display={{ base: 'flex', md: 'none' }}
-        onClick={onOpen}
-        variant="outline"
-        aria-label="open menu"
-        icon={AiOutlineMenu}
-      />
-
-      <Text
-        display={{ base: 'flex', md: 'none' }}
-        fontSize="2xl"
-        fontFamily="monospace"
-        fontWeight="bold"
-      >
-        Logo
-      </Text>
-
-      <Menu>
-        <MenuButton
-          py={2}
-          transition="all 0.3s"
-          _focus={{ boxShadow: 'none' }}
-        >
-          <Flex align="center">
-            <Avatar
-              size="sm"
-              name={user?.name}
-              src={user?.profile?.avatarUrl || undefined}
-            />
-            <Box ml="2" display={{ base: 'none', md: 'flex' }}>
-              <Text fontSize="sm">{user?.name}</Text>
-              <Text fontSize="xs" color="gray.600">
-                {user?.role}
-              </Text>
-            </Box>
-            <Box ml="2">
-              <IconWrapper icon={AiOutlineDown} size={16} />
-            </Box>
-          </Flex>
-        </MenuButton>
-        <MenuList>
-          <MenuItem as={RouterLink} to="/profile">Profile</MenuItem>
-          <MenuItem onClick={handleLogout}>Sign out</MenuItem>
-        </MenuList>
-      </Menu>
     </Flex>
   );
-}; 
+};
+
+export default DashboardLayout; 

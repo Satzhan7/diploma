@@ -22,41 +22,60 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
+# Influencer Platform Backend
+
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Backend API for the Influencer Platform, built with NestJS, TypeScript, and PostgreSQL.
 
 ## Installation
 
 ```bash
-$ yarn install
+$ npm install
 ```
 
 ## Running the app
 
 ```bash
 # development
-$ yarn run start
+$ npm run start
 
 # watch mode
-$ yarn run start:dev
+$ npm run start:dev
 
 # production mode
-$ yarn run start:prod
+$ npm run start:prod
 ```
 
 ## Test
 
 ```bash
 # unit tests
-$ yarn run test
+$ npm run test
 
 # e2e tests
-$ yarn run test:e2e
+$ npm run test:e2e
 
 # test coverage
-$ yarn run test:cov
+$ npm run test:cov
 ```
+
+## Maintenance Scripts
+
+### Create Missing Profiles
+
+If you have users without profiles in your database, you can run the following script to create profiles for them:
+
+```bash
+# Run from the project root
+$ npx ts-node -r tsconfig-paths/register src/scripts/create-missing-profiles.ts
+```
+
+This script will:
+1. Find all users in the database
+2. Check if each user has a profile
+3. Create a profile for users who don't have one
+4. Log the results of the operation
 
 ## Support
 

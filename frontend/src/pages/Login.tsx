@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import {
   Button,
@@ -17,8 +17,14 @@ import { useAuth } from '../contexts/AuthContext';
 export const Login: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToast();
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = React.useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/profile');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -29,14 +35,14 @@ export const Login: React.FC = () => {
     const password = formData.get('password') as string;
 
     try {
-      const response = await login(email, password);
+      await login(email, password);
       toast({
         title: 'Login successful',
         status: 'success',
         duration: 3000,
         isClosable: true,
       });
-      navigate(`/dashboard/${response.user.role.toLowerCase()}`);
+      navigate('/profile');
     } catch (error) {
       toast({
         title: 'Login failed',
@@ -49,6 +55,10 @@ export const Login: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  if (isAuthenticated) {
+    return null;
+  }
 
   return (
     <Container maxW="lg" py={{ base: '12', md: '24' }} px={{ base: '0', sm: '8' }}>

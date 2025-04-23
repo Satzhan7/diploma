@@ -7,11 +7,62 @@ import {
   CardHeader,
   CardBody,
   useToast,
+  Stat,
+  StatLabel,
+  StatNumber,
+  StatHelpText,
+  StatArrow,
+  Flex,
 } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
-import { StatCard } from '../../components/statistics/StatCard';
-import { api } from '../../services/api';
+// import { StatCard } from '../../components/statistics/StatCard';
+import api from '../../services/api';
 import { BrandDashboardStats } from '../../types/statistics';
+
+// Локальная версия компонента StatCard
+const StatCard: React.FC<{
+  title: string;
+  value: string | number;
+  helpText?: string;
+  change?: number;
+  isIncrease?: boolean;
+  icon?: React.ReactNode;
+}> = ({ title, value, helpText, change, isIncrease, icon }) => {
+  return (
+    <Box
+      p={5}
+      shadow="md"
+      borderWidth="1px"
+      borderRadius="lg"
+      bg="white"
+      _hover={{ shadow: 'lg' }}
+      transition="all 0.3s"
+    >
+      <Flex justify="space-between" align="center">
+        <Stat>
+          <StatLabel fontWeight="medium" isTruncated>
+            {title}
+          </StatLabel>
+          <StatNumber fontSize="2xl" fontWeight="bold">
+            {value}
+          </StatNumber>
+          {(helpText || change !== undefined) && (
+            <StatHelpText mb={0}>
+              {change !== undefined && (
+                <>
+                  <StatArrow type={isIncrease ? 'increase' : 'decrease'} />
+                  {change}%
+                </>
+              )}
+              {helpText && (change !== undefined ? ' ' : '') + helpText}
+            </StatHelpText>
+          )}
+        </Stat>
+        {icon && <Box ml={2}>{icon}</Box>}
+      </Flex>
+    </Box>
+  );
+};
 
 function Overview() {
   const toast = useToast();
@@ -49,22 +100,24 @@ function Overview() {
       <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4} mb={8}>
         <StatCard
           title="Active Campaigns"
-          stat={stats?.activeCampaigns || 0}
+          value={stats?.activeCampaigns || 0}
           helpText="Current active campaigns"
         />
         <StatCard
           title="Total Reach"
-          stat={stats?.totalReach?.toLocaleString() || 0}
+          value={stats?.totalReach?.toLocaleString() || 0}
           change={stats?.reachChange || 0}
+          isIncrease={stats?.reachChange ? stats.reachChange > 0 : true}
         />
         <StatCard
           title="Engagement Rate"
-          stat={`${stats?.engagementRate || 0}%`}
+          value={`${stats?.engagementRate || 0}%`}
           change={stats?.engagementChange || 0}
+          isIncrease={stats?.engagementChange ? stats.engagementChange > 0 : true}
         />
         <StatCard
           title="Connected Influencers"
-          stat={stats?.connectedInfluencers || 0}
+          value={stats?.connectedInfluencers || 0}
           helpText="Total partnerships"
         />
       </SimpleGrid>
@@ -79,11 +132,11 @@ function Overview() {
             <CardBody>
               <StatCard
                 title="Status"
-                stat={campaign.status}
+                value={campaign.status}
               />
               <StatCard
                 title="Budget"
-                stat={`$${campaign.budget.toLocaleString()}`}
+                value={`$${campaign.budget.toLocaleString()}`}
               />
             </CardBody>
           </Card>

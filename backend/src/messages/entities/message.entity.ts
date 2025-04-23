@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from '../../users/entities/user.entity';
+import { Chat } from '../../chats/entities/chat.entity';
 
 @Entity()
 export class Message {
@@ -35,4 +36,10 @@ export class Message {
   @ApiProperty({ example: false, description: 'Whether the message has been read' })
   @Column({ default: false })
   isRead: boolean;
+
+  @ManyToOne(() => Chat, chat => chat.messages)
+  chat: Chat;
+
+  @Column()
+  chatId: string;
 } 

@@ -7,18 +7,20 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { Box, Heading } from '@chakra-ui/react';
+import { Box, Heading, useColorModeValue } from '@chakra-ui/react';
 import { CampaignStats } from '../../types/statistics';
 
 interface PieChartProps {
-  title: string;
+  title?: string;
   data: CampaignStats[];
   dataKey: keyof CampaignStats;
   nameKey: keyof CampaignStats;
   colors?: string[];
+  suffix?: string;
+  prefix?: string;
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FF6B6B', '#6B66FF'];
 
 export const PieChart: React.FC<PieChartProps> = ({
   title,
@@ -26,10 +28,22 @@ export const PieChart: React.FC<PieChartProps> = ({
   dataKey,
   nameKey,
   colors = COLORS,
+  suffix = '',
+  prefix = ''
 }) => {
+  const tooltipBg = useColorModeValue('white', 'gray.800');
+
+  // Формат для тултипа
+  const formatValue = (value: number) => {
+    return `${prefix}${value.toLocaleString()}${suffix}`;
+  };
+
+  // Генерируем уникальный ID для каждого графика
+  const chartId = React.useId();
+
   return (
     <Box p={5} shadow="md" borderWidth="1px" borderRadius="lg">
-      <Heading size="md" mb={4}>{title}</Heading>
+      {title && <Heading size="md" mb={4}>{title}</Heading>}
       <Box h="300px">
         <ResponsiveContainer width="100%" height="100%">
           <RechartsPieChart>
@@ -43,10 +57,13 @@ export const PieChart: React.FC<PieChartProps> = ({
               label
             >
               {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                <Cell key={`cell-${chartId}-${index}`} fill={colors[index % colors.length]} />
               ))}
             </Pie>
-            <Tooltip />
+            <Tooltip 
+              formatter={(value: number) => formatValue(value)} 
+              contentStyle={{ backgroundColor: tooltipBg, borderRadius: '8px', border: 'none' }}
+            />
             <Legend />
           </RechartsPieChart>
         </ResponsiveContainer>

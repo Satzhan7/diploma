@@ -9,7 +9,9 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ user: User }>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
+  deleteAccount: () => Promise<void>;
   isAuthenticated: boolean;
+  refreshUser: () => Promise<void>;
 }
 
 interface RegisterData {
@@ -79,6 +81,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   };
 
+  const deleteAccount = async () => {
+    try {
+      setError(null);
+      await api.delete('/auth/account');
+      // After successful deletion, log the user out
+      logout();
+      return;
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to delete account');
+      throw err;
+    }
+  };
+
+  const refreshUser = async () => {
+    try {
+      const response = await api.get('/auth/profile');
+      setUser(response.data);
+    } catch (err: any) {
+      console.error('Failed to refresh user data:', err);
+      throw err;
+    }
+  };
+
   const value = {
     user,
     isLoading,
@@ -86,7 +111,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login,
     register,
     logout,
+    deleteAccount,
     isAuthenticated: !!user,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

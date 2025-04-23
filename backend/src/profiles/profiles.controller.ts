@@ -32,11 +32,13 @@ export class ProfilesController {
   }
 
   @Patch('me')
+  @ApiOperation({ summary: 'Update current user profile' })
+  @ApiResponse({ status: 200, description: 'Profile has been successfully updated.', type: Profile })
   updateMyProfile(
     @GetCurrentUser('sub') userId: string,
     @Body() updateProfileDto: UpdateProfileDto,
-  ) {
-    return this.profilesService.update(userId, updateProfileDto);
+  ): Promise<Profile> {
+    return this.profilesService.updateProfile(userId, updateProfileDto);
   }
 
   @Get(':userId')

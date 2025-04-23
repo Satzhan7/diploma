@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import {
   Button,
@@ -16,28 +16,37 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../types/user';
 
-const Register: React.FC = () => {
+export const Register: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToast();
-  const { register } = useAuth();
+  const { register, isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = React.useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/profile');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const name = formData.get('name') as string;
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    const role = formData.get('role') as UserRole;
+    const data = {
+      name: formData.get('name') as string,
+      email: formData.get('email') as string,
+      password: formData.get('password') as string,
+      role: formData.get('role') as UserRole,
+    };
 
     try {
-      await register({ name, email, password, role });
+      await register(data);
       toast({
         title: 'Registration successful',
+        description: 'Please login with your credentials',
         status: 'success',
-        duration: 3000,
+        duration: 5000,
         isClosable: true,
       });
       navigate('/login');
@@ -54,6 +63,10 @@ const Register: React.FC = () => {
     }
   };
 
+  if (isAuthenticated) {
+    return null;
+  }
+
   return (
     <Container maxW="lg" py={{ base: '12', md: '24' }} px={{ base: '0', sm: '8' }}>
       <VStack spacing="8">
@@ -63,7 +76,7 @@ const Register: React.FC = () => {
             <Stack spacing="6">
               <FormControl isRequired>
                 <FormLabel>Name</FormLabel>
-                <Input type="text" name="name" placeholder="Enter your full name" />
+                <Input type="text" name="name" placeholder="Enter your name" />
               </FormControl>
               <FormControl isRequired>
                 <FormLabel>Email</FormLabel>
@@ -90,13 +103,11 @@ const Register: React.FC = () => {
           Already have an account?{' '}
           <RouterLink to="/login">
             <Text as="span" color="blue.500">
-              Login
+              Sign in
             </Text>
           </RouterLink>
         </Text>
       </VStack>
     </Container>
   );
-};
-
-export { Register }; 
+}; 

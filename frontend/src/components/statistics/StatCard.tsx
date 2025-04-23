@@ -1,38 +1,55 @@
 import React from 'react';
-import {
-  Card,
-  CardBody,
-  Stat,
-  StatLabel,
-  StatNumber,
-  StatHelpText,
-  StatArrow,
-} from '@chakra-ui/react';
+import { Box, Stat, StatLabel, StatNumber, StatHelpText, StatArrow, Flex } from '@chakra-ui/react';
 
 interface StatCardProps {
   title: string;
-  stat: string | number;
+  value: string | number;
   helpText?: string;
   change?: number;
+  isIncrease?: boolean;
+  icon?: React.ReactNode;
 }
 
-export const StatCard: React.FC<StatCardProps> = ({ title, stat, helpText, change }) => {
+export const StatCard: React.FC<StatCardProps> = ({
+  title,
+  value,
+  helpText,
+  change,
+  isIncrease,
+  icon,
+}) => {
   return (
-    <Card>
-      <CardBody>
+    <Box
+      p={5}
+      shadow="md"
+      borderWidth="1px"
+      borderRadius="lg"
+      bg="white"
+      _hover={{ shadow: 'lg' }}
+      transition="all 0.3s"
+    >
+      <Flex justify="space-between" align="center">
         <Stat>
-          <StatLabel>{title}</StatLabel>
-          <StatNumber>{stat}</StatNumber>
+          <StatLabel fontWeight="medium" isTruncated>
+            {title}
+          </StatLabel>
+          <StatNumber fontSize="2xl" fontWeight="bold">
+            {value}
+          </StatNumber>
           {(helpText || change !== undefined) && (
-            <StatHelpText>
+            <StatHelpText mb={0}>
               {change !== undefined && (
-                <StatArrow type={change > 0 ? 'increase' : 'decrease'} />
+                <>
+                  <StatArrow type={isIncrease ? 'increase' : 'decrease'} />
+                  {change}%
+                </>
               )}
-              {helpText || `${Math.abs(change!)}%`}
+              {helpText && (change !== undefined ? ' ' : '') + helpText}
             </StatHelpText>
           )}
         </Stat>
-      </CardBody>
-    </Card>
+        {icon && <Box ml={2}>{icon}</Box>}
+      </Flex>
+    </Box>
   );
 }; 

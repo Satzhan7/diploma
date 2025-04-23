@@ -18,8 +18,17 @@ import {
   Badge,
   HStack,
   VStack,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  Textarea,
+  useDisclosure,
 } from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 
 interface Order {
@@ -42,8 +51,20 @@ interface FilterState {
   status: string;
 }
 
+interface ApplicationFormData {
+  message: string;
+  proposedPrice: number;
+}
+
 export const Orders: React.FC = () => {
   const toast = useToast();
+  const queryClient = useQueryClient();
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [applicationForm, setApplicationForm] = useState<ApplicationFormData>({
+    message: '',
+    proposedPrice: 0,
+  });
   const [filters, setFilters] = useState<FilterState>({
     category: '',
     minBudget: 0,
@@ -59,9 +80,21 @@ export const Orders: React.FC = () => {
     },
   });
 
-  const handleApply = async (orderId: string) => {
-    try {
-      await api.post(`/orders/${orderId}/apply`);
+  const submitApplicationMutation = useMutation({
+    mutationFn: async (data: { orderId: string, application: ApplicationFormData }) => {
+      console.log('Submitting application:', data);
+      try {
+        const response = await api.post(`/order-applications/${data.orderId}`, data.application);
+        console.log('Application submitted successfully:', response.data);
+        return response.data;
+      } catch (error) {
+        console.error('Error submitting application:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['myApplications'] });
       toast({
         title: 'Application submitted',
         description: 'Your application has been sent to the brand',
@@ -69,7 +102,11 @@ export const Orders: React.FC = () => {
         duration: 3000,
         isClosable: true,
       });
-    } catch (error: any) {
+      onClose();
+      resetForm();
+    },
+    onError: (error: any) => {
+      console.error('Mutation error handler:', error);
       toast({
         title: 'Error',
         description: error.response?.data?.message || 'Failed to submit application',
@@ -77,7 +114,52 @@ export const Orders: React.FC = () => {
         duration: 5000,
         isClosable: true,
       });
-    }
+    },
+  });
+
+  const handleOpenApplicationForm = (order: Order) => {
+    setSelectedOrder(order);
+    setApplicationForm(prev => ({
+      ...prev,
+      proposedPrice: order.budget,
+    }));
+    onOpen();
+  };
+
+  const handleSubmitApplication = () => {
+    if (!selectedOrder) return;
+    
+    // Подготовка данных заявки
+    const application = {
+      message: applicationForm.message,
+      proposedPrice: applicationForm.proposedPrice
+    };
+    
+    console.log('Preparing to submit application:', {
+      orderId: selectedOrder.id,
+      application: application
+    });
+    
+    submitApplicationMutation.mutate({
+      orderId: selectedOrder.id,
+      application: application,
+    });
+  };
+
+  const resetForm = () => {
+    setApplicationForm({
+      message: '',
+      proposedPrice: 0,
+    });
+    setSelectedOrder(null);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setApplicationForm(prev => ({
+      ...prev,
+      [name]: name === 'proposedPrice' ? Number(value) : value,
+    }));
   };
 
   return (
@@ -178,7 +260,7 @@ export const Orders: React.FC = () => {
                   <Button
                     colorScheme="blue"
                     width="full"
-                    onClick={() => handleApply(order.id)}
+                    onClick={() => handleOpenApplicationForm(order)}
                     isDisabled={order.status !== 'open'}
                   >
                     Apply Now
@@ -190,6 +272,54 @@ export const Orders: React.FC = () => {
         ) : (
           <Text>No orders available matching your filters.</Text>
         )}
+
+        {/* Application Form Modal */}
+        <Modal isOpen={isOpen} onClose={onClose}>
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>Apply for {selectedOrder?.title}</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              <VStack spacing={4}>
+                <FormControl isRequired>
+                  <FormLabel>Your Message to the Brand</FormLabel>
+                  <Textarea
+                    name="message"
+                    value={applicationForm.message}
+                    onChange={handleInputChange}
+                    placeholder="Explain why you're a good fit for this order and what you can offer..."
+                    rows={5}
+                  />
+                </FormControl>
+                <FormControl isRequired>
+                  <FormLabel>Your Proposed Price ($)</FormLabel>
+                  <Input
+                    name="proposedPrice"
+                    type="number"
+                    value={applicationForm.proposedPrice}
+                    onChange={handleInputChange}
+                  />
+                  <Text fontSize="sm" color="gray.500" mt={1}>
+                    Original budget: ${selectedOrder?.budget.toLocaleString()}
+                  </Text>
+                </FormControl>
+              </VStack>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="ghost" mr={3} onClick={onClose}>
+                Cancel
+              </Button>
+              <Button 
+                colorScheme="blue" 
+                onClick={handleSubmitApplication}
+                isLoading={submitApplicationMutation.isPending}
+                isDisabled={!applicationForm.message}
+              >
+                Submit Application
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
       </VStack>
     </Box>
   );

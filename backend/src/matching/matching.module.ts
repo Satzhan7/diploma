@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { MatchingService } from './matching.service';
 import { MatchingController } from './matching.controller';
+import { MatchingService } from './matching.service';
 import { Match } from './entities/match.entity';
 import { UsersModule } from '../users/users.module';
 import { ProfilesModule } from '../profiles/profiles.module';

@@ -1,6 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { ApiProperty } from '@nestjs/swagger';
-import { Profile } from '../../profiles/entities/profile.entity';
+import { User } from '../../users/entities/user.entity';
 
 export enum MatchStatus {
   PENDING = 'pending',
@@ -9,45 +8,43 @@ export enum MatchStatus {
   COMPLETED = 'completed',
 }
 
+// Define structure for the stats object
+export interface MatchStats {
+  clicks?: number;
+  impressions?: number;
+  engagementRate?: number; // Kept for potential use, though also a direct column
+  followerGrowth?: number;
+}
+
 @Entity()
 export class Match {
-  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000', description: 'The unique identifier of the match' })
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ApiProperty({ example: 'Summer Campaign 2024', description: 'The name of the campaign' })
+  @ManyToOne(() => User)
+  brand: User;
+
   @Column()
-  name: string;
+  brandId: string;
 
-  @ApiProperty({ example: 'Fashion', description: 'The category of the campaign' })
+  @ManyToOne(() => User)
+  influencer: User;
+
   @Column()
-  category: string;
+  influencerId: string;
 
-  @ApiProperty({ example: '2024-06-01', description: 'The start date of the campaign' })
-  @Column()
-  startDate: Date;
+  @Column({ nullable: true })
+  name?: string;
 
-  @ApiProperty({ example: '2024-08-31', description: 'The end date of the campaign' })
-  @Column()
-  endDate: Date;
+  @Column({ nullable: true })
+  category?: string;
 
-  @ApiProperty({ example: 1000, description: 'The number of clicks for this campaign' })
-  @Column({ default: 0 })
-  clicks: number;
+  @Column({ type: 'timestamp with time zone', nullable: true })
+  startDate?: Date;
 
-  @ApiProperty({ example: 50000, description: 'The number of impressions for this campaign' })
-  @Column({ default: 0 })
-  impressions: number;
+  @Column({ type: 'timestamp with time zone', nullable: true })
+  endDate?: Date;
 
-  @ApiProperty({ example: 2.5, description: 'The engagement rate for this campaign' })
-  @Column({ type: 'float', default: 0 })
-  engagementRate: number;
-
-  @ApiProperty({ example: 100, description: 'The follower growth for this campaign' })
-  @Column({ default: 0 })
-  followerGrowth: number;
-
-  @ApiProperty({ enum: MatchStatus, example: MatchStatus.PENDING, description: 'The status of the match' })
   @Column({
     type: 'enum',
     enum: MatchStatus,
@@ -55,19 +52,27 @@ export class Match {
   })
   status: MatchStatus;
 
-  @ApiProperty({ type: () => Profile })
-  @ManyToOne(() => Profile)
-  brand: Profile;
+  @Column({ nullable: true })
+  message?: string;
 
-  @ApiProperty({ type: () => Profile })
-  @ManyToOne(() => Profile)
-  influencer: Profile;
+  @Column({ type: 'jsonb', nullable: true })
+  metadata?: Record<string, any>;
 
-  @ApiProperty({ example: '2024-04-19T09:00:00.000Z', description: 'The creation date of the match' })
+  @Column({ type: 'jsonb', nullable: true, default: {} })
+  stats?: MatchStats;
+
+  @Column({ default: 0 })
+  engagementRate: number;
+
+  @Column({ default: 0 })
+  conversionRate: number;
+
+  @Column({ default: 0 })
+  clickThroughRate: number;
+
   @CreateDateColumn()
   createdAt: Date;
 
-  @ApiProperty({ example: '2024-04-19T09:00:00.000Z', description: 'The last update date of the match' })
   @UpdateDateColumn()
   updatedAt: Date;
 }

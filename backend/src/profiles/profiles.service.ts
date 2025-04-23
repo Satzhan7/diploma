@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Profile, ProfileType } from './entities/profile.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UsersService } from '../users/users.service';
+import { SocialMedia } from './entities/social-media.entity';
 
 @Injectable()
 export class ProfilesService {
@@ -30,6 +31,7 @@ export class ProfilesService {
   async findByUserId(userId: string): Promise<Profile> {
     const profile = await this.profilesRepository.findOne({
       where: { user: { id: userId } },
+      relations: ['socialMedia']
     });
 
     if (!profile) {
@@ -39,13 +41,49 @@ export class ProfilesService {
     return profile;
   }
 
-  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto): Promise<Profile> {
-    const profile = await this.findByUserId(userId);
+  async update(id: string, updateProfileDto: UpdateProfileDto): Promise<Profile> {
+    const profile = await this.profilesRepository.findOne({ 
+      where: { id },
+      relations: ['socialMedia']
+    });
     
-    // Update profile with new data
-    Object.assign(profile, updateProfileDto);
+    if (!profile) {
+      throw new NotFoundException(`Profile with ID ${id} not found`);
+    }
+
+    // Handle socialMedia separately
+    const { socialMedia, ...profileData } = updateProfileDto;
+    
+    // Update profile with new data (except socialMedia)
+    Object.assign(profile, profileData);
+    
+    // Handle social media if provided
+    if (socialMedia && socialMedia.length > 0) {
+      // Remove existing social media entries if any
+      if (profile.socialMedia && profile.socialMedia.length > 0) {
+        await this.profilesRepository.manager.remove(profile.socialMedia);
+      }
+      
+      // Create new social media entries
+      profile.socialMedia = socialMedia.map(mediaDto => {
+        const socialMediaEntity = new SocialMedia();
+        socialMediaEntity.type = mediaDto.type;
+        socialMediaEntity.url = mediaDto.url;
+        socialMediaEntity.username = mediaDto.username;
+        socialMediaEntity.followers = mediaDto.followers;
+        socialMediaEntity.profile = profile;
+        return socialMediaEntity;
+      });
+    }
     
     return this.profilesRepository.save(profile);
+  }
+
+  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto): Promise<Profile> {
+    const profile = await this.findByUserId(userId);
+    const profileId = profile.id;
+    
+    return this.update(profileId, updateProfileDto);
   }
 
   async findInfluencersForBrand(brandUserId: string, filters: any = {}): Promise<Profile[]> {
@@ -119,12 +157,54 @@ export class ProfilesService {
     return this.profilesRepository.save(newProfile);
   }
 
-  async update(id: string, profile: Partial<Profile>): Promise<Profile> {
-    await this.profilesRepository.update(id, profile);
-    return this.profilesRepository.findOne({ where: { id } });
-  }
-
   async remove(id: string): Promise<void> {
     await this.profilesRepository.delete(id);
+  }
+
+  async delete(id: string): Promise<void> {
+    const result = await this.profilesRepository.delete(id);
+    if (!result.affected) {
+      throw new NotFoundException(`Profile with ID ${id} not found`);
+    }
+  }
+
+  // Метод для поиска инфлюенсеров по категориям
+  async findInfluencersByCategories(categories: string[], limit: number = 10): Promise<Profile[]> {
+    const queryBuilder = this.profilesRepository
+      .createQueryBuilder('profile')
+      .where('profile.type = :type', { type: ProfileType.INFLUENCER })
+      .leftJoinAndSelect('profile.user', 'user');
+    
+    if (categories && categories.length > 0) {
+      // Используем ARRAY_OVERLAP для поиска профилей, у которых есть хотя бы одна общая категория
+      queryBuilder.andWhere('profile.categories && :categories', { 
+        categories: categories 
+      });
+    }
+    
+    return queryBuilder
+      .orderBy('user.name', 'ASC')
+      .limit(limit)
+      .getMany();
+  }
+  
+  // Метод для поиска брендов по категориям
+  async findBrandsByCategories(categories: string[], limit: number = 10): Promise<Profile[]> {
+    const queryBuilder = this.profilesRepository
+      .createQueryBuilder('profile')
+      .where('profile.type = :type', { type: ProfileType.BRAND })
+      .leftJoinAndSelect('profile.user', 'user');
+    
+    if (categories && categories.length > 0) {
+      // Используем ARRAY_OVERLAP для поиска профилей, у которых есть хотя бы одна общая категория
+      queryBuilder.andWhere('profile.categories && :categories', { 
+        categories: categories 
+      });
+    }
+    
+    return queryBuilder
+      .orderBy('user.name', 'ASC')
+      .limit(limit)
+      .getMany();
   }
 }

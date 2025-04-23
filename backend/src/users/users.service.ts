@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User, UserRole } from './entities/user.entity';
+import { Repository, ILike } from 'typeorm';
+import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
+import { UserRole } from './enums/user-role.enum';
 
 @Injectable()
 export class UsersService {
@@ -14,7 +15,31 @@ export class UsersService {
   ) {}
 
   async findAll(): Promise<User[]> {
-    return this.usersRepository.find();
+    return await this.usersRepository.find();
+  }
+
+  async findInfluencers(searchQuery?: string, category?: string): Promise<User[]> {
+    const where: any = { role: UserRole.INFLUENCER };
+    
+    if (searchQuery) {
+      where.name = ILike(`%${searchQuery}%`);
+    }
+    
+    if (category) {
+      where.categories = ILike(`%${category}%`);
+    }
+    
+    return await this.usersRepository.find({ where });
+  }
+
+  async findBrands(searchQuery?: string): Promise<User[]> {
+    const where: any = { role: UserRole.BRAND };
+    
+    if (searchQuery) {
+      where.name = ILike(`%${searchQuery}%`);
+    }
+    
+    return await this.usersRepository.find({ where });
   }
 
   async findById(id: string): Promise<User> {
@@ -32,39 +57,17 @@ export class UsersService {
   }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
-    const { password, ...userData } = createUserDto;
-    
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    // Create user
-    const user = this.usersRepository.create({
-      ...userData,
-      password: hashedPassword,
-    });
-    
-    return this.usersRepository.save(user);
+    const user = this.usersRepository.create(createUserDto);
+    return await this.usersRepository.save(user);
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
-    const user = await this.findById(id);
-    
-    // If password is provided, hash it
-    if (updateUserDto.password) {
-      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
-    }
-    
-    // Update user
-    Object.assign(user, updateUserDto);
-    
-    return this.usersRepository.save(user);
+    await this.usersRepository.update(id, updateUserDto);
+    return this.findById(id);
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.usersRepository.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`User with ID "${id}" not found`);
-    }
+    await this.usersRepository.delete(id);
   }
 
   async updateRefreshToken(userId: string, refreshToken: string | null): Promise<void> {
@@ -82,17 +85,5 @@ export class UsersService {
     user.isEmailVerified = true;
     
     return this.usersRepository.save(user);
-  }
-
-  async findBrands(): Promise<User[]> {
-    return this.usersRepository.find({
-      where: { role: UserRole.BRAND },
-    });
-  }
-
-  async findInfluencers(): Promise<User[]> {
-    return this.usersRepository.find({
-      where: { role: UserRole.INFLUENCER },
-    });
   }
 }

@@ -1,17 +1,38 @@
+import { IsNotEmpty, IsString, IsEnum, IsOptional, IsUUID, IsObject } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsUUID, IsEnum } from 'class-validator';
 import { MatchStatus } from '../entities/match.entity';
 
 export class CreateMatchDto {
-  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000', description: 'The ID of the brand profile' })
+  @ApiProperty({ description: 'ID of the brand', example: '123e4567-e89b-12d3-a456-426614174000' })
   @IsUUID()
+  @IsNotEmpty()
   brandId: string;
 
-  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000', description: 'The ID of the influencer profile' })
+  @ApiProperty({ description: 'ID of the influencer', example: '123e4567-e89b-12d3-a456-426614174001' })
   @IsUUID()
+  @IsNotEmpty()
   influencerId: string;
 
-  @ApiProperty({ enum: MatchStatus, example: MatchStatus.PENDING, description: 'The status of the match' })
+  @ApiProperty({ 
+    description: 'Status of the match', 
+    enum: MatchStatus, 
+    default: MatchStatus.PENDING,
+    example: MatchStatus.PENDING 
+  })
   @IsEnum(MatchStatus)
-  status: MatchStatus;
+  @IsOptional()
+  status?: MatchStatus;
+
+  @ApiProperty({ description: 'Message for the match', example: 'Would love to collaborate on our new campaign!' })
+  @IsString()
+  @IsOptional()
+  message?: string;
+
+  @ApiProperty({ 
+    description: 'Additional metadata for the match', 
+    example: { campaignType: 'Instagram Post', budget: 1000 } 
+  })
+  @IsObject()
+  @IsOptional()
+  metadata?: Record<string, any>;
 }

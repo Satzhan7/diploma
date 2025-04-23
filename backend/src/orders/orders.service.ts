@@ -84,12 +84,24 @@ export class OrdersService {
     return this.orderRepository.save(order);
   }
 
-  async findByBrand(brandId: string): Promise<Order[]> {
-    return this.orderRepository.find({
-      where: { brandId },
-      relations: ['brand', 'brand.user', 'influencer', 'influencer.user'],
+  async findByBrand(userId: string): Promise<Order[]> {
+    const brandProfile = await this.profilesService.findByUserId(userId);
+    
+    console.log('Finding orders for brand profile:', brandProfile.id);
+    
+    const orders = await this.orderRepository.find({
+      where: { brandId: brandProfile.id },
+      relations: ['brand', 'brand.user', 'influencer', 'influencer.user', 'applications', 'applications.applicant'],
       order: { createdAt: 'DESC' },
     });
+    
+    console.log(`Found ${orders.length} orders, with applications:`, orders.map(o => ({
+      id: o.id,
+      title: o.title,
+      applicationsCount: o.applications?.length || 0
+    })));
+    
+    return orders;
   }
 
   async findByInfluencer(influencerId: string): Promise<Order[]> {
