@@ -1,11 +1,12 @@
 import React from 'react';
-import { Box, Flex, Text, VStack, useColorModeValue, Icon } from '@chakra-ui/react';
+import { Box, Flex, Text, VStack, useColorModeValue } from '@chakra-ui/react';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { IconType } from 'react-icons';
-import { FiHome, FiList, FiMessageSquare, FiSettings, FiUsers, FiMenu, FiBell } from 'react-icons/fi';
+import { FiHome, FiList, FiMessageSquare, FiSettings, FiUsers } from 'react-icons/fi';
 import { BsFileEarmarkPlus } from 'react-icons/bs';
 import { UserRole } from '../types/user';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../contexts/AuthContext';
+import { IconWrapper } from './IconWrapper';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -37,7 +38,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => 
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const activeBg = useColorModeValue('gray.100', 'gray.700');
 
-  const filteredNavItems = navItems.filter(item => item.roles.includes(role as UserRole));
+  const filteredNavItems = navItems.filter(item => role && item.roles.includes(role));
 
   return (
     <Flex minH="100vh">
@@ -76,7 +77,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => 
                     alignItems="center"
                     mr={3}
                   >
-                    {item.icon && <item.icon style={{ marginRight: '12px' }} />}
+                    {item.icon && <IconWrapper icon={item.icon} size="1.25em" />}
                   </Box>
                   <Text>{item.label}</Text>
                 </Flex>
