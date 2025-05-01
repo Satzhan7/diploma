@@ -43,8 +43,8 @@ export const ordersService = {
     await api.delete(`/orders/${id}`);
   },
 
-  getByBrand: async (brandId: string): Promise<Order[]> => {
-    const response = await api.get(`/orders/brand/${brandId}`);
+  getByBrand: async (): Promise<Order[]> => {
+    const response = await api.get(`/orders/brand`);
     return response.data;
   },
 

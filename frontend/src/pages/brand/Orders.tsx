@@ -18,7 +18,6 @@ import {
   ModalCloseButton,
   useDisclosure,
   SimpleGrid,
-  Tag,
   Card,
   CardHeader,
   CardBody,
@@ -26,7 +25,6 @@ import {
   VStack,
   List,
   ListItem,
-  Divider,
   Menu,
   MenuButton,
   MenuList,
@@ -35,15 +33,16 @@ import {
   FormControl,
   FormLabel,
   Input,
-  FormHelperText,
-  IconButton,
+  Avatar,
 } from '@chakra-ui/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { ordersService, Order, Application } from '../../services/orders';
+import { ordersService, Order } from '../../services/orders';
+import { applicationsService, Application } from '../../services/applications';
 import { IconWrapper, IconButtonWithWrapper } from '../../components/IconWrapper';
 import { FiEdit2, FiTrash2, FiEye, FiTrendingUp } from 'react-icons/fi';
 import { BsThreeDotsVertical } from 'react-icons/bs';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface StatsFormData {
   clicks: number;
@@ -53,7 +52,7 @@ interface StatsFormData {
 }
 
 const BrandOrders: React.FC = () => {
-  const { isOpen: isDetailsOpen, onOpen: onDetailsOpen, onClose: onDetailsClose } = useDisclosure();
+  const { user } = useAuth();
   const { isOpen: isApplicantsOpen, onOpen: onApplicantsOpen, onClose: onApplicantsClose } = useDisclosure();
   const { isOpen: isStatsModalOpen, onOpen: onStatsModalOpen, onClose: onStatsModalClose } = useDisclosure();
   const [statsForm, setStatsForm] = useState<StatsFormData>({ clicks: 0, impressions: 0, engagementRate: 0, followerGrowth: 0 });
@@ -73,7 +72,8 @@ const BrandOrders: React.FC = () => {
 
   const { data: orders, isLoading, error } = useQuery<Order[], Error>({
     queryKey: ['brandOrders'],
-    queryFn: ordersService.getBrandOrders,
+    queryFn: () => ordersService.getByBrand(),
+    enabled: !!user?.id,
   });
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -82,9 +82,8 @@ const BrandOrders: React.FC = () => {
   const navigate = useNavigate();
 
   const acceptMutation = useMutation({
-    mutationFn: (applicationId: string) => ordersService.acceptApplication(applicationId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['brandOrders'] });
+    mutationFn: (applicationId: string) => applicationsService.update(applicationId, { status: 'accepted' }),
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['orderApplications', selectedOrder?.id] });
       toast({ title: 'Application Accepted', status: 'success' });
     },
@@ -92,9 +91,8 @@ const BrandOrders: React.FC = () => {
   });
 
   const rejectMutation = useMutation({
-    mutationFn: (applicationId: string) => ordersService.rejectApplication(applicationId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['brandOrders'] });
+    mutationFn: (applicationId: string) => applicationsService.update(applicationId, { status: 'rejected' }),
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['orderApplications', selectedOrder?.id] });
       toast({ title: 'Application Rejected', status: 'warning' });
     },
@@ -102,24 +100,19 @@ const BrandOrders: React.FC = () => {
   });
 
   const deleteOrderMutation = useMutation({
-      mutationFn: (orderId: string) => ordersService.deleteOrder(orderId),
-      onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['brandOrders'] });
-          toast({ title: 'Order Deleted', status: 'info' });
-      },
-      onError: (err) => toast({ title: 'Error deleting order', description: (err as Error).message, status: 'error' })
+    mutationFn: (orderId: string) => ordersService.delete(orderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['brandOrders', user?.id] });
+      toast({ title: 'Order Deleted', status: 'info' });
+    },
+    onError: (err) => toast({ title: 'Error deleting order', description: (err as Error).message, status: 'error' })
   });
 
   const { data: orderApplications, isLoading: isLoadingApplications } = useQuery<Application[]>({
-     queryKey: ['orderApplications', selectedOrder?.id],
-     queryFn: () => ordersService.getOrderApplications(selectedOrder!.id),
-     enabled: !!selectedOrder && isApplicantsOpen,
-   });
-
-  const handleViewDetails = (order: Order) => {
-    setSelectedOrder(order);
-    onDetailsOpen();
-  };
+    queryKey: ['orderApplications', selectedOrder?.id],
+    queryFn: () => applicationsService.getByOrder(selectedOrder!.id),
+    enabled: !!selectedOrder && isApplicantsOpen,
+  });
 
   const handleViewApplicants = (order: Order) => {
     setSelectedOrder(order);
@@ -127,20 +120,20 @@ const BrandOrders: React.FC = () => {
   };
 
   const handleEditOrder = (orderId: string) => {
-    navigate(`/orders/edit/${orderId}`);
+    navigate(`/brand/orders/edit/${orderId}`);
   };
 
   const handleDeleteOrder = (orderId: string) => {
-      if(window.confirm('Are you sure you want to delete this order?')) {
-          deleteOrderMutation.mutate(orderId);
-      }
+    if(window.confirm('Are you sure you want to delete this order?')) {
+      deleteOrderMutation.mutate(orderId);
+    }
   };
 
   const handleOpenStatsModal = (order: Order) => {
-     setSelectedOrder(order);
-     setStatsForm({ clicks: 0, impressions: 0, engagementRate: 0, followerGrowth: 0 });
-     onStatsModalOpen();
-   };
+    setSelectedOrder(order);
+    setStatsForm({ clicks: 0, impressions: 0, engagementRate: 0, followerGrowth: 0 });
+    onStatsModalOpen();
+  };
 
   const handleStatsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -157,23 +150,23 @@ const BrandOrders: React.FC = () => {
   };
 
   const handleViewInfluencer = (influencerId: string) => {
-      navigate(`/profile/${influencerId}`);
-   };
+    navigate(`/profile/${influencerId}`);
+  };
 
-   const handleAcceptApplication = (application: Application) => {
-      acceptMutation.mutate(application.id);
-   };
+  const handleAcceptApplication = (application: Application) => {
+    acceptMutation.mutate(application.id);
+  };
 
-   const handleRejectApplication = (application: Application) => {
-      rejectMutation.mutate(application.id);
-   };
+  const handleRejectApplication = (application: Application) => {
+    rejectMutation.mutate(application.id);
+  };
 
   const renderStatusBadge = (status: string) => {
     let colorScheme = 'gray';
-    if (status === 'active') colorScheme = 'green';
+    if (status === 'active' || status === 'open') colorScheme = 'green';
     if (status === 'paused') colorScheme = 'yellow';
     if (status === 'completed') colorScheme = 'blue';
-    if (status === 'cancelled') colorScheme = 'red';
+    if (status === 'cancelled' || status === 'closed') colorScheme = 'red';
     return <Badge colorScheme={colorScheme}>{status}</Badge>;
   };
 
@@ -186,13 +179,14 @@ const BrandOrders: React.FC = () => {
     return <Badge colorScheme={colorScheme}>{status}</Badge>;
   };
 
+  if (!user) return <Center p={10}><Text>Loading user information...</Text></Center>;
   if (isLoading) return <Center p={10}><Spinner /></Center>;
   if (error) return <Center p={10}><Text color="red.500">Error loading orders: {error.message}</Text></Center>;
 
   return (
     <Box p={4}>
-      <Heading mb={6}>My Orders</Heading>
-      <Button as={RouterLink} to="/orders/create" colorScheme="blue" mb={6}>
+      <Heading mb={6}>My Brand Orders</Heading>
+      <Button as={RouterLink} to="/brand/orders/create" colorScheme="blue" mb={6}>
         Create New Order
       </Button>
 
@@ -207,146 +201,97 @@ const BrandOrders: React.FC = () => {
                  </HStack>
                 <HStack mt={2} spacing={2}>
                   <Badge>{order.category}</Badge>
+                  <Text fontSize="sm">Budget: ${order.budget.toLocaleString()}</Text>
                 </HStack>
               </CardHeader>
-              <CardBody>
-                <VStack align="stretch" spacing={3}>
-                  <Text noOfLines={2}>{order.description}</Text>
-                  <HStack justify="space-between">
-                    <Text fontWeight="semibold">Budget:</Text>
-                    <Text>${order.budget.toLocaleString()}</Text>
-                  </HStack>
-                  <HStack justify="space-between">
-                    <Text fontWeight="semibold">Deadline:</Text>
-                    <Text>{new Date(order.deadline).toLocaleDateString()}</Text>
-                  </HStack>
-                  <HStack justify="space-between">
-                    <Text fontWeight="semibold">Applications:</Text>
-                     <Button variant="link" colorScheme="blue" size="sm" onClick={() => handleViewApplicants(order)}>
-                       {order.applications?.length || 0} View
-                     </Button>
-                  </HStack>
-                </VStack>
+              <CardBody py={2}>
+                <Text noOfLines={3}>{order.description}</Text>
               </CardBody>
               <CardFooter>
-                 <Menu>
-                   <MenuButton
-                     as={IconButtonWithWrapper}
-                     icon={<BsThreeDotsVertical />}
-                     variant="ghost"
-                     size="sm"
-                     aria-label="Actions"
-                   />
-                   <MenuList>
-                     <MenuItem
-                       icon={<IconWrapper icon={FiEye} size="1.25em" />}
-                       onClick={() => handleViewApplicants(order)}
-                     >
-                       View Applications
-                     </MenuItem>
-                     <MenuItem
-                       icon={<IconWrapper icon={FiEdit2} size="1.25em" />}
-                       onClick={() => handleEditOrder(order.id)}
-                     >
-                       Edit Order
-                     </MenuItem>
-                     <MenuItem
-                       icon={<IconWrapper icon={FiTrendingUp} size="1.25em" />}
-                       onClick={() => handleOpenStatsModal(order)}
-                     >
-                       Update Stats
-                     </MenuItem>
-                     <MenuDivider />
-                     <MenuItem
-                       icon={<IconWrapper icon={FiTrash2} size="1.25em" />}
-                       onClick={() => handleDeleteOrder(order.id)}
-                       color="red.500"
-                     >
-                       Delete Order
-                     </MenuItem>
-                   </MenuList>
-                 </Menu>
+                 <HStack justify="space-between" width="100%">
+                    <Button 
+                      leftIcon={<IconWrapper icon={FiEye}/>}
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleViewApplicants(order)}
+                    >
+                      View Applicants
+                    </Button>
+                    <Menu>
+                      <MenuButton
+                        as={IconButtonWithWrapper}
+                        icon={BsThreeDotsVertical}
+                        variant='ghost'
+                        size='sm'
+                        aria-label='Order actions'
+                      />
+                      <MenuList>
+                        <MenuItem icon={<IconWrapper icon={FiTrendingUp} />} onClick={() => handleOpenStatsModal(order)}>
+                          View/Update Stats
+                        </MenuItem>
+                        <MenuItem icon={<IconWrapper icon={FiEdit2} />} onClick={() => handleEditOrder(order.id)}>
+                          Edit Order
+                        </MenuItem>
+                        <MenuDivider />
+                        <MenuItem icon={<IconWrapper icon={FiTrash2} />} color="red.500" onClick={() => handleDeleteOrder(order.id)}>
+                          Delete Order
+                        </MenuItem>
+                      </MenuList>
+                    </Menu>
+                  </HStack>
               </CardFooter>
             </Card>
           ))}
         </SimpleGrid>
       ) : (
-        <Box textAlign="center" p={8}>
-          <Text mb={4}>You haven't created any orders yet.</Text>
-          <Button colorScheme="blue" onClick={() => navigate('/orders/create')}>
-            Create Your First Order
-          </Button>
-        </Box>
+        <Center p={10}>
+          <Text>You haven't created any orders yet.</Text>
+        </Center>
       )}
 
       {selectedOrder && (
         <Modal isOpen={isApplicantsOpen} onClose={onApplicantsClose} size="xl">
           <ModalOverlay />
           <ModalContent>
-            <ModalHeader>Applications for: {selectedOrder.title}</ModalHeader>
+            <ModalHeader>Applicants for "{selectedOrder.title}"</ModalHeader>
             <ModalCloseButton />
             <ModalBody>
-               {isLoadingApplications ? (
-                 <Center><Spinner /></Center>
-               ) : orderApplications && orderApplications.length > 0 ? (
-                 <List spacing={4}>
-                   {orderApplications.map((application: Application) => (
-                     <ListItem key={application.id}>
-                       <Card variant="outline">
-                         <CardBody>
-                           <VStack align="stretch" spacing={3}>
-                             <HStack justify="space-between">
-                               <Text fontWeight="bold">{application.applicant?.name || 'Unknown Applicant'}</Text>
-                               {renderApplicationStatusBadge(application.status)}
+              {isLoadingApplications ? (
+                <Center><Spinner /></Center>
+              ) : !orderApplications || orderApplications.length === 0 ? (
+                <Text>No applicants yet.</Text>
+              ) : (
+                <List spacing={3}>
+                  {orderApplications.map(app => (
+                    <ListItem key={app.id} borderWidth="1px" borderRadius="md" p={3}>
+                      <HStack justify="space-between">
+                         <VStack align="start" spacing={1}>
+                           <HStack>
+                              <Avatar size="xs" name={app.applicant?.name || 'Unknown'} src={app.applicant?.avatarUrl}/>
+                              <Text fontWeight="bold">{app.applicant?.name || 'Unknown Applicant'}</Text>
+                           </HStack>
+                            <Text fontSize="sm">Proposed: ${app.proposedPrice.toLocaleString()}</Text>
+                            <Text fontSize="sm" fontStyle="italic">"{app.message}"</Text>
+                         </VStack>
+                         <VStack align="end">
+                           {renderApplicationStatusBadge(app.status)}
+                           {app.status === 'pending' && (
+                              <HStack>
+                                <Button size="xs" colorScheme="green" onClick={() => handleAcceptApplication(app)} isLoading={acceptMutation.isPending}>
+                                  Accept
+                                </Button>
+                                <Button size="xs" colorScheme="red" onClick={() => handleRejectApplication(app)} isLoading={rejectMutation.isPending}>
+                                  Reject
+                                </Button>
                              </HStack>
-                             <Text>{application.message}</Text>
-                             {application.proposedPrice && (
-                               <HStack justify="space-between">
-                                 <Text fontWeight="semibold">Proposed Price:</Text>
-                                 <Text>${application.proposedPrice.toLocaleString()}</Text>
-                               </HStack>
-                             )}
-                             <Text fontSize="sm" color="gray.500">
-                               Applied on {new Date(application.createdAt).toLocaleDateString()}
-                             </Text>
-                             <Divider />
-                             <HStack spacing={2} justify="space-between">
-                               <Button
-                                 size="sm"
-                                 onClick={() => handleViewInfluencer(application.applicant.id)}
-                               >
-                                 View Profile
-                               </Button>
-                               {application.status === 'pending' && (
-                                 <HStack>
-                                   <Button
-                                     size="sm"
-                                     colorScheme="green"
-                                     onClick={() => handleAcceptApplication(application)}
-                                     isLoading={acceptMutation.isPending && acceptMutation.variables === application.id}
-                                   >
-                                     Accept
-                                   </Button>
-                                   <Button
-                                     size="sm"
-                                     colorScheme="red"
-                                     onClick={() => handleRejectApplication(application)}
-                                     isLoading={rejectMutation.isPending && rejectMutation.variables === application.id}
-                                   >
-                                     Reject
-                                   </Button>
-                                 </HStack>
-                               )}
-                             </HStack>
-                           </VStack>
-                         </CardBody>
-                       </Card>
-                     </ListItem>
-                   ))}
-                 </List>
-               ) : (
-                 <Text>No applications yet for this order.</Text>
-               )}
+                           )}
+                           <Button size="xs" variant="link" onClick={() => app.applicant?.id && handleViewInfluencer(app.applicant.id)} isDisabled={!app.applicant?.id}>View Profile</Button>
+                         </VStack>
+                      </HStack>
+                    </ListItem>
+                  ))}
+                </List>
+              )}
             </ModalBody>
             <ModalFooter>
               <Button onClick={onApplicantsClose}>Close</Button>
@@ -359,7 +304,7 @@ const BrandOrders: React.FC = () => {
          <Modal isOpen={isStatsModalOpen} onClose={onStatsModalClose}>
            <ModalOverlay />
            <ModalContent>
-             <ModalHeader>Update Campaign Statistics for: {selectedOrder.title}</ModalHeader>
+             <ModalHeader>Update Stats for "{selectedOrder.title}"</ModalHeader>
              <ModalCloseButton />
              <ModalBody>
                <VStack spacing={4}>
@@ -371,7 +316,6 @@ const BrandOrders: React.FC = () => {
                      value={statsForm.clicks}
                      onChange={handleStatsChange}
                    />
-                   <FormHelperText>Number of new clicks</FormHelperText>
                  </FormControl>
 
                  <FormControl>
@@ -382,7 +326,6 @@ const BrandOrders: React.FC = () => {
                      value={statsForm.impressions}
                      onChange={handleStatsChange}
                    />
-                   <FormHelperText>Number of new impressions</FormHelperText>
                  </FormControl>
 
                  <FormControl>
@@ -394,7 +337,6 @@ const BrandOrders: React.FC = () => {
                      value={statsForm.engagementRate}
                      onChange={handleStatsChange}
                    />
-                   <FormHelperText>Current engagement rate percentage</FormHelperText>
                  </FormControl>
 
                  <FormControl>
@@ -405,7 +347,6 @@ const BrandOrders: React.FC = () => {
                      value={statsForm.followerGrowth}
                      onChange={handleStatsChange}
                    />
-                   <FormHelperText>Number of new followers gained</FormHelperText>
                  </FormControl>
                </VStack>
              </ModalBody>
@@ -419,7 +360,7 @@ const BrandOrders: React.FC = () => {
                  onClick={handleStatsSubmit}
                  isLoading={updateStatsMutation.isPending}
                >
-                 Update
+                 Save Stats
                </Button>
              </ModalFooter>
            </ModalContent>

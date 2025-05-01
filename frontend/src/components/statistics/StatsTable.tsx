@@ -6,10 +6,8 @@ import {
   Tbody,
   Tr,
   Th,
-  Td,
   TableContainer,
   Text,
-  Badge,
 } from '@chakra-ui/react';
 
 // Export the interface so it can be imported elsewhere

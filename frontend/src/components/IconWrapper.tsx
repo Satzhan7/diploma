@@ -1,20 +1,21 @@
 import React from 'react';
 import { IconType, IconBaseProps } from 'react-icons';
-import { Box, IconButton, IconButtonProps } from '@chakra-ui/react';
+import { Box, IconButton, IconButtonProps, BoxProps } from '@chakra-ui/react';
 
-interface IconWrapperProps {
+// Extend BoxProps to include Chakra UI style props
+interface IconWrapperProps extends BoxProps { 
   icon: IconType;
-  size?: string | number;
-  color?: string;
-  className?: string;
+  size?: string | number; // Size for the icon itself
+  // color is already part of BoxProps
+  // className?: string; // className is part of BoxProps
 }
 
 export const IconWrapper = React.forwardRef<HTMLSpanElement, IconWrapperProps>(({ 
   icon: Icon, 
-  size = "1.5em", 
-  color = "currentColor",
-  className,
-  ...props 
+  size = "1.5em", // Default icon size
+  // color = "currentColor", // Use default color from BoxProps
+  // className, // Use default className from BoxProps
+  ...props // Spread the rest of the props (including mt, flexShrink, etc.)
 }, ref) => {
   const IconComponent = Icon as React.ComponentType<IconBaseProps>;
   
@@ -22,13 +23,14 @@ export const IconWrapper = React.forwardRef<HTMLSpanElement, IconWrapperProps>((
     <Box 
       ref={ref}
       as="span" 
-      className={className}
+      // className={className} // Handled by props
       display="inline-flex"
       alignItems="center"
       justifyContent="center"
-      {...props}
+      {...props} // Spread all props, including style props like mt, color, flexShrink
     >
-      <IconComponent size={size} color={color} />
+      {/* Pass only relevant props to the actual icon component */}
+      <IconComponent size={size as string} color={props.color as string} />
     </Box>
   );
 });

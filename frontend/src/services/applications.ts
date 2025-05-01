@@ -1,5 +1,5 @@
 import api from './api';
-import { Order } from './orders';
+import { Order } from '../types/order';
 
 export interface Application {
   id: string;

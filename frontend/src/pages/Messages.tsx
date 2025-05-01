@@ -13,8 +13,6 @@ import {
   Badge,
   Spinner,
   Center,
-  Flex,
-  IconButton,
   useToast,
   Heading,
 } from '@chakra-ui/react';
@@ -23,43 +21,13 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import socketService from '../services/socket';
 import { ChevronLeftIcon } from '@chakra-ui/icons';
-import { FiSend } from 'react-icons/fi';
 import { Conversation, Message } from '../types/messages';
-import ChatWindow from '../components/ChatWindow';
-
-interface User {
-  id: string;
-  name: string;
-  avatarUrl?: string;
-}
-
-interface Chat {
-  id: string;
-  sender: User;
-  recipient: User;
-  lastMessage?: {
-    content: string;
-    timestamp: string;
-    isRead: boolean;
-  };
-  unreadCount: number;
-}
-
-interface Message {
-  id: string;
-  content: string;
-  sender: User | { id: string };
-  recipient: User | { id: string };
-  chat: { id: string } | string;
-  timestamp?: string;
-  createdAt: string;
-  isRead: boolean;
-}
+import { User } from '../types/user';
 
 // Helper function to extract user ID safely
 const getUserId = (user: User | { id: string } | undefined): string => {
   if (!user) return '';
-  return typeof user === 'object' ? user.id : '';
+  return typeof user === 'object' && 'id' in user ? user.id : '';
 };
 
 // Helper function to extract chat ID safely
@@ -177,7 +145,7 @@ export const Messages: React.FC = () => {
     });
     
     // Listen for new chat
-    socketService.on('newChat', (chat: Chat) => {
+    socketService.on('newChat', (chat: Conversation) => {
       queryClient.invalidateQueries({ queryKey: ['chats'] });
     });
     
@@ -209,7 +177,7 @@ export const Messages: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [selectedChat]);
 
-  const { data: chats, isLoading: isLoadingChats, error: chatsError } = useQuery<Chat[]>({
+  const { data: chats, isLoading: isLoadingChats, error: chatsError } = useQuery<Conversation[]>({
     queryKey: ['chats'],
     queryFn: async () => {
       const response = await api.get('/chats');
@@ -256,9 +224,20 @@ export const Messages: React.FC = () => {
   };
 
   // Get the other user in the chat (not the current user)
-  const getOtherUser = (chat: Chat) => {
-    if (!user) return null;
-    return chat.sender.id === user.id ? chat.recipient : chat.sender;
+  const getOtherUser = (chat: Conversation): User | null => {
+    if (!user || !chat) { 
+      return null;
+    }
+    // Check if the current user is the sender or recipient
+    if (chat.sender?.id === user.id) {
+      return chat.recipient;
+    }
+    if (chat.recipient?.id === user.id) {
+      return chat.sender;
+    }
+    // Should not happen in a 1-on-1 chat if data is correct, but return null as fallback
+    console.warn('Could not determine other user in chat:', chat);
+    return null; 
   };
 
   if (isLoadingChats) {
@@ -312,7 +291,10 @@ export const Messages: React.FC = () => {
               ) : chats && chats.length > 0 ? (
                 chats.map((chat) => {
                   const otherUser = getOtherUser(chat);
-                  if (!otherUser) return null;
+                  if (!otherUser) {
+                    console.warn("Skipping chat render, couldn't get other user for chat:", chat.id);
+                    return null;
+                  }
                   
                   return (
                     <Box
@@ -325,11 +307,11 @@ export const Messages: React.FC = () => {
                       borderBottomWidth="1px"
                     >
                       <HStack spacing={3} align="center">
-                        <Avatar size="sm" name={otherUser?.name || 'User'} src={otherUser?.avatarUrl} />
+                        <Avatar size="sm" name={otherUser.name || 'User'} src={otherUser.avatarUrl} />
                         <Box flex="1" overflow="hidden">
                           <HStack justify="space-between">
                             <Text fontWeight="bold" isTruncated>
-                              {otherUser?.name || 'User'}
+                              {otherUser.name || 'User'}
                             </Text>
                             {chat.unreadCount > 0 && (
                               <Badge colorScheme="blue" borderRadius="full">
@@ -391,16 +373,22 @@ export const Messages: React.FC = () => {
                 </Button>
                 
                 {chats && (
-                  <>
-                    <Avatar
-                      size="sm"
-                      name={getOtherUser(chats.find(c => c.id === selectedChat) || chats[0])?.name || 'User'}
-                      src={getOtherUser(chats.find(c => c.id === selectedChat) || chats[0])?.avatarUrl}
-                    />
-                    <Text fontWeight="bold">
-                      {getOtherUser(chats.find(c => c.id === selectedChat) || chats[0])?.name || 'User'}
-                    </Text>
-                  </>
+                  (() => {
+                    const currentChat = chats.find(c => c.id === selectedChat);
+                    const otherUser = currentChat ? getOtherUser(currentChat) : null;
+                    return (
+                      <>
+                        <Avatar
+                          size="sm"
+                          name={otherUser?.name || 'User'}
+                          src={otherUser?.avatarUrl}
+                        />
+                        <Text fontWeight="bold">
+                          {otherUser?.name || 'User'}
+                        </Text>
+                      </>
+                    );
+                  })()
                 )}
               </HStack>
 

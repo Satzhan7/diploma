@@ -31,14 +31,6 @@ import { SiThreads } from 'react-icons/si';
 import { IconWrapper } from '../components/IconWrapper';
 import { User, Profile as ProfileType } from '../types/user';
 
-interface SocialMedia {
-  id: string;
-  type: string;
-  url: string;
-  username?: string;
-  followers?: number;
-}
-
 interface ProfileProps {
   isViewMode?: boolean;
 }

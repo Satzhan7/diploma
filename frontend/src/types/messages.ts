@@ -14,9 +14,8 @@ export interface Message {
 
 export interface Conversation {
   id: string;
-  participants: User[];
-  sender: User; // Added based on Messages.tsx usage
-  recipient: User; // Added based on Messages.tsx usage
+  sender: User;
+  recipient: User;
   lastMessage?: {
     content: string;
     timestamp: string; // Assuming string based on usage

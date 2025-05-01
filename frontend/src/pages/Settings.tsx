@@ -6,14 +6,11 @@ import {
   Heading,
   FormControl,
   FormLabel,
-  Input,
   Button,
   Switch,
   useToast,
   Divider,
-  Text,
   Select,
-  useColorMode,
 } from '@chakra-ui/react';
 import { useAuth } from '../contexts/AuthContext';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -23,7 +20,6 @@ export const Settings: React.FC = () => {
   const { logout, deleteAccount } = useAuth();
   const toast = useToast();
   const queryClient = useQueryClient();
-  const { colorMode, toggleColorMode } = useColorMode();
 
   const { mutate: updateSettings, isPending } = useMutation({
     mutationFn: async (data: any) => {

@@ -25,8 +25,6 @@ import { matchingService } from '../../services/matching';
 import { Link as RouterLink } from 'react-router-dom';
 import { StarIcon } from '@chakra-ui/icons';
 import { FiSearch } from 'react-icons/fi';
-import { usersService } from '../../services/users';
-import { User, UserRole } from '../../types/user';
 import { IconWrapper } from '../../components/IconWrapper';
 
 interface BrandRecommendationsProps {

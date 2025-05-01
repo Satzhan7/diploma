@@ -1,12 +1,12 @@
 import React from 'react';
-import { Box, Flex, Text, VStack, useColorModeValue } from '@chakra-ui/react';
+import { Box, Flex, Text, VStack, useColorModeValue, Link } from '@chakra-ui/react';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { IconType } from 'react-icons';
-import { FiHome, FiList, FiMessageSquare, FiSettings, FiUsers } from 'react-icons/fi';
-import { BsFileEarmarkPlus } from 'react-icons/bs';
+import { FiHome, FiList, FiMessageSquare, FiSettings, FiUsers, FiAward } from 'react-icons/fi';
+import { BsFileEarmarkPlus, BsLightbulb } from 'react-icons/bs';
 import { UserRole } from '../types/user';
-import { useAuth } from '../contexts/AuthContext';
 import { IconWrapper } from './IconWrapper';
+import Logo from './Logo';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -16,20 +16,21 @@ interface DashboardLayoutProps {
 interface NavItem {
   label: string;
   icon: IconType;
-  to: string;
+  pathSuffix: string;
   roles: UserRole[];
 }
 
 const navItems: NavItem[] = [
-  { label: 'Overview', icon: FiHome, to: '/dashboard', roles: [UserRole.BRAND, UserRole.INFLUENCER] },
-  { label: 'My Orders', icon: FiList, to: '/orders', roles: [UserRole.BRAND, UserRole.INFLUENCER] },
-  { label: 'Create Order', icon: BsFileEarmarkPlus, to: '/orders/create', roles: [UserRole.BRAND] },
-  { label: 'Available Orders', icon: FiList, to: '/orders/available', roles: [UserRole.INFLUENCER] },
-  { label: 'My Applications', icon: FiList, to: '/applications', roles: [UserRole.INFLUENCER] },
-  { label: 'Messages', icon: FiMessageSquare, to: '/chats', roles: [UserRole.BRAND, UserRole.INFLUENCER] },
-  { label: 'Influencers', icon: FiUsers, to: '/influencers', roles: [UserRole.BRAND] },
-  { label: 'Brands', icon: FiUsers, to: '/brands', roles: [UserRole.INFLUENCER] },
-  { label: 'Settings', icon: FiSettings, to: '/settings', roles: [UserRole.BRAND, UserRole.INFLUENCER] },
+  { label: 'Dashboard', icon: FiHome, pathSuffix: 'dashboard', roles: [UserRole.BRAND, UserRole.INFLUENCER] },
+  { label: 'Orders', icon: FiList, pathSuffix: 'orders', roles: [UserRole.BRAND, UserRole.INFLUENCER] },
+  { label: 'Create Order', icon: BsFileEarmarkPlus, pathSuffix: 'orders/create', roles: [UserRole.BRAND] },
+  { label: 'My Applications', icon: FiAward, pathSuffix: 'applications', roles: [UserRole.INFLUENCER] },
+  { label: 'Influencers', icon: FiUsers, pathSuffix: 'influencers', roles: [UserRole.BRAND] },
+  { label: 'Brands', icon: FiUsers, pathSuffix: 'brands', roles: [UserRole.INFLUENCER] },
+  { label: 'Recommendations', icon: BsLightbulb, pathSuffix: 'recommendations', roles: [UserRole.INFLUENCER] },
+  { label: 'Messages', icon: FiMessageSquare, pathSuffix: 'messages', roles: [UserRole.BRAND, UserRole.INFLUENCER] },
+  { label: 'Collaborations', icon: FiAward, pathSuffix: 'collaborations', roles: [UserRole.BRAND, UserRole.INFLUENCER] },
+  { label: 'Settings', icon: FiSettings, pathSuffix: 'settings', roles: [UserRole.BRAND, UserRole.INFLUENCER] },
 ];
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => {
@@ -38,55 +39,60 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => 
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const activeBg = useColorModeValue('gray.100', 'gray.700');
 
+  const basePath = role === UserRole.BRAND ? '/brand' : role === UserRole.INFLUENCER ? '/influencer' : '/';
+
   const filteredNavItems = navItems.filter(item => role && item.roles.includes(role));
 
   return (
     <Flex minH="100vh">
       <Box
+        as="nav"
         w="250px"
         bg={bg}
         borderRight="1px"
         borderColor={borderColor}
-        py={5}
         position="fixed"
         h="100vh"
         overflowY="auto"
       >
-        <VStack spacing={1} align="stretch">
+        <Box py={5} px={4} mb={4}> 
+          <Logo />
+        </Box>
+        
+        <VStack spacing={1} align="stretch" px={2}>
           {filteredNavItems.map((item) => {
-            const isActive = location.pathname === item.to;
+            const fullPath = `${basePath}/${item.pathSuffix}`;
+            const isActive = location.pathname.startsWith(fullPath);
             
             return (
-              <Box
-                key={item.to}
+              <Link
+                key={item.pathSuffix}
                 as={RouterLink}
-                to={item.to}
-                px={4}
-                py={3}
+                to={fullPath}
                 display="flex"
                 alignItems="center"
+                px={4}
+                py={3}
                 bg={isActive ? activeBg : 'transparent'}
-                _hover={{ bg: activeBg }}
+                _hover={{ bg: activeBg, textDecoration: 'none' }}
                 borderRadius="md"
-                mx={2}
+                fontWeight={isActive ? 'bold' : 'normal'}
+                color={isActive ? 'blue.500' : 'inherit'}
               >
                 <Flex alignItems="center">
-                  <Box
-                    as="span"
-                    display={{ base: 'none', md: 'flex' }}
-                    alignItems="center"
-                    mr={3}
-                  >
-                    {item.icon && <IconWrapper icon={item.icon} size="1.25em" />}
-                  </Box>
-                  <Text>{item.label}</Text>
+                  {item.icon && (
+                     <IconWrapper 
+                        icon={item.icon} 
+                      />
+                  )}
+                  <Text ml={3}>{item.label}</Text>
                 </Flex>
-              </Box>
+              </Link>
             );
           })}
         </VStack>
       </Box>
-      <Box ml="250px" p={8} flex={1}>
+      <Box ml="250px" p={8} flex={1} as="main">
         {children}
       </Box>
     </Flex>
