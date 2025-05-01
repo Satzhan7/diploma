@@ -6,7 +6,7 @@ services:
     container_name: influencer_platform_db
     restart: always
     ports:
-      - "5432:5432"
+      - "5435:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -29,7 +29,7 @@ services:
     container_name: influencer_platform_backend
     restart: always
     ports:
-      - "3002:3002"
+      - "3005:3005"
     environment:
       - DATABASE_HOST=postgres
       - DATABASE_PORT=5432
@@ -39,7 +39,7 @@ services:
       - JWT_SECRET=your-secret-key-change-in-production
       - JWT_ACCESS_EXPIRATION=15m
       - JWT_REFRESH_EXPIRATION=7d
-      - PORT=3001
+      - PORT=3005
       - NODE_ENV=development
     volumes:
       - ./backend:/usr/src/app
