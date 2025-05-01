@@ -1,20 +1,10 @@
 import { User } from './user';
+import { Match } from '../services/matching';
+import { Application } from '../services/applications';
+import { Profile } from './user';
 
-export enum OrderStatus {
-  OPEN = 'open',
-  IN_PROGRESS = 'in-progress',
-  COMPLETED = 'completed',
-  CANCELLED = 'cancelled'
-}
-
-export interface OrderApplication {
-  id: string;
-  message: string;
-  proposedPrice: number;
-  status: 'pending' | 'accepted' | 'rejected' | 'withdrawn';
-  createdAt: string;
-  applicant: User;
-}
+// Use the type alias from services/orders.ts
+export type OrderStatus = 'open' | 'closed' | 'in_progress' | 'completed' | 'cancelled';
 
 export interface Order {
   id: string;
@@ -22,11 +12,13 @@ export interface Order {
   description: string;
   budget: number;
   category: string;
-  requirements: string;
-  deadline: string;
+  requirements?: string;
+  deadline?: string;
   status: OrderStatus;
-  brand: User;
-  applications: OrderApplication[];
+  brandId: string;
+  brand?: Profile;
   createdAt: string;
   updatedAt: string;
+  applications?: Application[];
+  match?: Match;
 } 

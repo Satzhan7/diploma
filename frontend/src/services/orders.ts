@@ -1,4 +1,10 @@
 import api from './api';
+import { User } from './users';
+import { Application } from './applications';
+import { Match } from './matching';
+import { Profile } from '../types/user';
+
+export type OrderStatus = 'open' | 'closed' | 'in_progress' | 'completed' | 'cancelled';
 
 export interface Order {
   id: string;
@@ -6,16 +12,15 @@ export interface Order {
   description: string;
   budget: number;
   category: string;
-  requirements: string;
-  deadline: string;
-  status: 'open' | 'closed' | 'in_progress';
-  brand: {
-    id: string;
-    name: string;
-    logoUrl: string;
-  };
+  requirements?: string;
+  deadline?: string;
+  status: OrderStatus;
+  brandId: string;
   createdAt: string;
   updatedAt: string;
+  brand?: Profile;
+  applications?: Application[];
+  match?: Match;
 }
 
 export const ordersService = {
@@ -24,8 +29,8 @@ export const ordersService = {
     return response.data;
   },
 
-  getById: async (id: string): Promise<Order> => {
-    const response = await api.get(`/orders/${id}`);
+  getById: async (orderId: string): Promise<Order> => {
+    const response = await api.get(`/orders/${orderId}`);
     return response.data;
   },
 

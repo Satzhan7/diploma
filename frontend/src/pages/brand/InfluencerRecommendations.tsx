@@ -28,13 +28,10 @@ const InfluencerRecommendations = () => {
     // TODO: Implement selection logic (e.g., view profile, send request)
   };
 
-  const { data: recommendations, isLoading } = useQuery({
-    queryKey: ['recommendations', user?.id, filters], // Include user ID and filters in query key
-    queryFn: () => {
-      if (!user?.id) return Promise.resolve([]); // Don't fetch if no user ID
-      return matchingService.getRecommendations(user.id, 'influencers');
-    },
-    enabled: !!user?.id, // Only run query if user ID exists
+  const { data: recommendations, isLoading, error } = useQuery({
+    queryKey: ['matchRecommendations', 'influencers'], // Keep queryKey specific
+    queryFn: () => matchingService.getRecommendations('influencers'), // Remove user.id 
+    enabled: !!user?.id, 
   });
 
   return (

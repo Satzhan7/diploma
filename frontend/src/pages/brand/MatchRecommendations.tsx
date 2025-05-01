@@ -34,7 +34,7 @@ const MatchRecommendations: React.FC = () => {
   // Get influencer recommendations
   const { data: recommendations, isLoading, error } = useQuery({
     queryKey: ['matchRecommendations', 'influencers'],
-    queryFn: () => matchingService.getRecommendations('', 'influencers'), // Assuming we fetch all recommendations
+    queryFn: () => matchingService.getRecommendations('influencers'), // Pass only the type
   });
 
   // Mutation for creating a match

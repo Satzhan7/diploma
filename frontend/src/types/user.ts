@@ -25,6 +25,9 @@ export interface Profile {
   industry?: string;
   categories?: string[];
   socialMedia: SocialMedia[];
+  userId: string;
+  user?: User;
+  followers?: number;
 }
 
 export interface User {

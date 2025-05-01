@@ -77,13 +77,13 @@ export const MyApplications: React.FC = () => {
   };
 
   const handleViewOrder = (orderId: string) => {
-    console.log('View order:', orderId);
-    toast({ title: 'Order details view not implemented yet.', status: 'warning' });
-    // navigate(`/orders/${orderId}`); // Uncomment when order detail page exists
+    navigate(`/influencer/orders/${orderId}`); 
+    // console.log('View order:', orderId);
+    // toast({ title: 'Order details view not implemented yet.', status: 'warning' });
   };
 
   const handleViewBrand = (brandId: string) => {
-    navigate(`/profile/${brandId}`);
+    navigate(`/influencer/profile/${brandId}`);
   };
 
   const renderApplicationStatusBadge = (status: string) => {
@@ -111,8 +111,8 @@ export const MyApplications: React.FC = () => {
         <VStack align="start" spacing={1}>
           <Text fontSize="sm">
             Brand:
-            <ChakraLink ml={1} color="blue.500" onClick={() => handleViewBrand(application.order.brand.id)}>
-              {application.order.brand.name || 'Brand Name Missing'} <IconWrapper icon={FiExternalLink} />
+            <ChakraLink ml={1} color="blue.500" onClick={() => application.order.brand?.id && handleViewBrand(application.order.brand.id)}>
+              {application.order.brand?.displayName || 'Brand Name Missing'} <IconWrapper icon={FiExternalLink} />
             </ChakraLink>
           </Text>
           <Text fontSize="sm">Category: {application.order.category}</Text>
@@ -127,7 +127,7 @@ export const MyApplications: React.FC = () => {
             variant="outline"
             leftIcon={<IconWrapper icon={FiEye} />}
             onClick={() => handleViewOrder(application.order.id)}
-            isDisabled // Disable until order detail view is implemented
+            // isDisabled // Enable button
           >
             View Order
           </Button>

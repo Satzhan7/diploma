@@ -8,13 +8,13 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { Box, Heading, useColorModeValue } from '@chakra-ui/react';
-import { CampaignStats } from '../../types/statistics';
+import { CampaignStat } from '../../types/statistics';
 
 interface PieChartProps {
   title?: string;
-  data: CampaignStats[];
-  dataKey: keyof CampaignStats;
-  nameKey: keyof CampaignStats;
+  data: CampaignStat[];
+  dataKey: keyof CampaignStat;
+  nameKey: keyof CampaignStat;
   colors?: string[];
   suffix?: string;
   prefix?: string;
@@ -49,8 +49,8 @@ export const PieChart: React.FC<PieChartProps> = ({
           <RechartsPieChart>
             <Pie
               data={data}
-              dataKey={dataKey}
-              nameKey={nameKey}
+              dataKey={dataKey as string}
+              nameKey={nameKey as string}
               cx="50%"
               cy="50%"
               outerRadius={80}

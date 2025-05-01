@@ -30,25 +30,14 @@ import {
 } from '@chakra-ui/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
-
-interface Order {
-  id: string;
-  title: string;
-  description: string;
-  budget: number;
-  category: string;
-  requirements: string;
-  deadline: string;
-  status: 'open' | 'in_progress' | 'completed';
-  brandName: string;
-  brandId: string;
-}
+import { Order } from '../../services/orders';
+import { Application, applicationsService } from '../../services/applications';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface FilterState {
   category: string;
   minBudget: number;
   maxBudget: number;
-  status: string;
 }
 
 interface ApplicationFormData {
@@ -65,20 +54,34 @@ export const Orders: React.FC = () => {
     message: '',
     proposedPrice: 0,
   });
-  const [filters, setFilters] = useState<FilterState>({
+  const [filters, setFilters] = useState<Omit<FilterState, 'status'>>({
     category: '',
     minBudget: 0,
     maxBudget: 100000,
-    status: '',
   });
+  const { user } = useAuth();
 
-  const { data: orders, isLoading } = useQuery({
-    queryKey: ['orders', filters],
+  const { data: orders, isLoading: isLoadingOrders } = useQuery<Order[]>({
+    queryKey: ['availableOrders', filters],
     queryFn: async () => {
       const response = await api.get('/orders/available', { params: filters });
       return response.data;
     },
   });
+
+  const { data: myApplications, isLoading: isLoadingApplications } = useQuery<Application[]>({
+    queryKey: ['myApplications', user?.id],
+    queryFn: () => applicationsService.getMyApplications(),
+    enabled: !!user,
+  });
+
+  const myApplicationsMap = React.useMemo(() => {
+    if (!myApplications) return {};
+    return myApplications.reduce((acc, app) => {
+      acc[app.order.id] = app;
+      return acc;
+    }, {} as Record<string, Application>);
+  }, [myApplications]);
 
   const submitApplicationMutation = useMutation({
     mutationFn: async (data: { orderId: string, application: ApplicationFormData }) => {
@@ -93,7 +96,6 @@ export const Orders: React.FC = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['myApplications'] });
       toast({
         title: 'Application submitted',
@@ -204,70 +206,82 @@ export const Orders: React.FC = () => {
                   onChange={(e) => setFilters({ ...filters, maxBudget: Number(e.target.value) })}
                 />
               </FormControl>
-
-              <FormControl>
-                <FormLabel>Status</FormLabel>
-                <Select
-                  placeholder="All statuses"
-                  value={filters.status}
-                  onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                >
-                  <option value="open">Open</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                </Select>
-              </FormControl>
             </Stack>
           </CardBody>
         </Card>
 
         {/* Orders Grid */}
-        {isLoading ? (
+        {isLoadingOrders ? (
           <Text>Loading orders...</Text>
         ) : orders?.length ? (
           <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-            {orders.map((order: Order) => (
-              <Card key={order.id}>
-                <CardHeader>
-                  <VStack align="stretch" spacing={2}>
-                    <Heading size="md">{order.title}</Heading>
-                    <HStack>
-                      <Badge colorScheme="blue">{order.category}</Badge>
-                      <Badge colorScheme={order.status === 'open' ? 'green' : 'orange'}>
-                        {order.status}
-                      </Badge>
-                    </HStack>
-                  </VStack>
-                </CardHeader>
+            {orders.map((order: Order) => {
+              const myApplication = myApplicationsMap[order.id];
 
-                <CardBody>
-                  <VStack align="stretch" spacing={4}>
-                    <Text noOfLines={3}>{order.description}</Text>
-                    <HStack justify="space-between">
-                      <Text fontWeight="bold">Budget:</Text>
-                      <Text>${order.budget.toLocaleString()}</Text>
-                    </HStack>
-                    <HStack justify="space-between">
-                      <Text fontWeight="bold">Deadline:</Text>
-                      <Text>{new Date(order.deadline).toLocaleDateString()}</Text>
-                    </HStack>
-                    <Text fontWeight="bold">Brand:</Text>
-                    <Text>{order.brandName}</Text>
-                  </VStack>
-                </CardBody>
+              return (
+                <Card key={order.id}>
+                  <CardHeader>
+                    <VStack align="stretch" spacing={2}>
+                      <Heading size="md">{order.title}</Heading>
+                      <HStack>
+                        <Badge colorScheme="blue">{order.category}</Badge>
+                        <Badge colorScheme={order.status === 'open' ? 'green' : 'orange'}>
+                          {order.status}
+                        </Badge>
+                      </HStack>
+                    </VStack>
+                  </CardHeader>
 
-                <CardFooter>
-                  <Button
-                    colorScheme="blue"
-                    width="full"
-                    onClick={() => handleOpenApplicationForm(order)}
-                    isDisabled={order.status !== 'open'}
-                  >
-                    Apply Now
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+                  <CardBody>
+                    <VStack align="stretch" spacing={4}>
+                      <Text noOfLines={3}>{order.description}</Text>
+                      <HStack justify="space-between">
+                        <Text fontWeight="bold">Budget:</Text>
+                        <Text>${order.budget.toLocaleString()}</Text>
+                      </HStack>
+                      <HStack justify="space-between">
+                        <Text fontWeight="bold">Deadline:</Text>
+                        <Text>{order.deadline ? new Date(order.deadline).toLocaleDateString() : 'N/A'}</Text>
+                      </HStack>
+                      <HStack justify="space-between">
+                        <Text>Brand:</Text>
+                        <Text fontWeight="medium">{order.brand?.displayName || 'N/A'}</Text>
+                      </HStack>
+                    </VStack>
+                  </CardBody>
+
+                  <CardFooter>
+                    {myApplication ? (
+                      <VStack align="stretch" spacing={1} width="full">
+                        <Badge 
+                          colorScheme={myApplication.status === 'pending' ? 'yellow' : 
+                                       myApplication.status === 'accepted' ? 'green' : 
+                                       myApplication.status === 'rejected' ? 'red' : 
+                                       'purple'} 
+                          textAlign="center"
+                        >
+                          Applied ({myApplication.status})
+                        </Badge>
+                        {myApplication.message && (
+                          <Text fontSize="xs" fontStyle="italic" noOfLines={1} title={myApplication.message}>
+                             Your message: "{myApplication.message}"
+                          </Text>
+                        )}
+                      </VStack>
+                    ) : (
+                      <Button
+                        colorScheme="blue"
+                        width="full"
+                        onClick={() => handleOpenApplicationForm(order)}
+                        isDisabled={order.status !== 'open'}
+                      >
+                        Apply Now
+                      </Button>
+                    )}
+                  </CardFooter>
+                </Card>
+              );
+            })}
           </SimpleGrid>
         ) : (
           <Text>No orders available matching your filters.</Text>

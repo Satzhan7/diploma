@@ -34,6 +34,9 @@ import {
   FormLabel,
   Input,
   Avatar,
+  AlertDialogBody,
+  AlertDialogFooter,
+  Portal,
 } from '@chakra-ui/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
@@ -54,8 +57,8 @@ interface StatsFormData {
 const BrandOrders: React.FC = () => {
   const { user } = useAuth();
   const { isOpen: isApplicantsOpen, onOpen: onApplicantsOpen, onClose: onApplicantsClose } = useDisclosure();
-  const { isOpen: isStatsModalOpen, onOpen: onStatsModalOpen, onClose: onStatsModalClose } = useDisclosure();
   const [statsForm, setStatsForm] = useState<StatsFormData>({ clicks: 0, impressions: 0, engagementRate: 0, followerGrowth: 0 });
+  const { isOpen: isStatsModalOpen, onOpen: onStatsModalOpen, onClose: onStatsModalClose } = useDisclosure();
 
   const updateStatsMutation = useMutation({
     mutationFn: async (data: { orderId: string; stats: StatsFormData }) => {
@@ -65,7 +68,6 @@ const BrandOrders: React.FC = () => {
     },
     onSuccess: () => {
       toast({ title: 'Stats Updated (Placeholder)', status: 'success' });
-      onStatsModalClose();
     },
     onError: (err) => toast({ title: 'Error Updating Stats (Placeholder)', description: (err as Error).message, status: 'error' }),
   });
@@ -76,15 +78,16 @@ const BrandOrders: React.FC = () => {
     enabled: !!user?.id,
   });
 
+  const toast = useToast();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const queryClient = useQueryClient();
-  const toast = useToast();
   const navigate = useNavigate();
 
   const acceptMutation = useMutation({
     mutationFn: (applicationId: string) => applicationsService.update(applicationId, { status: 'accepted' }),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['orderApplications', selectedOrder?.id] });
+      queryClient.invalidateQueries({ queryKey: ['brandOrders'] });
       toast({ title: 'Application Accepted', status: 'success' });
     },
     onError: (err) => toast({ title: 'Error accepting', description: (err as Error).message, status: 'error' }),
@@ -129,12 +132,6 @@ const BrandOrders: React.FC = () => {
     }
   };
 
-  const handleOpenStatsModal = (order: Order) => {
-    setSelectedOrder(order);
-    setStatsForm({ clicks: 0, impressions: 0, engagementRate: 0, followerGrowth: 0 });
-    onStatsModalOpen();
-  };
-
   const handleStatsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setStatsForm(prev => ({
@@ -146,6 +143,8 @@ const BrandOrders: React.FC = () => {
   const handleStatsSubmit = () => {
     if (selectedOrder) {
       updateStatsMutation.mutate({ orderId: selectedOrder.id, stats: statsForm });
+    } else {
+      toast({ title: "Cannot update stats", description: "Order context not found.", status: "error" });
     }
   };
 
@@ -159,6 +158,16 @@ const BrandOrders: React.FC = () => {
 
   const handleRejectApplication = (application: Application) => {
     rejectMutation.mutate(application.id);
+  };
+
+  const handleOpenStatsModal = (order: Order) => {
+    setSelectedOrder(order);
+    onStatsModalOpen();
+    toast({ 
+      title: "Stats Modal Triggered (UI Commented Out)",
+      description: `Triggered for order ${order.id}. Match ID: ${order.match?.id}`,
+      status: "info"
+    }); 
   };
 
   const renderStatusBadge = (status: string) => {
@@ -209,14 +218,26 @@ const BrandOrders: React.FC = () => {
               </CardBody>
               <CardFooter>
                  <HStack justify="space-between" width="100%">
-                    <Button 
-                      leftIcon={<IconWrapper icon={FiEye}/>}
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleViewApplicants(order)}
-                    >
-                      View Applicants
-                    </Button>
+                    {(() => {
+                      // Calculate pending applications count
+                      const pendingCount = order.applications?.filter(app => app.status === 'pending').length || 0;
+                      return (
+                        <Button 
+                          leftIcon={<IconWrapper icon={FiEye}/>}
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleViewApplicants(order)}
+                          // Add badge if there are pending applications
+                          rightIcon={pendingCount > 0 ? 
+                            <Badge colorScheme='yellow' ml='1' borderRadius='full' px='2'>
+                              {pendingCount} new
+                            </Badge> : undefined
+                          }
+                        >
+                          View Applicants
+                        </Button>
+                      );
+                    })()}
                     <Menu>
                       <MenuButton
                         as={IconButtonWithWrapper}
@@ -225,18 +246,20 @@ const BrandOrders: React.FC = () => {
                         size='sm'
                         aria-label='Order actions'
                       />
-                      <MenuList>
-                        <MenuItem icon={<IconWrapper icon={FiTrendingUp} />} onClick={() => handleOpenStatsModal(order)}>
-                          View/Update Stats
-                        </MenuItem>
-                        <MenuItem icon={<IconWrapper icon={FiEdit2} />} onClick={() => handleEditOrder(order.id)}>
-                          Edit Order
-                        </MenuItem>
-                        <MenuDivider />
-                        <MenuItem icon={<IconWrapper icon={FiTrash2} />} color="red.500" onClick={() => handleDeleteOrder(order.id)}>
-                          Delete Order
-                        </MenuItem>
-                      </MenuList>
+                      <Portal>
+                        <MenuList>
+                          <MenuItem icon={<IconWrapper icon={FiTrendingUp} />} onClick={() => handleOpenStatsModal(order)}>
+                            View/Update Stats
+                          </MenuItem>
+                          <MenuItem icon={<IconWrapper icon={FiEdit2} />} onClick={() => handleEditOrder(order.id)}>
+                            Edit Order
+                          </MenuItem>
+                          <MenuDivider />
+                          <MenuItem icon={<IconWrapper icon={FiTrash2} />} color="red.500" onClick={() => handleDeleteOrder(order.id)}>
+                            Delete Order
+                          </MenuItem>
+                        </MenuList>
+                      </Portal>
                     </Menu>
                   </HStack>
               </CardFooter>
@@ -275,16 +298,27 @@ const BrandOrders: React.FC = () => {
                          </VStack>
                          <VStack align="end">
                            {renderApplicationStatusBadge(app.status)}
-                           {app.status === 'pending' && (
-                              <HStack>
-                                <Button size="xs" colorScheme="green" onClick={() => handleAcceptApplication(app)} isLoading={acceptMutation.isPending}>
-                                  Accept
-                                </Button>
-                                <Button size="xs" colorScheme="red" onClick={() => handleRejectApplication(app)} isLoading={rejectMutation.isPending}>
-                                  Reject
-                                </Button>
-                             </HStack>
-                           )}
+                           <HStack>
+                             {app.status === 'pending' && (
+                               <>
+                                 <Button size="xs" colorScheme="green" onClick={() => handleAcceptApplication(app)} isLoading={acceptMutation.isPending}>
+                                   Accept
+                                 </Button>
+                                 <Button size="xs" colorScheme="red" onClick={() => handleRejectApplication(app)} isLoading={rejectMutation.isPending}>
+                                   Reject
+                                 </Button>
+                               </>
+                             )}
+                             {app.status === 'accepted' && (
+                               <Button 
+                                 size="xs" 
+                                 colorScheme="blue" 
+                                 onClick={() => handleOpenStatsModal(app.order)}
+                               >
+                                 Complete & Update Stats (TBD)
+                               </Button>
+                             )}
+                           </HStack>
                            <Button size="xs" variant="link" onClick={() => app.applicant?.id && handleViewInfluencer(app.applicant.id)} isDisabled={!app.applicant?.id}>View Profile</Button>
                          </VStack>
                       </HStack>
@@ -360,7 +394,7 @@ const BrandOrders: React.FC = () => {
                  onClick={handleStatsSubmit}
                  isLoading={updateStatsMutation.isPending}
                >
-                 Save Stats
+                 Save Stats & Complete Match
                </Button>
              </ModalFooter>
            </ModalContent>

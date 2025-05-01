@@ -105,7 +105,7 @@ export const CreateOrder: React.FC<CreateOrderProps> = ({ isEditMode }) => {
         duration: 3000,
         isClosable: true,
       });
-      navigate('/dashboard/brand/orders');
+      navigate('/brand/orders');
     },
     onError: (error: any) => {
       toast({
@@ -128,7 +128,7 @@ export const CreateOrder: React.FC<CreateOrderProps> = ({ isEditMode }) => {
         duration: 3000,
         isClosable: true,
       });
-      navigate('/dashboard/brand/orders');
+      navigate('/brand/orders');
     },
     onError: (error: any) => {
       toast({

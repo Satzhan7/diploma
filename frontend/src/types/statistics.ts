@@ -1,6 +1,6 @@
 import { Order } from './order';
 
-export interface DailyStats {
+export interface DailyStat {
   date: string;
   clicks: number;
   impressions: number;
@@ -8,52 +8,51 @@ export interface DailyStats {
   followerGrowth: number;
 }
 
-export interface CampaignStats {
+export interface CampaignStat {
   id: string;
-  order: Order;
   name: string;
-  category: string;
-  status: string;
-  clicks: number;
-  impressions: number;
-  engagementRate: number;
-  followerGrowth: number;
-  startDate: string;
-  endDate: string;
+  clicks?: number;
+  impressions?: number;
+  engagementRate?: number;
+  followerGrowth?: number;
+  startDate?: Date | string;
+  endDate?: Date | string;
+  status?: string;
   influencerId?: string;
   influencerName?: string;
   brandId?: string;
   brandName?: string;
-  createdAt: string;
-  updatedAt: string;
+  category?: string;
 }
 
 export interface BrandDashboardStats {
+  totalOrdersCreated: number;
+  openOrders: number;
+  inProgressOrders: number;
+  totalApplicationsReceived: number;
+  pendingApplications: number;
+  acceptedApplications: number;
+  totalMatches: number;
+  completedMatches: number;
   totalClicks: number;
   totalImpressions: number;
   averageEngagementRate: number;
-  totalFollowerGrowth: number;
-  activeCampaigns?: number;
-  totalReach?: number;
-  reachChange?: number;
-  engagementRate?: number;
-  engagementChange?: number;
-  clicksChange?: number;
-  impressionsChange?: number;
-  connectedInfluencers?: number;
-  dailyStats: DailyStats[];
-  campaignStats: CampaignStats[];
+  dailyStats: DailyStat[];
+  campaignStats: CampaignStat[];
 }
 
 export interface InfluencerDashboardStats {
+  totalApplicationsSent: number;
+  pendingApplications: number;
+  acceptedApplications: number;
+  rejectedApplications: number;
+  withdrawnApplications: number;
+  totalMatches: number;
+  completedMatches: number;
   totalClicks: number;
   totalImpressions: number;
   averageEngagementRate: number;
   followerGrowth: number;
-  clicksChange?: number;
-  impressionsChange?: number;
-  engagementChange?: number;
-  followerGrowthChange?: number;
-  dailyStats: DailyStats[];
-  campaignStats: CampaignStats[];
+  dailyStats: DailyStat[];
+  campaignStats: CampaignStat[];
 } 

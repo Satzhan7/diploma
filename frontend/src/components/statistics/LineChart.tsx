@@ -10,12 +10,12 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { Box, Heading, useColorModeValue } from '@chakra-ui/react';
-import { DailyStats } from '../../types/statistics';
+import { DailyStat } from '../../types/statistics';
 
 interface LineChartProps {
   title?: string;
-  data: DailyStats[];
-  dataKey: keyof DailyStats;
+  data: DailyStat[];
+  dataKey: keyof DailyStat;
   color?: string;
   xAxisDataKey?: string;
   suffix?: string;
@@ -74,7 +74,7 @@ export const LineChart: React.FC<LineChartProps> = ({
             <Legend />
             <Line
               type="monotone"
-              dataKey={dataKey}
+              dataKey={dataKey as string}
               stroke={color}
               activeDot={{ r: 8 }}
               strokeWidth={2}

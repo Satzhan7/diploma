@@ -20,9 +20,11 @@ import BrandList from './pages/influencer/BrandList';
 import BrandRecommendations from './pages/influencer/BrandRecommendations';
 import { Messages } from './pages/Messages';
 import { Settings } from './pages/Settings';
-import { Collaborations } from './pages/Collaborations';
+import { Matches } from './pages/Matches';
 import theme from './theme';
 import { UserRole } from './types/user';
+import { OrderDetail } from './pages/influencer/OrderDetail';
+import { MatchDetail } from './pages/MatchDetail';
 
 const queryClient = new QueryClient();
 
@@ -96,8 +98,10 @@ function AppRoutes() {
                 <Route path="orders/create" element={<CreateOrder />} />
                 <Route path="influencers" element={<InfluencerList />} />
                 <Route path="messages" element={<Messages />} />
-                <Route path="collaborations" element={<Collaborations />} />
-                <Route path="profile/:userId" element={<Profile />} />
+                <Route path="matches" element={<Matches />} />
+                <Route path="matches/:matchId" element={<MatchDetail />} />
+                <Route path="profile/:userId" element={<Profile isViewMode={true} />} />
+                <Route path="profile" element={<Profile />} />
                 <Route path="profile/edit" element={<EditProfile />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="/" element={<Navigate to="dashboard" replace />} /> 
@@ -115,14 +119,17 @@ function AppRoutes() {
               <Routes>
                 <Route path="dashboard" element={<InfluencerDashboard />} />
                 <Route path="orders" element={<InfluencerOrders />} />
+                <Route path="orders/:orderId" element={<OrderDetail />} />
                 <Route path="applications" element={<MyApplications />} />
                 <Route path="brands" element={<BrandList />} />
                 <Route path="recommendations" 
                   element={user?.id ? <BrandRecommendations influencerId={user.id} /> : <div>Loading User...</div>}
                 /> 
                 <Route path="messages" element={<Messages />} />
-                <Route path="collaborations" element={<Collaborations />} />
-                <Route path="profile/:userId" element={<Profile />} />
+                <Route path="matches" element={<Matches />} />
+                <Route path="matches/:matchId" element={<MatchDetail />} />
+                <Route path="profile/:userId" element={<Profile isViewMode={true} />} />
+                <Route path="profile" element={<Profile />} />
                 <Route path="profile/edit" element={<EditProfile />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="/" element={<Navigate to="dashboard" replace />} /> 

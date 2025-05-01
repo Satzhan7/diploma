@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Flex, Text, VStack, useColorModeValue, Link } from '@chakra-ui/react';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { IconType } from 'react-icons';
-import { FiHome, FiList, FiMessageSquare, FiSettings, FiUsers, FiAward } from 'react-icons/fi';
+import { FiHome, FiList, FiMessageSquare, FiSettings, FiUsers, FiAward, FiUser } from 'react-icons/fi';
 import { BsFileEarmarkPlus, BsLightbulb } from 'react-icons/bs';
 import { UserRole } from '../types/user';
 import { IconWrapper } from './IconWrapper';
@@ -22,6 +22,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', icon: FiHome, pathSuffix: 'dashboard', roles: [UserRole.BRAND, UserRole.INFLUENCER] },
+  { label: 'Profile', icon: FiUser, pathSuffix: 'profile', roles: [UserRole.BRAND, UserRole.INFLUENCER] },
   { label: 'Orders', icon: FiList, pathSuffix: 'orders', roles: [UserRole.BRAND, UserRole.INFLUENCER] },
   { label: 'Create Order', icon: BsFileEarmarkPlus, pathSuffix: 'orders/create', roles: [UserRole.BRAND] },
   { label: 'My Applications', icon: FiAward, pathSuffix: 'applications', roles: [UserRole.INFLUENCER] },
@@ -29,7 +30,7 @@ const navItems: NavItem[] = [
   { label: 'Brands', icon: FiUsers, pathSuffix: 'brands', roles: [UserRole.INFLUENCER] },
   { label: 'Recommendations', icon: BsLightbulb, pathSuffix: 'recommendations', roles: [UserRole.INFLUENCER] },
   { label: 'Messages', icon: FiMessageSquare, pathSuffix: 'messages', roles: [UserRole.BRAND, UserRole.INFLUENCER] },
-  { label: 'Collaborations', icon: FiAward, pathSuffix: 'collaborations', roles: [UserRole.BRAND, UserRole.INFLUENCER] },
+  { label: 'Matches', icon: FiAward, pathSuffix: 'matches', roles: [UserRole.BRAND, UserRole.INFLUENCER] },
   { label: 'Settings', icon: FiSettings, pathSuffix: 'settings', roles: [UserRole.BRAND, UserRole.INFLUENCER] },
 ];
 

@@ -83,7 +83,7 @@ const BrandList: React.FC = () => {
             >
               <HStack spacing={4}>
                 <Image
-                  src={brand.avatarUrl || 'https://via.placeholder.com/100'}
+                  src={brand.profile?.avatarUrl || 'https://via.placeholder.com/100'}
                   alt={brand.name}
                   borderRadius="full"
                   boxSize="100px"

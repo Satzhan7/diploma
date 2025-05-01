@@ -23,13 +23,16 @@ import {
   HStack,
   Link,
   Spinner,
+  Flex,
 } from '@chakra-ui/react';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import { FaInstagram, FaTiktok, FaFacebook, FaTwitter, FaLinkedin, FaEnvelope } from 'react-icons/fa';
 import { SiThreads } from 'react-icons/si';
 import { IconWrapper } from '../components/IconWrapper';
-import { User, Profile as ProfileType } from '../types/user';
+import { User, Profile as ProfileType, UserRole } from '../types/user';
+import { matchingService } from '../services/matching';
 
 interface ProfileProps {
   isViewMode?: boolean;
@@ -46,8 +49,42 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
   const [profileData, setProfileData] = useState<ProfileType | null>(null);
   const [loading, setLoading] = useState(true);
   const [targetUser, setTargetUser] = useState<User | null>(null);
+  const queryClient = useQueryClient();
 
   const displayUserId = isViewMode ? userId : user?.id;
+
+  const isBrandViewingInfluencer = user?.role === UserRole.BRAND && 
+                                   targetUser?.role === UserRole.INFLUENCER && 
+                                   isViewMode &&
+                                   user?.id !== targetUser?.id;
+
+  const createMatchMutation = useMutation({
+    mutationFn: async () => {
+      if (!user?.id || !targetUser?.id) {
+        throw new Error("User IDs are missing");
+      }
+      return matchingService.createMatch({ brandId: user.id, influencerId: targetUser.id });
+    },
+    onSuccess: (newMatch) => {
+      toast({
+        title: "Collaboration Request Sent",
+        description: `Request sent to ${targetUser?.name || 'Influencer'}. Match ID: ${newMatch.id}`,
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+      queryClient.invalidateQueries({ queryKey: ['userMatches'] }); 
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error Sending Request",
+        description: error.response?.data?.message || error.message || "Could not send collaboration request.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    },
+  });
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -189,7 +226,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
             src={avatarUrl}
             mb={6} 
           />
-          <VStack spacing={3}>
+          <VStack spacing={3} mt={4}>
             <Heading size="lg">{displayName}</Heading>
             {role && (
               <Text 
@@ -204,6 +241,27 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
                 {role}
               </Text>
             )}
+            <Flex direction={{ base: 'column', sm: 'row' }} gap={3} justify="center" mt={4}>
+                {!isViewMode && user && (
+                    <Button colorScheme="blue" onClick={() => navigate(`/${user.role}/profile/edit`)}>
+                        Edit Profile
+                    </Button>
+                )}
+                {isBrandViewingInfluencer && (
+                    <Button 
+                        colorScheme="teal" 
+                        onClick={() => createMatchMutation.mutate()}
+                        isLoading={createMatchMutation.isPending}
+                    >
+                        Send Collaboration Request
+                    </Button>
+                )}
+                {isViewMode && user?.id !== targetUser?.id && (
+                    <Button colorScheme="gray" onClick={handleCreateChat}>
+                        Start Chat
+                    </Button>
+                )}
+            </Flex>
           </VStack>
         </Box>
 
@@ -304,9 +362,6 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
             </>
           ) : (
             <>
-              <Button colorScheme="blue" onClick={() => navigate('/profile/edit')}>
-                Edit Profile
-              </Button>
               <Button colorScheme="red" variant="outline" onClick={onOpen}>
                 Delete Account
               </Button>

@@ -1,12 +1,25 @@
 import api from './api';
 
+// Add a basic User type
+interface BasicUser {
+  id: string;
+  name: string;
+  // Add other relevant user fields if needed, e.g., avatarUrl
+  profile?: {
+    avatarUrl?: string;
+  };
+}
+
 export interface Match {
   id: string;
   brandId: string;
   influencerId: string;
-  status: 'pending' | 'accepted' | 'rejected';
+  status: 'pending' | 'accepted' | 'rejected' | 'completed';
   createdAt: string;
   updatedAt: string;
+  // Add optional brand and influencer objects
+  brand?: BasicUser;
+  influencer?: BasicUser;
   stats?: {
     clicks?: number;
     impressions?: number;
@@ -97,10 +110,9 @@ export const matchingService = {
   },
 
   // Получить рекомендации
-  async getRecommendations(userId: string, type: 'brands' | 'influencers'): Promise<Recommendation[]> {
-    const response = await api.get<Recommendation[]>(
-      `/matching/recommendations/${userId}?type=${type}`
-    );
+  async getRecommendations(type: 'brands' | 'influencers', limit: number = 10): Promise<Recommendation[]> {
+    const endpoint = type === 'brands' ? '/matching/recommendations/brands' : '/matching/recommendations/influencers';
+    const response = await api.get<Recommendation[]>(endpoint, { params: { limit } });
     return response.data.sort((a: Recommendation, b: Recommendation) => b.matchScore - a.matchScore);
   },
 
@@ -124,8 +136,8 @@ export const matchingService = {
   },
 
   // Получить матчи пользователя
-  async getMatches(userId: string): Promise<MatchScore[]> {
-    const response = await api.get<MatchScore[]>(`/matching/matches/${userId}`);
+  async getMatches(): Promise<MatchScore[]> {
+    const response = await api.get<MatchScore[]>('/matching/user/matches');
     return response.data;
   }
 }; 

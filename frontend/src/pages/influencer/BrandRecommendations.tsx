@@ -41,7 +41,7 @@ const BrandRecommendations: React.FC<BrandRecommendationsProps> = ({ influencerI
   // Get brand recommendations
   const { data: recommendations, isLoading, error } = useQuery({
     queryKey: ['matchRecommendations', 'brands', searchQuery, categoryFilter],
-    queryFn: () => matchingService.getRecommendations(searchQuery, 'brands'),
+    queryFn: () => matchingService.getRecommendations('brands'),
   });
 
   // Mutation for creating a match
