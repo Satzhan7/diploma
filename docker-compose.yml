@@ -29,7 +29,7 @@ services:
     container_name: influencer_platform_backend
     restart: always
     ports:
-      - "3001:3001"
+      - "3002:3002"
     environment:
       - DATABASE_HOST=postgres
       - DATABASE_PORT=5432
