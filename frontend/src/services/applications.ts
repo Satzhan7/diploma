@@ -41,8 +41,8 @@ export const applicationsService = {
     return response.data;
   },
 
-  getByInfluencer: async (influencerId: string): Promise<Application[]> => {
-    const response = await api.get(`/applications/influencer/${influencerId}`);
+  getByInfluencer: async (): Promise<Application[]> => {
+    const response = await api.get(`/order-applications`);
     return response.data;
   },
 

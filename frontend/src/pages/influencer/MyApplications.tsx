@@ -47,7 +47,7 @@ export const MyApplications: React.FC = () => {
 
   const { data: applications, isLoading, error } = useQuery<Application[], Error>({
     queryKey: ['myApplications', user?.id],
-    queryFn: () => applicationsService.getByInfluencer(user!.id),
+    queryFn: () => applicationsService.getByInfluencer(),
     enabled: !!user,
   });
 
