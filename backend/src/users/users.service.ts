@@ -29,7 +29,10 @@ export class UsersService {
       where.categories = ILike(`%${category}%`);
     }
     
-    return await this.usersRepository.find({ where });
+    return await this.usersRepository.find({ 
+      where, 
+      relations: ['profile'] 
+    });
   }
 
   async findBrands(searchQuery?: string): Promise<User[]> {
@@ -39,7 +42,10 @@ export class UsersService {
       where.name = ILike(`%${searchQuery}%`);
     }
     
-    return await this.usersRepository.find({ where });
+    return await this.usersRepository.find({ 
+      where, 
+      relations: ['profile'] 
+    });
   }
 
   async findById(id: string): Promise<User> {
@@ -57,7 +63,13 @@ export class UsersService {
   }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
-    const user = this.usersRepository.create(createUserDto);
+    const saltRounds = 10; // Standard salt rounds
+    const hashedPassword = await bcrypt.hash(createUserDto.password, saltRounds);
+
+    const user = this.usersRepository.create({
+      ...createUserDto,
+      password: hashedPassword, // Use the hashed password
+    });
     return await this.usersRepository.save(user);
   }
 
