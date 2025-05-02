@@ -35,7 +35,7 @@ services:
       - DATABASE_PORT=5432
       - DATABASE_USERNAME=postgres
       - DATABASE_PASSWORD=postgres
-      - DATABASE_NAME=influencer_platform
+      - DB_NAME=influencer_platform
       - JWT_SECRET=your-secret-key-change-in-production
       - JWT_ACCESS_EXPIRATION=15m
       - JWT_REFRESH_EXPIRATION=7d
