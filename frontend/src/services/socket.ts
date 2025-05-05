@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 
 // Use the same base URL as the API
-const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+const baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001';
 
 class SocketService {
   private socket: Socket | null = null;
