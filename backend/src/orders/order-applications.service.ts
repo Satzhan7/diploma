@@ -82,7 +82,12 @@ export class OrderApplicationsService {
     });
   }
 
-  async findOne(id: string): Promise<OrderApplication> {
+  // `requester` is passed from the controller for direct reads; internal
+  // callers (update/withdraw) omit it and apply their own ownership rules.
+  async findOne(
+    id: string,
+    requester?: { id: string; role: UserRole },
+  ): Promise<OrderApplication> {
     const application = await this.orderApplicationRepository.findOne({
       where: { id },
       relations: ['order', 'applicant', 'order.brand', 'order.brand.user']
@@ -90,6 +95,17 @@ export class OrderApplicationsService {
 
     if (!application) {
       throw new NotFoundException(`Application with ID ${id} not found`);
+    }
+
+    // Read ownership (SECURITY_AUDIT H3): only the applicant, the brand that
+    // owns the order, or an admin may view an application.
+    if (
+      requester &&
+      requester.role !== UserRole.ADMIN &&
+      application.applicant?.id !== requester.id &&
+      application.order?.brand?.user?.id !== requester.id
+    ) {
+      throw new ForbiddenException('You do not have access to this application');
     }
 
     return application;

@@ -5,6 +5,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GetCurrentUser } from '../auth/decorators/get-current-user.decorator';
+import { UserRole } from './entities/user.entity';
 
 @ApiTags('users')
 @ApiBearerAuth()
@@ -12,11 +13,6 @@ import { GetCurrentUser } from '../auth/decorators/get-current-user.decorator';
 @UseGuards(JwtAuthGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
-
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
-  }
 
   @Get()
   findAll() {
@@ -59,7 +55,15 @@ export class UsersController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(
+    @Param('id') id: string,
+    @GetCurrentUser() currentUser: { id: string; role: UserRole },
+  ) {
+    // Ownership: same rule as PATCH — only the account owner (or an admin)
+    // may delete a user record.
+    if (id !== currentUser.id && currentUser.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('You can only delete your own account');
+    }
     return this.usersService.remove(id);
   }
 } 

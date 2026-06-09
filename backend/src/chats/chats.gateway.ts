@@ -16,7 +16,10 @@ import { Chat } from './entities/chat.entity';
 
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    // Same origin policy as the HTTP API (SECURITY_AUDIT H1).
+    origin: process.env.CORS_ORIGIN
+      ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+      : 'http://localhost:3000',
   },
   namespace: 'chats',
 })
@@ -80,10 +83,24 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('joinChat')
-  handleJoinChat(
+  async handleJoinChat(
     @ConnectedSocket() client: Socket,
     @MessageBody() chatId: string,
-  ): void {
+  ): Promise<void> {
+    // Membership check (SECURITY_AUDIT H1): only chat participants may join
+    // the room. ChatsService.findOne throws if userId is not a participant.
+    const userId = this.socketUserMap.get(client.id);
+    if (!userId) {
+      client.emit('error', { message: 'Not authenticated' });
+      return;
+    }
+    try {
+      await this.chatsService.findOne(chatId, userId);
+    } catch {
+      this.logger.warn(`User ${userId} denied access to chat ${chatId}`);
+      client.emit('error', { message: 'You are not a participant of this chat' });
+      return;
+    }
     client.join(`chat:${chatId}`);
     this.logger.log(`Socket ${client.id} joined chat room: ${chatId}`);
   }

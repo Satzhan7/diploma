@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsEnum } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsIn } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserRole } from '../../users/entities/user.entity';
 
@@ -16,7 +16,7 @@ export class RegisterDto {
   @MinLength(6)
   password: string;
 
-  @ApiProperty({ enum: UserRole, description: 'User role' })
-  @IsEnum(UserRole)
+  @ApiProperty({ enum: [UserRole.BRAND, UserRole.INFLUENCER], description: 'User role' })
+  @IsIn([UserRole.BRAND, UserRole.INFLUENCER])
   role: UserRole;
 } 

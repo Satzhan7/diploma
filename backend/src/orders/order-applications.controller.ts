@@ -61,14 +61,18 @@ export class OrderApplicationsController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get application by id' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Return the application', 
-    type: OrderApplication 
+  @ApiOperation({ summary: 'Get application by id (applicant or order-owning brand)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return the application',
+    type: OrderApplication
   })
-  findOne(@Param('id') id: string): Promise<OrderApplication> {
-    return this.orderApplicationsService.findOne(id);
+  findOne(
+    @Param('id') id: string,
+    @GetCurrentUser('sub') userId: string,
+    @GetCurrentUser('role') userRole: UserRole,
+  ): Promise<OrderApplication> {
+    return this.orderApplicationsService.findOne(id, { id: userId, role: userRole });
   }
 
   @Patch(':id')

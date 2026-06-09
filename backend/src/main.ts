@@ -2,10 +2,14 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
+import helmet from 'helmet';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Standard security headers (SECURITY_AUDIT H5/L3).
+  app.use(helmet());
   
   // Enable CORS. In production, restrict to CORS_ORIGIN (comma-separated list).
   // When CORS_ORIGIN is unset (dev/demo) fall back to reflecting any origin.
@@ -14,8 +18,15 @@ async function bootstrap() {
     : true;
   app.enableCors({ origin: corsOrigin, credentials: true });
   
-  // Enable validation pipes
-  app.useGlobalPipes(new ValidationPipe());
+  // Enable validation pipes. whitelist+forbidNonWhitelisted reject unknown
+  // body properties (mass-assignment guard, SECURITY_AUDIT H4).
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
   
   // Enable global interceptor for handling circular references
   app.useGlobalInterceptors(new TransformInterceptor());

@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
@@ -27,6 +29,14 @@ import { Collaboration } from './collaborations/entities/collaboration.entity';
       isGlobal: true,
       load: [configuration],
     }),
+    // Global rate limit (SECURITY_AUDIT H5); auth routes carry a tighter
+    // per-route @Throttle in AuthController.
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -60,6 +70,12 @@ import { Collaboration } from './collaborations/entities/collaboration.entity';
     ChatsModule,
     CollaborationsModule,
     CategoriesModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}

@@ -18,10 +18,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: any) {
     const user = await this.usersService.findById(payload.sub);
-    // Return a user object that includes the ID as 'sub' property for GetCurrentUser decorator
-    return { 
-      ...user,
-      sub: payload.sub // Ensure sub is explicitly set for the GetCurrentUser decorator
+    // Minimal claim object only — never the full entity. Spreading the entity
+    // here strips class-transformer metadata, which previously leaked the
+    // password/refreshToken hashes through serialization (SECURITY_AUDIT C3).
+    return {
+      id: user.id,
+      sub: payload.sub,
+      email: user.email,
+      role: user.role,
+      name: user.name,
     };
   }
 } 

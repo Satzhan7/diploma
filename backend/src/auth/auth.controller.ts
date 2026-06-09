@@ -6,7 +6,11 @@ import { Public } from './decorators/public.decorator';
 import { GetCurrentUser } from './decorators/get-current-user.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 
+// Tighter rate limit than the global default — login/register/refresh are
+// the brute-force surface (SECURITY_AUDIT H5).
+@Throttle({ default: { limit: 10, ttl: 60000 } })
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
