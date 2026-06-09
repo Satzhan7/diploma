@@ -116,6 +116,8 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   // Emit event when a new message is created
   async emitNewMessage(message: Message, chat: Chat): Promise<void> {
+    // No WS server outside the HTTP runtime (e.g. seed script, tests).
+    if (!this.server) return;
     // Ensure chat ID is available in the message
     if (message && !message.chat) {
       message.chat = { id: chat.id } as Chat;
@@ -141,6 +143,7 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   // Emit event when messages are marked as read
   emitMessagesRead(chatId: string, userId: string): void {
+    if (!this.server) return;
     this.server.to(`chat:${chatId}`).emit('messagesRead', {
       chatId,
       userId,
@@ -149,6 +152,7 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   // Emit event when a new chat is created
   emitNewChat(chat: Chat): void {
+    if (!this.server) return;
     // Emit to both participants
     this.server.to(`user:${chat.sender.id}`).emit('newChat', chat);
     this.server.to(`user:${chat.recipient.id}`).emit('newChat', chat);
