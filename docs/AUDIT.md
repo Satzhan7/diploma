@@ -1,140 +1,232 @@
-# AdPartners.kz — Repository Audit
+# AdPartners.kz — Full Repository Audit
 
-**Date:** 2026-06-09 · **Scope:** full-stack audit (architecture, Docker, backend, frontend, database, security) · **Mode:** documentation only, no code changed.
+**Date:** 2026-06-10 · **Branch:** `audit/fixes` · **Scope:** complete repository (architecture, structure, backend, frontend, database, Docker/deploy, env vars, security, docs, tests, defense readiness).
+**Verification status:** backend `nest build` ✅ exit 0 · frontend `tsc --noEmit` ✅ exit 0 · runtime end-to-end deploy **Not Verified** (no live server in audit environment).
 
-This single document consolidates Phases 1–8 of the audit. Remediation lives in [FIX_PLAN.md](FIX_PLAN.md); env vars in [ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md); markdown cleanup in [DOCUMENTATION_AUDIT.md](DOCUMENTATION_AUDIT.md).
+Companion documents: [FIX_PLAN.md](FIX_PLAN.md) · [SECURITY_AUDIT.md](SECURITY_AUDIT.md) · [REPOSITORY_CLEANUP.md](REPOSITORY_CLEANUP.md) · [ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md) · [DIPLOMA_DEFENSE.md](DIPLOMA_DEFENSE.md)
+
+> Supersedes the 2026-06-09 audit. Items already fixed in commit `6664b8e` (env-var name alignment, prod frontend service, CORS scoping, `DB_SYNCHRONIZE` bootstrap) are no longer listed as findings.
 
 ---
 
 ## 1. Project Overview
 
-AdPartners.kz is a full-stack web platform connecting brands with influencers in Kazakhstan/CIS. B2B2C, role-based (BRAND, INFLUENCER, ADMIN/manager). Core flows: auth, profiles, orders/campaigns, applications, collaborations, real-time chat, statistics.
+**Business purpose.** AdPartners.kz is a two-sided marketplace connecting brands with influencers in Kazakhstan/CIS. Brands publish campaign orders; influencers apply; accepted applications become matches/collaborations with real-time chat and KPI dashboards. Bachelor diploma project (SDU University, 2025).
 
-**Actual stack (verified in code — differs from thesis PDF):**
+**Stack (verified in code):**
 
-| Layer | Reality | PDF/Slides claim | Match? |
-|---|---|---|---|
-| Frontend | React 18 + **Create React App** (`react-scripts`) + Chakra UI + React Router 6 + axios + react-query + socket.io-client | React + **Vite** + Chakra | ⚠️ CRA, not Vite |
-| Backend | NestJS 10 + TypeORM 0.3 + PostgreSQL 14 + Passport-JWT + socket.io | NestJS + TypeORM + PG | ✅ |
-| Object storage | **none** | MinIO (S3), pre-signed URLs, UploadsModule | ❌ does not exist |
-| AI | **none** | Gemini (planned) | ✅ correctly "planned" |
-| Auth token store | **localStorage** | HttpOnly cookie | ⚠️ localStorage |
-| Deploy | Docker Compose (dev: db+backend; prod: +frontend+nginx+certbot) | one-command full stack | ⚠️ dev command omits frontend |
+| Layer | Technology | Evidence |
+|---|---|---|
+| Frontend | React 18 + Create React App, Chakra UI 2, React Router 6, TanStack Query 5, axios, socket.io-client | `frontend/package.json` |
+| Backend | NestJS 10, TypeORM 0.3, Passport-JWT, socket.io gateway, Swagger | `backend/package.json` |
+| Database | PostgreSQL 14 (alpine), schema via `synchronize` | `docker-compose*.yml`, `app.module.ts:50` |
+| Infra | Docker Compose (dev + prod), nginx + certbot TLS | `docker-compose.prod.yml`, `nginx/site.conf` |
+| Integrations | none external (no S3/MinIO, no AI, no payments) | dependency scan |
+
+### Architecture diagram
 
 ```mermaid
-graph TD
-  U[Browser / React CRA SPA] -->|HTTP REST + WS| N[nginx prod only]
-  N -->|/api| B[NestJS API :3005]
-  N -->|/socket.io| B
-  N -->|/| F[frontend nginx static]
-  B --> DB[(PostgreSQL 14)]
-  subgraph Backend modules wired in app.module
-    AUTH[Auth/JWT] --- USERS[Users] --- PROF[Profiles] --- ORD[Orders+Applications] --- MATCH[Matching] --- COLLAB[Collaborations] --- CHAT[Chats WS] --- STATS[Statistics] --- CAT[Categories]
-  end
-  B --- AUTH
-  DEAD[brands/ · influencers/ · messages/ — NOT imported, dead]
+flowchart LR
+    subgraph Client
+        SPA["React SPA (CRA)\nChakra UI + React Query"]
+    end
+    subgraph Edge["nginx (prod only)"]
+        NG["nginx :80/:443\nTLS via certbot"]
+    end
+    subgraph Backend["NestJS :3005"]
+        AUTH[AuthModule\nJWT access+refresh]
+        USERS[UsersModule]
+        PROF[ProfilesModule]
+        ORD[OrdersModule\n+OrderApplications]
+        MATCH[MatchingModule]
+        CHAT[ChatsModule\nREST + WS gateway]
+        COLLAB[CollaborationsModule]
+        STATS[StatisticsModule]
+        CAT[CategoriesModule\nstatic list]
+    end
+    DB[(PostgreSQL 14)]
+    SPA -- "/api/* REST" --> NG --> AUTH
+    SPA -- "socket.io ns /chats" --> NG --> CHAT
+    Backend --> DB
 ```
 
-**Data model (9 live entities):** User → Profile (1:1) → SocialMedia (1:N); User → Order (1:N) → OrderApplication (1:N); Match; Collaboration; Chat → Message (1:N). `brand`, `influencer`, second `message` entities exist but their modules are never imported (dead).
+### Module dependency graph (backend, as wired in `app.module.ts`)
+
+```mermaid
+flowchart TD
+    APP[AppModule] --> AUTH & USERS & PROF & MATCH & ORD & CHAT & COLLAB & STATS & CAT
+    AUTH --> USERS & PROF
+    PROF --> USERS
+    MATCH --> USERS & PROF & CHAT
+    ORD --> USERS & PROF & CHAT & MATCH
+    COLLAB --> USERS
+    STATS -.->|entities only| MATCH & ORD & PROF & USERS
+    DEAD1[BrandsModule]:::dead
+    DEAD2[InfluencersModule]:::dead
+    DEAD3[MessagesModule]:::dead
+    classDef dead fill:#fdd,stroke:#c00
+```
+
+`BrandsModule`, `InfluencersModule`, `MessagesModule` exist on disk but are **not imported** in `app.module.ts` — dead modules (see §2).
 
 ---
 
-## 2. Repository Audit (findings)
+## 2. Repository Structure Review
 
-Severity: 🔴 Critical (blocks run/deploy) · 🟠 High (core feature broken) · 🟡 Medium · ⚪ Low.
+Full keep/refactor/delete inventory: [REPOSITORY_CLEANUP.md](REPOSITORY_CLEANUP.md). Highlights:
 
-| # | Sev | Location | Finding | Impact |
-|---|---|---|---|---|
-| F1 | 🔴 | [docker-compose.prod.yml:30-32](../docker-compose.prod.yml#L30) vs [configuration.ts:6-7](../backend/src/config/configuration.ts#L6) | Compose sets `DATABASE_USERNAME`/`DATABASE_PASSWORD`; app reads `DB_USERNAME`/`DB_PASSWORD`. Names differ. | Prod backend ignores compose creds, falls back to `postgres/postgres`, but prod DB user is `${DB_USER}=adpartners` → **DB auth fails, backend cannot start**. Dev survives only because fallback matches dev creds. |
-| F2 | 🔴 | [frontend/src/services/api.ts:3](../frontend/src/services/api.ts#L3) vs [frontend/Dockerfile:6](../frontend/Dockerfile#L6) / [docker-compose.prod.yml:47](../docker-compose.prod.yml#L47) | Frontend reads `REACT_APP_API_BASE_URL`; build arg passed is `REACT_APP_API_URL`. | Prod bundle ignores the arg, bakes fallback `http://localhost:3005`. **Deployed UI calls localhost, never nginx `/api` → whole app non-functional in prod.** |
-| F3 | 🔴 | [configuration.ts:9](../backend/src/config/configuration.ts#L9), `src/migrations/` | `synchronize:false` in prod; only 2 *chat-fix* migrations, no base-schema migration, no `migrationsRun`. | **Fresh prod DB has no tables.** Backend errors on first query. |
-| F4 | 🟠 | [docker-compose.yml](../docker-compose.yml) | Default/dev compose defines only `postgres`+`backend`. No frontend service. | `docker compose up --build` (the documented command) does **not** start the UI. Contradicts thesis claim of one-command full stack. |
-| F5 | 🟠 | whole repo | No MinIO, multer, aws-sdk, s3, or Gemini references anywhere; no `UploadsModule`. | Thesis PDF + slides describe MinIO object storage, pre-signed uploads, profile/campaign media, `UploadsModule` in detail. **Feature does not exist** — defense liability if examiner asks to demo it. `profileImageUrl` is a plain string column only. |
-| F6 | 🟡 | [app.module.ts:24-63](../backend/src/app.module.ts#L24) vs `brands/`, `influencers/`, `messages/` | `BrandsModule`, `InfluencersModule`, `MessagesModule` exist but are never imported. | Dead code. Their controllers/routes never register. `messages/` duplicates the live `chats/` messaging (two `Message` entities). Confuses reviewers. |
-| F7 | 🟡 | repo root `src/`, root `package.json` | Stray `src/matching/matching.service.ts`, `src/orders/orders.module.ts`, and a root `package.json` with only `react-icons`. | Duplicate/dead; misleads anyone reading the tree. |
-| F8 | 🟡 | [main.ts:11](../backend/src/main.ts#L11) | `app.enableCors()` with no origin allowlist. | Any origin may call the API. Tighten for prod. |
-| F9 | 🟡 | [backend/src/scripts/](../backend/src/scripts/) | Ad-hoc SQL/TS fix scripts (`direct-fix.sql`, `fix-database.ts`, `add-recipient.sql`…) committed. | Signals schema was patched by hand rather than via migrations; not part of a clean build. |
-| F10 | ⚪ | [backend/Dockerfile:29](../backend/Dockerfile#L29) | `EXPOSE 3000` but app listens on `PORT=3005`. | Cosmetic; documentation drift. |
-| F11 | ⚪ | [frontend/src/mocks/](../frontend/src/mocks/) | `mocks/` not imported by any page/service. | Dead code. |
-| F12 | ⚪ | [frontend/README.md](../frontend/README.md) | Empty (0 lines). | Looks unfinished. |
+**Dead code (verified unreferenced):**
+- `backend/src/brands/`, `backend/src/influencers/`, `backend/src/messages/` — modules never imported into `AppModule`. `influencers.controller.ts` and `influencers.service.ts` are **1-byte empty files**. `messages.controller.ts` has **no auth guard at all** — harmless only because it is unwired; importing `MessagesModule` later would instantly expose unauthenticated read/write/delete of all messages.
+- Root `src/matching/matching.service.ts` and `src/orders/orders.module.ts` — stray AI-editing artifacts at repo root containing literal `// ... existing code ...` placeholders. Committed to git.
+- Root `package.json` + `package-lock.json` (sole dependency `react-icons`) — accidental.
+- Frontend dead files (zero imports, verified by grep): `pages/Home.tsx`, `pages/NotFound.tsx`, `pages/brand/Campaigns.tsx`, `pages/brand/Influencers.tsx`, `pages/brand/InfluencerRecommendations.tsx`, `pages/brand/MatchRecommendations.tsx`, `components/auth/PublicRoute.tsx`, `components/Header.tsx`, `components/SearchIcon.tsx`, `components/statistics/StatsCard.tsx`, `components/statistics/StatCard.tsx`, `services/mockData.ts`, `services/match.ts`, all of `src/mocks/` (3 files).
+- `backend/src/app.controller.ts` / `app.service.ts` — Hello-World controller **not registered** in AppModule; its e2e test (`test/app.e2e-spec.ts`) therefore fails with 404.
+- `backend/src/scripts/` — six one-off DB-repair scripts/SQL from an old chat-schema incident; superseded by the two migrations and the admin endpoints.
 
----
+**Duplicated logic:**
+- Two `Message` entities: `chats/entities/message.entity.ts` (live) vs `messages/entities/message.entity.ts` (dead twin).
+- `frontend/src/types/message.ts` vs `types/messages.ts` — overlapping definitions, each imported once.
+- `users` table duplicates profile data (`bio`, `avatarUrl`, `categories`, `languages`, `location`, `industry`, …) that also lives in `profiles` (§5).
+- Order assignment exists twice: `POST /orders/:id/apply` (direct claim, `orders.service.ts:67-85`) and the application→accept flow (`order-applications.service.ts:98-213`) — two divergent state machines for the same business event.
 
-## 3. Docker & Deployment
+**Lockfile noise:** both `yarn.lock` **and** `package-lock.json` committed in `backend/` and `frontend/`. Dockerfiles use npm — the yarn locks should go.
 
-**Can a fresh machine run `docker compose up --build`?** Partially. Dev compose brings up Postgres + backend (works by env-fallback luck), but **no frontend** (F4). Frontend must be run separately (`cd frontend && npm start`).
-
-**Prod (`docker-compose.prod.yml`)?** Currently **broken** by F1 (DB creds), F2 (frontend API URL), F3 (no schema). Also depends on `certbot/` cert volumes that must be bootstrapped before nginx will start with TLS ([nginx/site.conf:18-19](../nginx/site.conf#L18) references `/etc/letsencrypt/live/adpartners.kz/...`).
-
-| Aspect | Current | Correct target |
-|---|---|---|
-| Dev services | postgres, backend | + frontend (or document that UI runs via `npm start`) |
-| Env var names | mixed `DB_`/`DATABASE_` | one convention end-to-end |
-| Prod schema | synchronize off, no migrations | generate base migration + `migrationsRun:true`, OR set `synchronize:true` for the demo (acceptable for diploma) |
-| TLS | hard requires existing certs | document certbot bootstrap, or ship an HTTP-only `site.conf` for local demo |
-| Backend EXPOSE | 3000 | 3005 |
-
-Startup ordering and healthchecks are correct (`depends_on: condition: service_healthy` in prod). Volumes (`postgres_data`) persist correctly.
+**Local-only junk (untracked):** `.DS_Store`, `.idea/`, `frontend/.env` (`HTTPS=false`, harmless). `.gitignore` already covers them.
 
 ---
 
-## 4. Backend Review
+## 3. Backend Audit
 
-**Good:** clean module-per-domain layout; DTOs with `class-validator`; global `ValidationPipe`; Passport-JWT strategy; `RolesGuard` + `@Roles()` RBAC; bcrypt password hashing (salt 10, [users.service.ts:67](../backend/src/users/users.service.ts#L67)); refresh-token rotation with hashed token stored and `bcrypt.compare` ([auth.service.ts:60-75](../backend/src/auth/auth.service.ts#L60)); WebSocket JWT validation on handshake ([chats.gateway.ts:38-49](../backend/src/chats/chats.gateway.ts#L38)); Swagger at `/docs`.
+**Strengths.** Clean NestJS domain-module layout; DTO validation on most write paths; JWT access+refresh with hashed refresh-token storage (`users.service.ts:85-92`); bcrypt(10); ownership enforcement done properly in `MatchingService.findOwnedMatch` (`matching.service.ts:38-50`) and `order-applications.service.ts:104-129`; Swagger annotations throughout; defensive statistics aggregation (`safeNumber`).
+
+**Critical / high problems** (severity-tagged list in [SECURITY_AUDIT.md](SECURITY_AUDIT.md)):
+
+1. **Self-registration as ADMIN.** `RegisterDto.role` is `@IsEnum(UserRole)` (`auth/dto/register.dto.ts:20-21`) and `UserRole` includes `ADMIN`. `POST /auth/register {"role":"admin"}` grants every `@Roles(ADMIN)` endpoint (chat maintenance, all-collaborations listing, collaboration delete).
+2. **Any user can delete any user.** `DELETE /users/:id` has no ownership/role check (`users.controller.ts:61-64`). `PATCH /users/:id` *does* check ownership — the asymmetry is an oversight, not a design choice.
+3. **`POST /users` mints arbitrary-role users** for any authenticated caller, bypassing registration (no profile created → downstream `findByUserId` 404s) (`users.controller.ts:16-19`).
+4. **`GET /auth/profile` leaks `password` and `refreshToken` hashes.** `JwtStrategy.validate` returns `{ ...user, sub }` (`jwt.strategy.ts:22-25`) — the spread strips the `User` prototype, so `instanceToPlain` in `TransformInterceptor` cannot apply `@Exclude`. Every request's `req.user` carries the hashes; `/auth/profile` returns them verbatim.
+5. **WebSocket `joinChat` has no membership check** (`chats.gateway.ts:82-89`): any authenticated socket can join any `chat:<id>` room and live-read both sides' messages. Gateway CORS is `origin: '*'` (`chats.gateway.ts:17-22`).
+6. **Race conditions.** `orders.apply` is read-check-write without transaction/lock (`orders.service.ts:67-85`) — two influencers can both claim an open order. Application-accept spans 4+ writes (order, match, chat, reject-others) with no transaction (`order-applications.service.ts:135-210`).
+7. **Global `ValidationPipe` lacks `whitelist`/`forbidNonWhitelisted`/`transform`** (`main.ts:18`). Unknown body props pass through; with `Object.assign(profile, profileData)` (`profiles.service.ts:58`) and `UpdateProfileDto.type` being legal, a user can flip their profile type brand↔influencer.
+8. **Collaborations have no ownership checks:** any brand can create a collaboration naming any `brandId`/`influencerId` (`collaborations.controller.ts:18-23`) and `PATCH` any collaboration (`:53-58`). `GET /order-applications/:id` likewise returns anyone's application (`order-applications.controller.ts:63-72`).
+9. **No helmet, no rate limiting** — `@nestjs/throttler` absent; login/register brute-forceable.
+
+**Bugs (non-security):**
+- **Date-range filter bug:** `statistics.service.ts:53-58, 86-87, 140-141, 162-163` assign `where.createdAt` twice — when both `startDate` and `endDate` are given, only `endDate` survives. Needs `Between()`.
+- **Prod realtime chat broken:** frontend builds the socket URL as `io(baseURL + '/chats')` (`frontend/src/services/socket.ts:23`). In prod `baseURL = https://DOMAIN/api`, so the socket.io *namespace* becomes `/api/chats` ≠ gateway namespace `chats` → connection rejected. Works in dev only because the dev baseURL has no path.
+- **`ILike` on an array column:** `users.service.ts:29` applies `ILike('%…%')` to `categories text[]` — Postgres errors at runtime when `GET /users/influencers?category=…` is used.
+- **Broken inverse relation:** `User.orders = OneToMany(Order, order => order.brand)` (`user.entity.ts:70`) but `Order.brand` is a **Profile**. `Order.brandUser` (`order.entity.ts:87`) is an extra never-populated relation.
+- **e2e test fails:** `AppController` unregistered → `GET /` 404 vs expected 200.
+- `JWT_ACCESS_EXPIRATION`/`JWT_REFRESH_EXPIRATION` are read into config (`configuration.ts:16-17`) but TTLs are **hardcoded** `'15m'`/`'7d'` in `auth.service.ts:95,104` and `auth.module.ts:22`; ChatsModule registers a third JwtModule with `expiresIn: '1d'` (`chats.module.ts:19`).
+- `auth.service.deleteAccount` throws bare `Error` → HTTP 500 (`auth.service.ts:139`).
+- 50 `console.*` calls in `backend/src` (entities, IDs logged) instead of Nest `Logger`.
+- Admin maintenance endpoints reach into private fields via `this.chatsService['messagesRepository']` (`chats.controller.ts:48,71,108,152`) — encapsulation break; these one-off repair endpoints belong in scripts.
+- `/auth/refresh` verifies with the shared secret and no token-type claim (`auth.service.ts:60-85`); misuse is blocked only by the bcrypt compare against the stored refresh hash — works, but fragile by construction.
+
+---
+
+## 4. Frontend Audit
+
+**Strengths.** Role-aware routing via `ProtectedRoute` (`App.tsx:36-52`); single axios instance with single-flight refresh rotation and request replay (`services/api.ts:26-122`) — genuinely well built; clean AuthContext; zero TypeScript errors.
 
 **Issues:**
-- 🟡 Refresh tokens verified with the **same** `JWT_SECRET` as access tokens ([auth.service.ts:62](../backend/src/auth/auth.service.ts#L62)). Use a separate refresh secret.
-- 🟡 No rate limiting on `/auth/login` / `/auth/register` (no `@nestjs/throttler`). Brute-force exposure.
-- 🟡 Dead modules (F6) inflate the surface; `messages/` vs `chats/` duplication risks confusion about which is canonical.
-- ⚪ `JWT_ACCESS_EXPIRATION` / `JWT_REFRESH_EXPIRATION` env vars are **not read** — [configuration.ts:13-14](../backend/src/config/configuration.ts#L13) hard-codes `'15m'`/`'7d'`. The compose env values are decorative.
-- ⚪ Global `TransformInterceptor` ("handle circular references") — verify it is not masking serialization bugs.
+- **Tokens in `localStorage`** (`api.ts:15`, `AuthContext.tsx:57-58`) — XSS-readable. Acceptable for a demo; know the httpOnly-cookie answer for the defense.
+- **~17 dead files** (§2) including an entire unused mock-data layer — looks unfinished to any reviewer browsing the repo.
+- **State-management split-brain:** React Query is installed and instantiated (`App.tsx:29`) but most pages do manual `useEffect`+axios+`useState`.
+- **404:** custom `NotFound.tsx` exists but the route renders inline `<div>404 Not Found</div>` (`App.tsx:142`).
+- **Duplicates:** `types/message.ts` vs `types/messages.ts`; `services/match.ts` (dead) vs `services/matching.ts` (live).
+- **No global error boundary** — one render exception whites out the SPA.
+- **Accessibility:** Chakra baseline only; not systematically handled. **Not Verified** against WCAG.
+- **CRA is deprecated** (react-scripts 5, TS 4.9) — fine for a diploma, wrong answer for "production plans".
 
 ---
 
-## 5. Frontend Review
+## 5. Database Audit
 
-**Good:** axios instance with Bearer-token request interceptor; well-implemented single-flight 401 refresh + replay queue ([api.ts:32-122](../frontend/src/services/api.ts#L32)) — matches the "challenge we solved" in the thesis; React Router public/protected routes; react-query; socket.io client.
+Schema comes entirely from TypeORM `synchronize` over 9 entities. The 2 files in `backend/src/migrations/` are old data-repair scripts, not a baseline; no datasource config or `migration:run` script exists — **migrations are effectively absent**.
 
-**Issues:**
-- 🔴 F2 env var name mismatch (prod-breaking).
-- 🟡 Tokens in `localStorage` (XSS-readable). Thesis claims HttpOnly cookie — mismatch and weaker posture.
-- 🟡 Hard-coded fallback `http://localhost:3005`; no frontend `.env.example` documenting `REACT_APP_API_BASE_URL`.
-- ⚪ Dead `mocks/` (F11); empty `frontend/README.md` (F12).
-- ⚪ CRA (`react-scripts`) is in maintenance mode; fine for a diploma, but contradicts the "Vite" claim in the report.
-
----
-
-## 6. Database Review
-
-**Engine:** PostgreSQL 14. **ORM:** TypeORM 0.3, explicit `entities[]` array in [app.module.ts:39-49](../backend/src/app.module.ts#L39) (9 entities). Schema created by `synchronize` in dev.
-
-**Findings:**
-- 🔴 No reliable fresh-prod setup (F3): synchronize off + incomplete migrations.
-- 🟡 Migrations only patch chat/message tables ([1745086101543](../backend/src/migrations/1745086101543-AddChatIdToMessages.ts), [1724111111111](../backend/src/migrations/1724111111111-FixChatMessages.ts)); no migration creates the base schema → DB not reproducible from migrations alone.
-- 🟡 Hand-fix scripts in `backend/src/scripts/` (F9) confirm schema drift resolved manually.
-- ⚪ Duplicate `Message` entity (chats vs messages) — only the chats one is live.
-
-**Verdict:** dev schema works via synchronize; prod schema is not reproducible. For the diploma demo, enabling `synchronize:true` in the demo profile is the pragmatic fix; for "production-ready", generate a baseline migration.
+- **`users` is a god-table** mixing identity with influencer metrics (`followers`, `engagementRate`, `categories`) and brand fields (`industry`, `totalSpent`), all nullable (`user.entity.ts:97-139`), while `profiles` holds the same concepts again. Two sources of truth: matching reads `profiles.categories`, user-search reads `users.categories`.
+- **FK target inconsistency:** `orders.brand_id`/`influencer_id` → **profiles.id**, but `match.brandId`/`influencerId` → **users.id**, and `collaborations.*Id` → users.id. Statistics must bridge both ID spaces (`statistics.service.ts:44-52,85`). The single most confusing design decision in the codebase.
+- **Missing indexes:** none beyond PKs/unique email. Postgres does not auto-index FKs — `orders.status`, `orders.brand_id`, `message."chatId"`, `match(brandId,influencerId)`, `order_application(order,applicant)` all unindexed.
+- **Missing constraints:** no unique on `match(brandId, influencerId)` (uniqueness only app-enforced, racy); no unique pair on `chat(sender,recipient)`; no CHECK on `order.budget`; `order.deadline` is a **string** column (`order.entity.ts:52-53`); `chat.unreadCount` is one counter for both participants (sender's own messages inflate their "unread").
+- **Duplicate KPI storage:** `match.stats` jsonb *plus* `engagementRate`/`conversionRate`/`clickThroughRate` int columns (`match.entity.ts:58-71`).
+- **Seed data:** none committed. A demo needs a committed seed script (one existed only as `/tmp/seed.sh` in a working session).
 
 ---
 
-## 7. Security Review
+## 6. Docker & Deployment Audit
 
-| Sev | Finding | Location |
+**Dev (`docker-compose.yml`):** postgres (healthcheck ✅, port 5435) + backend (target `development`, bind mount, `npm install && build && start:dev`) + frontend (static nginx, port 3000). **Starts from scratch: yes** — schema auto-created via synchronize. Weakness: backend `depends_on` has no `condition: service_healthy` in dev, so first boot may crash-loop until postgres is ready (`restart: always` hides it).
+
+**Prod (`docker-compose.prod.yml`):** env-driven, DB healthcheck gating ✅, nginx TLS + certbot renew loop, DB not port-exposed ✅, CORS scoped to `https://${DOMAIN}` ✅. Remaining risks:
+- **Certbot chicken-and-egg:** `nginx/site.conf:18-19` references `/etc/letsencrypt/live/adpartners.kz/fullchain.pem` at startup; on a fresh VPS nginx exits before certbot can answer the challenge. DEPLOY.md lacks the bootstrap step (`certbot certonly --standalone` first, or a temporary HTTP-only config). **Not Verified** live.
+- **Prod socket.io namespace mismatch** (§3) — realtime chat will not work after deploy even though nginx proxies `/socket.io/` correctly.
+- **No `/health` endpoint and no backend healthcheck** in either compose file.
+- `backend/Dockerfile`: prod stage `npm install --only=production` (deprecated; use `npm ci --omit=dev`) then **copies node_modules from the dev stage anyway** (line 27), defeating the prune; dev-stage `RUN npm run build` is redundant with the compose command.
+- `frontend/` has **no `.dockerignore`** — host `node_modules` enters the build context and `COPY . .` can clobber the freshly installed modules.
+- `version: '3.7'` in dev compose is obsolete.
+- `DB_SYNCHRONIZE=true` default in `.env.prod.example` — deliberate demo bootstrap, but schema-sync-in-prod is the first thing a production reviewer flags.
+
+---
+
+## 7. Environment Variables
+
+Full table: [ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md). Names are **aligned** since `6664b8e`. Remaining: decorative TTL vars (set in compose, hardcoded in code); `JWT_SECRET` dual-read path — `configuration.ts:15` default `'super-secret'` is dead code because `auth.module.ts:20` / `jwt.strategy.ts:15` / `chats.module.ts:17` read the raw env var, and the app **fails to boot** if it's unset outside compose; weak dev defaults committed in `docker-compose.yml:39`.
+
+**No real secrets committed** — dev compose holds placeholders (`postgres/postgres`, `your-secret-key-change-in-production`); `.env.prod.example` holds `CHANGE_ME` values; `frontend/.env` (untracked) holds only `HTTPS=false`.
+
+---
+
+## 8. Security Audit
+
+Severity-tagged, OWASP-mapped findings: [SECURITY_AUDIT.md](SECURITY_AUDIT.md). Tally: **4 Critical · 6 High · 7 Medium · 5 Low.**
+
+Clean areas: SQL injection **not found** (parameterized everywhere, incl. raw `$1` queries); XSS — React escaping, no `dangerouslySetInnerHTML` (grep-verified); CSRF — token-in-header, not cookie-based, so largely N/A; SSRF / file upload — features don't exist.
+
+---
+
+## 9. Documentation Audit
+
+19 markdown files, ~4 800 lines. Per-file disposition: [REPOSITORY_CLEANUP.md](REPOSITORY_CLEANUP.md). Calls:
+- `README.md`, `DEPLOY.md` — keep; accurate post-`6664b8e`, but DEPLOY.md must add the certbot bootstrap step.
+- `docs/diploma/*` (11 files) — thesis working set; keep through the defense. `11_REPOSITORY_ANALYSIS_REPORT.md` duplicates this audit → delete.
+- `REVIEW_FIXES_AND_REFLECTION.md`, `backend/src/scripts/README*.md` — historical one-off notes → delete (with the scripts).
+- `docs/DOCUMENTATION_AUDIT.md` → superseded by REPOSITORY_CLEANUP.md; `docs/DIPLOMA_DEFENSE_BRIEF.md` → superseded by DIPLOMA_DEFENSE.md. Delete both after review.
+- Missing: a real `ARCHITECTURE.md` (seed it from §1); `frontend/README.md` is empty.
+
+---
+
+## 10. Testing Audit
+
+- Backend: 1 unit spec for the unregistered Hello-World controller (passes vacuously) + 1 e2e spec that **fails** (404). Business-logic coverage: **0%**.
+- Frontend: CRA boilerplate `App.test.tsx` only.
+- Untested critical paths: register/login, refresh rotation, order apply/accept state machine, match accept→chat seeding, every ownership guard.
+- Minimum viable for the defense: unit tests for `calculateMatchScore` + `calculateCategoryMatch` (pure functions — and the "algorithm" examiners will probe), auth service specs, one e2e happy path (register→login→create order→apply→accept). See FIX_PLAN Phase 3.
+
+---
+
+## 11. Diploma Defense Readiness
+
+**Strongest:** real two-sided domain; clean NestJS decomposition; working JWT refresh rotation on both ends; real-time chat; prod compose with TLS; Swagger; unusually thorough thesis docs.
+
+**Weakest (examiners will hit these):** zero meaningful tests; `synchronize` instead of migrations; users/profiles duplication + mixed FK targets; dead modules and stray root files visible in 30 seconds of browsing; matching = Jaccard overlap (defensible — own it as deliberate simplicity); live security holes if anyone probes Swagger during the demo.
+
+Questions, answers, and demo script: [DIPLOMA_DEFENSE.md](DIPLOMA_DEFENSE.md).
+
+---
+
+## 12. Scores & Verdict
+
+| Area | Score | Rationale |
 |---|---|---|
-| 🟠 High | Wide-open CORS (`enableCors()` no allowlist) | [main.ts:11](../backend/src/main.ts#L11) |
-| 🟠 High | No rate limiting on auth endpoints | `auth/` |
-| 🟡 Med | Access tokens in `localStorage` (XSS exfiltration) | [api.ts](../frontend/src/services/api.ts) |
-| 🟡 Med | Refresh + access share one JWT secret | [auth.service.ts:62](../backend/src/auth/auth.service.ts#L62) |
-| 🟡 Med | Weak default secrets baked in dev compose (`your-secret-key-change-in-production`) and config fallbacks (`'super-secret'`, `postgres/postgres`) | [docker-compose.yml:39](../docker-compose.yml#L39), [configuration.ts:12](../backend/src/config/configuration.ts#L12) |
-| 🟢 Low | `JWT_*_EXPIRATION` env not actually read (hard-coded) | [configuration.ts:13-14](../backend/src/config/configuration.ts#L13) |
+| Architecture | 6/10 | Clean module layout undermined by dual ID spaces, dead modules, duplicated assignment flows |
+| Backend | 5/10 | Solid framework usage; authz gaps, races, §3 bugs |
+| Frontend | 5/10 | Works, type-checks; dead code, split state management, no error boundary |
+| Database | 4/10 | God-table, mixed FK targets, no migrations/indexes/constraints |
+| Security | 3/10 | 4 criticals — all cheap to fix |
+| DevOps | 6/10 | Prod compose with TLS is above diploma average; certbot bootstrap + healthchecks missing |
+| Documentation | 7/10 | Extensive, mostly accurate, needs dedup |
+| Production readiness | 4/10 | Would deploy, then break (socket ns, certbot, no monitoring/backups) |
+| Diploma readiness | 7/10 | Demoable today on dev compose; comfortably defensible after FIX_PLAN Phases 1–2 |
 
-**Positives:** bcrypt hashing ✅, refresh tokens stored hashed ✅, WS handshake JWT-validated ✅, DTO validation ✅, parameterized TypeORM queries ✅, secrets git-ignored via `.env` ✅, `node_modules` not committed ✅.
-
-No Critical-severity *security* exploit found (the 🔴 items are deployment/correctness, not vulnerabilities).
-
----
-
-## 8. Scores & Verdict
-
-See [DIPLOMA_DEFENSE_BRIEF.md](DIPLOMA_DEFENSE_BRIEF.md) and the chat summary. Headline: a working dev build with genuinely good auth engineering, undermined by prod-config breakage (F1–F3) and a thesis that documents features (MinIO/uploads/Vite) absent from the code.
+**Verdict: Demo Ready.** Not production-ready. **Diploma Ready after FIX_PLAN Phase 1 (≈1 day) + Phase 2 (≈1–2 days).**

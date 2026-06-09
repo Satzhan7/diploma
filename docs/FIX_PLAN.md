@@ -1,135 +1,78 @@
-# Fix Plan (proposed — no code changed yet)
+# Fix Plan — Prioritized Roadmap
 
-Ordered by severity. Each item: problem → root cause → files → effort → exact proposed change. IDs map to [AUDIT.md](AUDIT.md). Pick the **demo-fast** path for the defense; the **production** path for a clean portfolio repo.
+**Date:** 2026-06-10. Supersedes the 2026-06-09 plan (its C1/C2/C3 env+compose fixes shipped in commit `6664b8e` and are removed here). IDs reference [AUDIT.md](AUDIT.md) and [SECURITY_AUDIT.md](SECURITY_AUDIT.md).
 
----
-
-## Critical — blocks running / deployment
-
-### C1 (F1) — Prod backend can't authenticate to Postgres
-**Root cause:** env var name mismatch. App reads `DB_USERNAME`/`DB_PASSWORD`/`DB_PORT`; compose provides `DATABASE_USERNAME`/`DATABASE_PASSWORD`/`DATABASE_PORT`.
-**Files:** `docker-compose.yml`, `docker-compose.prod.yml` (or `backend/src/config/configuration.ts`).
-**Effort:** 10 min.
-**Fix (align compose to the app — preferred):**
-```diff
-# docker-compose.prod.yml (and docker-compose.yml)
--      - DATABASE_PORT=5432
--      - DATABASE_USERNAME=${DB_USER}
--      - DATABASE_PASSWORD=${DB_PASSWORD}
-+      - DB_PORT=5432
-+      - DB_USERNAME=${DB_USER}
-+      - DB_PASSWORD=${DB_PASSWORD}
-```
-Apply the same rename in `docker-compose.yml` (dev: `DB_USERNAME=postgres`, `DB_PASSWORD=postgres`). After this the app no longer relies on lucky defaults.
-
-### C2 (F2) — Prod frontend calls localhost instead of the API
-**Root cause:** code reads `REACT_APP_API_BASE_URL`; build passes `REACT_APP_API_URL`.
-**Files:** `frontend/Dockerfile`, `docker-compose.prod.yml` (or `frontend/src/services/api.ts`).
-**Effort:** 5 min.
-**Fix (rename the build arg to match code):**
-```diff
-# frontend/Dockerfile
--ARG REACT_APP_API_URL
--ENV REACT_APP_API_URL=${REACT_APP_API_URL}
-+ARG REACT_APP_API_BASE_URL
-+ENV REACT_APP_API_BASE_URL=${REACT_APP_API_BASE_URL}
-```
-```diff
-# docker-compose.prod.yml  (frontend.build.args)
--        REACT_APP_API_URL: https://${DOMAIN}/api
-+        REACT_APP_API_BASE_URL: https://${DOMAIN}/api
-```
-Note: services call paths like `/auth/login` — with base `https://domain/api`, nginx strips `/api` (`proxy_pass http://backend:3005/;`), so `/api/auth/login` → backend `/auth/login`. ✅ consistent.
-
-### C3 (F3) — Fresh prod DB has no schema
-**Root cause:** `synchronize:false` in prod, no base migration, no `migrationsRun`.
-**Files:** `backend/src/config/configuration.ts`, `backend/src/app.module.ts`.
-**Effort:** demo path 5 min · production path 1–2 h.
-**Demo-fast fix** (acceptable for diploma): force synchronize on for the demo DB.
-```diff
-# configuration.ts
--    synchronize: process.env.NODE_ENV !== 'production',
-+    synchronize: process.env.DB_SYNCHRONIZE === 'true'
-+      ? true
-+      : process.env.NODE_ENV !== 'production',
-```
-then set `DB_SYNCHRONIZE=true` in prod compose for the demo only.
-**Production fix:** add TypeORM DataSource + CLI, run `migration:generate` against an empty DB to capture the full baseline, register migrations + `migrationsRun: true` in `app.module.ts`, keep `synchronize:false`.
+Legend: **P** priority (P0 worst) · **Impact** what breaks if skipped · **Cx** complexity (S/M/L) · **Est** effort.
 
 ---
 
-## High — core functionality / deployment completeness
+## Phase 0 — Commit what's already fixed (5 min)
 
-### H1 (F4) — `docker compose up --build` does not start the UI
-**Root cause:** dev compose omits a frontend service; thesis claims one-command full stack.
-**Files:** `docker-compose.yml`.
-**Effort:** 20 min.
-**Fix:** add a frontend service, OR update README/thesis to state the UI runs via `cd frontend && npm start`. Adding the service makes the "one command" claim true:
-```yaml
-  frontend:
-    build:
-      context: ./frontend
-      args:
-        REACT_APP_API_BASE_URL: http://localhost:3005
-    ports: ["3000:80"]
-    depends_on: [backend]
-    networks: [app-network]
+Two uncommitted working-tree fixes from the previous session are part of the security story — commit them first:
+- `backend/src/common/interceptors/transform.interceptor.ts` (proper `instanceToPlain` serialization)
+- `frontend/src/pages/Register.tsx` (surface backend 409 message)
+
+```bash
+git add backend/src/common/interceptors/transform.interceptor.ts frontend/src/pages/Register.tsx
+git commit -m "fix: class-transformer serialization + register error surface"
 ```
 
-### H2 (F5) — MinIO / uploads / Gemini documented but absent
-**Root cause:** thesis + slides describe features never built.
-**Files:** documentation only (`docs/diploma/*`, thesis PDF source).
-**Effort:** 30 min (docs) — **do not fabricate code under time pressure**.
-**Fix:** Either (a) **scope-correct the thesis**: move MinIO/uploads to "Future Work / not implemented" exactly as Gemini already is (lowest risk, honest, defensible), or (b) implement a minimal `UploadsModule` (multer + local disk, or a real MinIO container) if time allows. Recommendation for defense: **(a)** — the report already models honest scoping for Gemini; mirror it for MinIO. Prevents the worst defense outcome (examiner asks to demo a non-existent feature).
+---
 
-### H3 (Security) — wide-open CORS + no auth rate limiting
-**Files:** `backend/src/main.ts`, `backend/src/app.module.ts`.
-**Effort:** 30 min.
-**Fix:**
-```diff
-# main.ts
--  app.enableCors();
-+  app.enableCors({ origin: process.env.CORS_ORIGIN?.split(',') ?? true, credentials: true });
-```
-Add `@nestjs/throttler` `ThrottlerModule` globally; tighter limit on `auth` routes.
+## Phase 1 — Critical security fixes (≈1 day)
+
+| # | Task | P | Impact | Cx | Est | Files |
+|---|---|---|---|---|---|---|
+| 1.1 | Block ADMIN self-registration: `@IsIn(['brand','influencer'])` on `RegisterDto.role` | P0 | Anyone becomes admin | S | 15 min | `auth/dto/register.dto.ts` |
+| 1.2 | Stop hash leak: return `{ id: user.id, sub, email: user.email, role: user.role, name: user.name }` from `JwtStrategy.validate` | P0 | Password/refresh hashes served to clients | S | 30 min | `auth/strategies/jwt.strategy.ts` (verify `GetUser`/`GetCurrentUser` consumers still get `id`/`sub`/`role`) |
+| 1.3 | Ownership on `DELETE /users/:id` (self or ADMIN); delete or ADMIN-gate `POST /users` | P0 | Anyone deletes/mints accounts | S | 30 min | `users/users.controller.ts` |
+| 1.4 | Harden ValidationPipe: `new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })`; remove `type` from `UpdateProfileDto` | P0 | Mass assignment, profile-type flips | S | 30 min + smoke-test forms | `main.ts`, `profiles/dto/update-profile.dto.ts` |
+| 1.5 | WS `joinChat` membership check (load chat, compare userId from `socketUserMap`); CORS from env | P1 | Live chat eavesdropping | M | 1–2 h | `chats/chats.gateway.ts` |
+| 1.6 | Collaborations ownership: force `brandId = req.user.id` on create; participant checks on findOne/update | P1 | IDOR | S | 1 h | `collaborations/collaborations.controller.ts`, `.service.ts` |
+| 1.7 | Application-read ownership: applicant or order-owning brand only | P1 | Competitor bids visible | S | 30 min | `orders/order-applications.service.ts:85` |
+| 1.8 | Add `@nestjs/throttler` (global, strict on `/auth/*`) + `helmet` | P1 | Brute force | S | 1 h | `app.module.ts`, `main.ts`, `backend/package.json` |
+
+## Phase 2 — Stability / functional bugs (≈1–2 days)
+
+| # | Task | P | Impact | Cx | Est | Files |
+|---|---|---|---|---|---|---|
+| 2.1 | Fix prod socket namespace: connect to origin with explicit `path`, keep namespace `/chats` (parse `baseURL` → `io(origin + '/chats', { path: '/socket.io' })`) | P1 | Realtime chat dead in prod | S | 1 h | `frontend/src/services/socket.ts` |
+| 2.2 | Statistics date range: use `Between(from, to)` when both bounds set (4 sites) | P1 | Wrong dashboard numbers | S | 30 min | `statistics/statistics.service.ts:53-58,86-87,140-141,162-163` |
+| 2.3 | Fix `ILike` on `categories text[]`: use `:cat = ANY(categories)` or `&&` array overlap | P1 | 500 on influencer category filter | S | 30 min | `users/users.service.ts:29` |
+| 2.4 | Wrap order-claim and application-accept in transactions (`dataSource.transaction`), pessimistic lock on order row | P2 | Double-assignment race | M | 3–4 h | `orders/orders.service.ts`, `order-applications.service.ts` |
+| 2.5 | Fix e2e: register `AppController` as `/health` (health JSON) or delete controller+spec; add compose healthcheck on it | P2 | Failing suite; no healthcheck | S | 1 h | `app.module.ts`, `app.controller.ts`, `test/app.e2e-spec.ts`, compose files |
+| 2.6 | Single JWT config: TTLs from `ConfigService` in auth module/service; remove ChatsModule's own `JwtModule.registerAsync` (import AuthModule's) | P2 | Three competing TTL sources | S | 1 h | `auth/auth.module.ts`, `auth/auth.service.ts`, `chats/chats.module.ts` |
+| 2.7 | Replace 50 `console.*` with Nest `Logger`; drop entity dumps | P2 | PII in logs, noise | S | 1–2 h | grep `console.` in `backend/src` |
+| 2.8 | `deleteAccount`: throw `InternalServerErrorException` instead of bare `Error` | P3 | Raw 500 | S | 10 min | `auth/auth.service.ts:139` |
+| 2.9 | Remove broken `User.orders` inverse and unused `Order.brandUser` | P3 | Confusing model | S | 30 min | `users/entities/user.entity.ts:69-71`, `orders/entities/order.entity.ts:87-88` |
+
+## Phase 3 — Production readiness (≈2–3 days, optional before defense)
+
+| # | Task | P | Impact | Cx | Est |
+|---|---|---|---|---|---|
+| 3.1 | Real migrations: TypeORM datasource + generated baseline; `DB_SYNCHRONIZE=false` in prod | P2 | Schema drift risk | M | 0.5 d |
+| 3.2 | Indexes: `orders(status)`, `orders(brand_id)`, `message("chatId")`, `match(brandId,influencerId)` + unique, `order_application(orderId,applicantId)` + unique | P2 | Scale + closes race window | S | 2 h |
+| 3.3 | Tests: units for `calculateMatchScore`/`calculateCategoryMatch` + AuthService; one e2e happy path (register→login→order→apply→accept) | P1 (defense) | "0% coverage" criticism | M | 1 d |
+| 3.4 | Backend Dockerfile: `npm ci --omit=dev`, stop copying node_modules from dev stage; add `frontend/.dockerignore` (`node_modules`, `build`) | P3 | Image bloat | S | 1 h |
+| 3.5 | DEPLOY.md: add certbot bootstrap (`certbot certonly --standalone` before first nginx start) | P2 | Fresh deploy fails | S | 30 min |
+| 3.6 | nginx security headers (`X-Frame-Options`, `X-Content-Type-Options`, basic CSP); pagination on list endpoints | P3 | Hardening | M | 0.5 d |
+| 3.7 | Commit a seed script (`backend/src/scripts/seed.ts` + npm script): 2 brands, 4 influencers, orders, applications, one chat | P1 (demo) | Empty demo screens | S | 2 h |
+
+## Phase 4 — Repository & documentation cleanup (≈0.5 day)
+
+Execute [REPOSITORY_CLEANUP.md](REPOSITORY_CLEANUP.md): delete dead backend modules (`brands/`, `influencers/`, `messages/`), stray root `src/` + root `package.json`/lock, yarn locks, ~17 dead frontend files, `backend/src/scripts/` repair files; merge/remove superseded docs (`DOCUMENTATION_AUDIT.md`, `DIPLOMA_DEFENSE_BRIEF.md`, `REVIEW_FIXES_AND_REFLECTION.md`, `docs/diploma/11_*`); fill `frontend/README.md`; add `docs/ARCHITECTURE.md` from AUDIT §1 diagrams. **Verify builds after each deletion batch** (`nest build`, `tsc --noEmit`).
+
+## Phase 5 — Diploma defense preparation (≈1 day)
+
+| # | Task | Est |
+|---|---|---|
+| 5.1 | Run the demo script in [DIPLOMA_DEFENSE.md](DIPLOMA_DEFENSE.md) end-to-end twice on a clean `docker-compose up` | 2 h |
+| 5.2 | Drill the examiner question list (same doc), esp. tests/migrations/matching algorithm | 2 h |
+| 5.3 | Record a backup screen-capture of the happy path in case live demo fails | 1 h |
+| 5.4 | Export architecture + ERD diagrams (AUDIT §1, `docs/diploma/05_DATABASE_DOCUMENTATION.md`) | 1 h |
 
 ---
 
-## Medium — maintainability / clarity
+## Minimum to defend safely
 
-### M1 (F6) — remove dead modules
-Delete unused `backend/src/brands/`, `backend/src/influencers/`, `backend/src/messages/` (verified not imported in `app.module.ts`). Keep `chats/` as canonical messaging. **Effort:** 20 min. Removes duplicate `Message` entity confusion.
-
-### M2 (F7) — remove stray root `src/` and root `package.json`
-Delete `src/matching/`, `src/orders/`, root `package.json`/`package-lock.json` (real apps live in `backend/` and `frontend/`). **Effort:** 5 min.
-
-### M3 (F9) — retire hand-fix scripts
-Fold `backend/src/scripts/*` into a `migrations/` baseline (C3 production path) or `archive/`. **Effort:** folded into C3.
-
-### M4 — separate refresh-token secret
-Add `JWT_REFRESH_SECRET`; sign/verify refresh tokens with it. **Files:** `auth.service.ts`, `configuration.ts`. **Effort:** 30 min.
-
-### M5 — actually read JWT expiration env vars
-`configuration.ts` hard-codes `'15m'`/`'7d'`. Read `JWT_ACCESS_EXPIRATION`/`JWT_REFRESH_EXPIRATION` or drop them from compose. **Effort:** 10 min.
-
----
-
-## Low — polish
-
-- **L1 (F10):** `backend/Dockerfile` `EXPOSE 3000` → `EXPOSE 3005`.
-- **L2 (F11):** delete `frontend/src/mocks/`.
-- **L3 (F12):** write `frontend/README.md` (run/build/env), or delete it.
-- **L4:** add `frontend/.env.example` documenting `REACT_APP_API_BASE_URL`.
-- **L5:** move tokens to HttpOnly cookies to match the thesis claim (larger change; optional).
-
----
-
-## Suggested commit grouping (when you apply)
-1. `fix(docker): align DB + frontend env var names, add frontend service` (C1, C2, H1, L1)
-2. `fix(db): make prod schema reproducible` (C3)
-3. `chore: remove dead modules and stray root files` (M1, M2, L2)
-4. `feat(security): scope CORS, add rate limiting, split refresh secret` (H3, M4, M5)
-5. `docs: scope-correct MinIO/uploads/Vite claims` (H2)
-6. `docs: frontend README + .env.example` (L3, L4)
-
-All on a branch off `main` (e.g. `audit/fixes`), PR-reviewed.
+Phase 0 + Phase 1 items 1.1–1.4 + 3.7 (seed data) + 5.1–5.3; add 2.1 only if demoing the prod deployment. Roughly **one working day**.
