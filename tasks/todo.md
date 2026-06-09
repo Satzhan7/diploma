@@ -1,50 +1,53 @@
-# Audit Fix Implementation — 2026-06-10
+# Audit Fix Implementation — 2026-06-10 — COMPLETE
 
-Branch: audit/fixes. Source: docs/FIX_PLAN.md, docs/SECURITY_AUDIT.md, docs/REPOSITORY_CLEANUP.md.
+Branch: audit/fixes. All phases done, all verification green.
 
-## Phase 0 — commit pending
-- [ ] Commit transform.interceptor.ts + Register.tsx
-- [ ] Commit refreshed audit docs (separate commit)
+## Phase 0 — commit pending ✅
+- [x] transform.interceptor.ts + Register.tsx (eb80d57)
+- [x] refreshed audit docs (d6c6261)
 
-## Phase 1 — critical security (nest build after each)
-- [ ] 1.1 RegisterDto: @IsIn(['brand','influencer'])
-- [ ] 1.2 jwt.strategy.validate → minimal claims; check GetCurrentUser/GetUser consumers
-- [ ] 1.3 DELETE /users/:id ownership; remove POST /users
-- [ ] 1.4 ValidationPipe whitelist+forbidNonWhitelisted+transform; drop type from UpdateProfileDto
-- [ ] 1.5 WS joinChat membership check; gateway CORS from env
-- [ ] 1.6 Collaborations: force brandId=caller on create; ownership on findOne/update
-- [ ] 1.7 order-applications findOne ownership
-- [ ] 1.8 throttler (global 100/min, auth 10/min) + helmet
+## Phase 1 — critical security ✅ (0042c84)
+- [x] 1.1 RegisterDto @IsIn([BRAND, INFLUENCER]) — admin register returns 400 (verified live)
+- [x] 1.2 jwt.strategy minimal claims {id,sub,email,role,name} — /auth/profile has NO password/refreshToken (verified live)
+- [x] 1.3 DELETE /users/:id ownership (403 verified live); POST /users removed
+- [x] 1.4 ValidationPipe whitelist+forbidNonWhitelisted+transform (unknown field → 400 verified); type removed from UpdateProfileDto
+- [x] 1.5 WS joinChat membership check via chatsService.findOne; gateway CORS from CORS_ORIGIN
+- [x] 1.6 collaborations: brandId forced to caller (non-admin); assertParticipant on findOne/update
+- [x] 1.7 order-applications findOne requester check (applicant/order brand/admin)
+- [x] 1.8 ThrottlerModule global 100/min + APP_GUARD; @Throttle 10/min on AuthController; helmet()
 
-## Phase 2 — stability
-- [ ] 2.1 socket.ts: origin-only URL + explicit path
-- [ ] 2.2 statistics Between() ×4 sites
-- [ ] 2.3 ArrayContains for categories filter
-- [ ] 2.4 transactions: order claim (pessimistic lock) + accept-application
-- [ ] 2.5 /health endpoint + AppController re-register + e2e update + compose healthcheck
-- [ ] 2.6 JWT TTLs from ConfigService; ChatsModule reuse auth JWT config
-- [ ] 2.7 console.* → Logger; remove entity dumps
+## Phase 2 — stability ✅ (ee43c75)
+- [x] 2.1 socket.ts uses URL(...).origin + path:/socket.io — prod namespace stays /chats
+- [x] 2.2 statistics applyDateRange helper with Between (4 sites) — verified: in-range=6 orders, out-of-range=0
+- [x] 2.3 ArrayContains for categories text[] — ?category=Beauty returns 200 (was 500)
+- [x] 2.4 transactions: orders.apply (pessimistic_write lock, ConflictException); accept-application atomic (order+app+match+reject-others), chat seed outside tx by design
+- [x] 2.5 GET /health registered; e2e spec passes in container; compose healthcheck + depends_on healthy
+- [x] 2.6 JWT TTLs from config (jwt.accessTokenExpiration/refreshTokenExpiration); AuthModule exports JwtModule; ChatsModule reuses it (was signing with '1d')
+- [x] 2.7 console.* → Nest Logger in all live files; entity dumps removed; deleteAccount → InternalServerErrorException
 
-## Phase 3 — cleanup (build check after each batch)
-- [ ] Batch 1: root src/, root package.json+lock
-- [ ] Batch 2: backend brands/ influencers/ messages/ scripts/(keep dir for seed) old migrations, yarn.lock, GetUser→GetCurrentUser consolidation
-- [ ] Batch 3: frontend dead files, types merge → chat.ts, yarn.lock
-- [ ] Batch 4: markdown dedup
+## Phase 3 — cleanup ✅ (510f70b, 590d1b9, d34e50b, 7d9c44c)
+- [x] Batch 1: root src/ strays, root package.json+lock
+- [x] Batch 2: brands/, influencers/, messages/, scripts/(old), migrations/, yarn.lock, get-user.decorator (chats.controller migrated to GetCurrentUser), app.service.ts + app.controller.spec.ts removed
+- [x] Batch 3: 14 dead frontend files + mocks/ + yarn.lock + logo.svg + App.css; types/messages.ts → types/chat.ts
+- [x] Batch 4: 4 superseded markdown docs
 
-## Phase 3.7 — seed script
-- [ ] backend/src/scripts/seed.ts + npm run seed
+## Phase 3.7 — seed ✅ (c857211)
+- [x] backend/src/scripts/seed.ts + `npm run seed` — verified in container: 6 users, 3 orders, 3 applications, accept chain (match+chat+welcome message+auto-reject). Re-runnable (users reused). Added null-server guards to gateway emits.
+- Demo logins: brand1@demo.kz / inf1..4@demo.kz, password demo1234.
 
-## Verification
-- [ ] nest build clean
-- [ ] tsc --noEmit clean
-- [ ] docker-compose up -d clean start
-- [ ] seed populates
-- [ ] admin register → 400
-- [ ] /auth/profile no hashes
-- [ ] DELETE other user → 403
-- [ ] category filter no 500
-- [ ] stats date filters correct
-- [ ] commit history clean
+## Verification ✅
+- [x] nest build — exit 0
+- [x] tsc --noEmit (frontend) — exit 0
+- [x] docker compose up — postgres healthy, backend serving, /health ok
+- [x] seed populates (db counts verified via psql)
+- [x] admin register → 400
+- [x] unknown body field → 400
+- [x] /auth/profile fields: [email,id,name,role,sub] — no hashes
+- [x] DELETE other user → 403
+- [x] category filter → 200
+- [x] stats Between filter correct
+- [x] e2e /health test passes
+- [x] clean commit history (9 descriptive commits)
 
-## Results
-(fill at end)
+## Not done (documented, post-defense)
+- FIX_PLAN 3.1 migrations baseline, 3.2 indexes, 3.3 test suite, 3.4 Dockerfile slimming, 3.5 DEPLOY.md certbot step, 3.6 nginx headers/pagination.
