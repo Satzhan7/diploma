@@ -32,15 +32,16 @@ services:
       - "3005:3005"
     environment:
       - DB_HOST=postgres
-      - DATABASE_PORT=5432
-      - DATABASE_USERNAME=postgres
-      - DATABASE_PASSWORD=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
       - DB_NAME=influencer_platform
       - JWT_SECRET=your-secret-key-change-in-production
       - JWT_ACCESS_EXPIRATION=15m
       - JWT_REFRESH_EXPIRATION=7d
       - PORT=3005
       - NODE_ENV=development
+      - CORS_ORIGIN=http://localhost:3000
     volumes:
       - ./backend:/usr/src/app
       - /usr/src/app/node_modules
@@ -49,6 +50,21 @@ services:
     networks:
       - app-network
     command: sh -c "npm install && npm run build && npm run start:dev"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_BASE_URL: http://localhost:3005
+    container_name: influencer_platform_frontend
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
 
 networks:
   app-network:

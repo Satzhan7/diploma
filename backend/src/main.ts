@@ -7,8 +7,12 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
-  // Enable CORS
-  app.enableCors();
+  // Enable CORS. In production, restrict to CORS_ORIGIN (comma-separated list).
+  // When CORS_ORIGIN is unset (dev/demo) fall back to reflecting any origin.
+  const corsOrigin = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+    : true;
+  app.enableCors({ origin: corsOrigin, credentials: true });
   
   // Enable validation pipes
   app.useGlobalPipes(new ValidationPipe());

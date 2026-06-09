@@ -26,14 +26,16 @@ services:
     environment:
       - NODE_ENV=production
       - DB_HOST=postgres
-      - DATABASE_PORT=5432
-      - DATABASE_USERNAME=${DB_USER}
-      - DATABASE_PASSWORD=${DB_PASSWORD}
+      - DB_PORT=5432
+      - DB_USERNAME=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
+      - DB_SYNCHRONIZE=${DB_SYNCHRONIZE:-true}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_ACCESS_EXPIRATION=15m
       - JWT_REFRESH_EXPIRATION=7d
       - PORT=3005
+      - CORS_ORIGIN=https://${DOMAIN}
     depends_on:
       postgres:
         condition: service_healthy
@@ -44,7 +46,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        REACT_APP_API_URL: https://${DOMAIN}/api
+        REACT_APP_API_BASE_URL: https://${DOMAIN}/api
     container_name: adpartners_frontend
     restart: always
     networks: [app]

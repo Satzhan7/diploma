@@ -26,6 +26,6 @@ RUN npm install --only=production
 COPY --from=development /usr/src/app/dist ./dist
 COPY --from=development /usr/src/app/node_modules ./node_modules
 
-EXPOSE 3000
+EXPOSE 3005
 
 CMD ["node", "dist/main"]
