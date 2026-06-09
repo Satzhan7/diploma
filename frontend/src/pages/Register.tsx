@@ -59,10 +59,12 @@ export const Register: React.FC = () => {
         isClosable: true,
       });
       navigate('/login');
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'Registration failed',
-        description: error instanceof Error ? error.message : 'An error occurred',
+        description:
+          error?.response?.data?.message ||
+          (error instanceof Error ? error.message : 'An error occurred'),
         status: 'error',
         duration: 5000,
         isClosable: true,
