@@ -21,7 +21,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import socketService from '../services/socket';
 import { ChevronLeftIcon } from '@chakra-ui/icons';
-import { Conversation, Message } from '../types/messages';
+import { Conversation, Message } from '../types/chat';
 import { User } from '../types/user';
 
 // Helper function to extract user ID safely
