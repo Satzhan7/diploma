@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   BadRequestException,
   ConflictException,
@@ -25,6 +26,8 @@ export interface UpdateMatchStatsDto {
 
 @Injectable()
 export class MatchingService {
+  private readonly logger = new Logger(MatchingService.name);
+
   constructor(
     @InjectRepository(Match)
     private readonly matchRepository: Repository<Match>,
@@ -151,7 +154,7 @@ export class MatchingService {
       );
     } catch (error) {
       // Acceptance must succeed even if the chat seed fails.
-      console.error('Failed to seed chat after match acceptance:', (error as Error).message);
+      this.logger.error(`Failed to seed chat after match acceptance: ${(error as Error).message}`);
     }
 
     return updatedMatch;

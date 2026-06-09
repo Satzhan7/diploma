@@ -1,5 +1,6 @@
-import { Injectable, UnauthorizedException, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, UnauthorizedException, ConflictException, NotFoundException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -10,10 +11,13 @@ import { UserRole } from '../users/entities/user.entity';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly profilesService: ProfilesService,
+    private readonly configService: ConfigService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -85,6 +89,8 @@ export class AuthService {
   }
 
   private async generateTokens(userId: string, email: string) {
+    // TTLs come from configuration (JWT_ACCESS_EXPIRATION / JWT_REFRESH_EXPIRATION)
+    // — previously hardcoded in three different places (AUDIT §3).
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
         {
@@ -92,7 +98,7 @@ export class AuthService {
           email,
         },
         {
-          expiresIn: '15m',
+          expiresIn: this.configService.get('jwt.accessTokenExpiration', '15m'),
         },
       ),
       this.jwtService.signAsync(
@@ -101,7 +107,7 @@ export class AuthService {
           email,
         },
         {
-          expiresIn: '7d',
+          expiresIn: this.configService.get('jwt.refreshTokenExpiration', '7d'),
         },
       ),
     ]);
@@ -128,15 +134,15 @@ export class AuthService {
         }
       } catch (profileError) {
         // Profile not found is okay, we can proceed with user deletion
-        console.log(`Profile not found for user ${userId}, proceeding with user deletion`);
+        this.logger.warn(`Profile not found for user ${userId}, proceeding with user deletion`);
       }
-      
+
       // Then delete the user
       await this.usersService.remove(userId);
-      
+
       return { message: 'Account successfully deleted' };
     } catch (error) {
-      throw new Error(`Failed to delete account: ${error.message}`);
+      throw new InternalServerErrorException(`Failed to delete account: ${error.message}`);
     }
   }
 } 

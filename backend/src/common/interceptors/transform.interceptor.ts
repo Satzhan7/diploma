@@ -1,10 +1,12 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import { Injectable, Logger, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
 export class TransformInterceptor implements NestInterceptor {
+  private readonly logger = new Logger(TransformInterceptor.name);
+
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
       map(data => {
@@ -19,7 +21,7 @@ export class TransformInterceptor implements NestInterceptor {
           return instanceToPlain(data, { enableCircularCheck: true });
         } catch (error) {
           // If serialization fails, return the original data
-          console.warn('Error in transform interceptor:', error.message);
+          this.logger.warn(`Error in transform interceptor: ${error.message}`);
           return data;
         }
       }),

@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not } from 'typeorm';
+import { Repository, Not, DataSource } from 'typeorm';
 import { OrderApplication, ApplicationStatus } from './entities/order-application.entity';
 import { Order, OrderStatus } from './entities/order.entity';
 import { CreateOrderApplicationDto } from './dto/create-order-application.dto';
@@ -12,6 +12,8 @@ import { Match, MatchStatus } from '../matching/entities/match.entity';
 
 @Injectable()
 export class OrderApplicationsService {
+  private readonly logger = new Logger(OrderApplicationsService.name);
+
   constructor(
     @InjectRepository(OrderApplication)
     private readonly orderApplicationRepository: Repository<OrderApplication>,
@@ -21,6 +23,7 @@ export class OrderApplicationsService {
     private readonly matchRepository: Repository<Match>,
     private readonly profilesService: ProfilesService,
     private readonly chatsService: ChatsService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(
@@ -28,9 +31,7 @@ export class OrderApplicationsService {
     userId: string, 
     createOrderApplicationDto: CreateOrderApplicationDto
   ): Promise<OrderApplication> {
-    console.log('Creating application with data:', { orderId, userId, dto: createOrderApplicationDto });
-    
-    const order = await this.orderRepository.findOne({ 
+    const order = await this.orderRepository.findOne({
       where: { id: orderId },
       relations: ['brand', 'brand.user'] 
     });
@@ -38,8 +39,6 @@ export class OrderApplicationsService {
     if (!order) {
       throw new NotFoundException(`Order with ID ${orderId} not found`);
     }
-
-    console.log('Found order:', { id: order.id, status: order.status });
 
     if (order.status !== OrderStatus.OPEN) {
       throw new BadRequestException('This order is not open for applications');
@@ -64,11 +63,9 @@ export class OrderApplicationsService {
       status: ApplicationStatus.PENDING
     });
 
-    console.log('Created application object:', application);
-
     const savedApplication = await this.orderApplicationRepository.save(application);
-    console.log('Saved application:', savedApplication);
-    
+    this.logger.log(`Application ${savedApplication.id} created for order ${orderId}`);
+
     return savedApplication;
   }
 
@@ -146,83 +143,89 @@ export class OrderApplicationsService {
 
     // Update the application
     Object.assign(application, updateOrderApplicationDto);
-    
-    // If brand accepts an application, update the order status and assign the influencer
+
+    // If brand accepts an application: order assignment, application save,
+    // match upsert and reject-others are one atomic transaction with a row
+    // lock on the order (SECURITY_AUDIT M2). The chat seed stays outside the
+    // transaction — it is best-effort and must not roll back an acceptance.
     if (userRole === UserRole.BRAND && updateOrderApplicationDto.status === ApplicationStatus.ACCEPTED) {
-      const order = await this.orderRepository.findOne({ 
-        where: { id: application.order.id },
-        relations: ['brand', 'brand.user'] 
-      });
-      
-      if (!order) {
-        throw new NotFoundException(`Order with ID ${application.order.id} not found`);
-      }
-      
-      if (order.status !== OrderStatus.OPEN) {
-        throw new BadRequestException('This order is not open for applications');
-      }
-      
-      // Получаем профиль инфлюенсера
       const applicantProfile = await this.profilesService.findByUserId(application.applicant.id);
       if (!applicantProfile) {
         throw new NotFoundException(`Profile for applicant with ID ${application.applicant.id} not found`);
       }
-      
-      console.log(`Updating order ${order.id} to assign influencer ${applicantProfile.id}`);
-      
-      // Update the order with proper profile reference
-      order.status = OrderStatus.IN_PROGRESS;
-      order.influencerId = applicantProfile.id;
-      await this.orderRepository.save(order);
 
-      const brandUserId = order.brand.user.id;
-      const influencerUserId = application.applicant.id;
-
-      // Create or reuse a Match record so the matching lifecycle and dashboards
-      // stay in sync with the order/application flow. Idempotent on (brandId, influencerId).
-      try {
-        const existingMatch = await this.matchRepository.findOne({
-          where: [
-            { brandId: brandUserId, influencerId: influencerUserId },
-            { brandId: influencerUserId, influencerId: brandUserId },
-          ],
-        });
-
-        if (!existingMatch) {
-          const match = this.matchRepository.create({
-            brandId: brandUserId,
-            influencerId: influencerUserId,
-            status: MatchStatus.ACCEPTED,
-            name: order.title,
-            category: order.category,
+      const { brandUserId, influencerUserId, orderTitle } = await this.dataSource.transaction(
+        async (manager) => {
+          const order = await manager.findOne(Order, {
+            where: { id: application.order.id },
+            lock: { mode: 'pessimistic_write' },
           });
-          await this.matchRepository.save(match);
-        } else if (existingMatch.status === MatchStatus.PENDING) {
-          existingMatch.status = MatchStatus.ACCEPTED;
-          await this.matchRepository.save(existingMatch);
-        }
-      } catch (error) {
-        console.error('Error creating/reusing match:', (error as Error).message);
-      }
 
-      // Create or reuse the chat between brand and influencer and seed it.
+          if (!order) {
+            throw new NotFoundException(`Order with ID ${application.order.id} not found`);
+          }
+          if (order.status !== OrderStatus.OPEN) {
+            throw new BadRequestException('This order is not open for applications');
+          }
+
+          order.status = OrderStatus.IN_PROGRESS;
+          order.influencerId = applicantProfile.id;
+          await manager.save(Order, order);
+
+          await manager.save(OrderApplication, application);
+
+          // Reject all other applications for this order
+          await manager.update(
+            OrderApplication,
+            { order: { id: order.id }, id: Not(application.id) },
+            { status: ApplicationStatus.REJECTED },
+          );
+
+          // Match upsert — keeps the matching lifecycle in sync. The lock was
+          // taken on the order row inside this same transaction, so the FK
+          // targets are loaded via relations fetched before the lock.
+          const brandUid = application.order.brand.user.id;
+          const influencerUid = application.applicant.id;
+          const existingMatch = await manager.findOne(Match, {
+            where: [
+              { brandId: brandUid, influencerId: influencerUid },
+              { brandId: influencerUid, influencerId: brandUid },
+            ],
+          });
+          if (!existingMatch) {
+            await manager.save(
+              Match,
+              manager.create(Match, {
+                brandId: brandUid,
+                influencerId: influencerUid,
+                status: MatchStatus.ACCEPTED,
+                name: order.title,
+                category: order.category,
+              }),
+            );
+          } else if (existingMatch.status === MatchStatus.PENDING) {
+            existingMatch.status = MatchStatus.ACCEPTED;
+            await manager.save(Match, existingMatch);
+          }
+
+          return {
+            brandUserId: brandUid,
+            influencerUserId: influencerUid,
+            orderTitle: order.title,
+          };
+        },
+      );
+
+      // Best-effort chat seed (non-transactional by design).
       try {
         const chat = await this.chatsService.create(brandUserId, influencerUserId);
-        const welcomeMessage = `Your application for "${order.title}" has been accepted. Let's discuss the details!`;
+        const welcomeMessage = `Your application for "${orderTitle}" has been accepted. Let's discuss the details!`;
         await this.chatsService.addMessage(chat.id, brandUserId, welcomeMessage);
       } catch (error) {
-        console.error('Error creating chat:', (error as Error).message);
-        // Do not roll back the acceptance if the chat seed fails.
+        this.logger.error(`Chat seed after acceptance failed: ${(error as Error).message}`);
       }
-      
-      // Reject all other applications for this order
-      await this.orderApplicationRepository.update(
-        { 
-          order: { id: order.id }, 
-          id: Not(application.id)
-        },
-        { status: ApplicationStatus.REJECTED }
-      );
+
+      return application;
     }
 
     return this.orderApplicationRepository.save(application);
@@ -257,15 +260,9 @@ export class OrderApplicationsService {
       throw new ForbiddenException('You can only view applications for your own orders');
     }
 
-    console.log(`Finding applications for order ID: ${orderId}`);
-    
-    const applications = await this.orderApplicationRepository.find({
+    return this.orderApplicationRepository.find({
       where: { order: { id: orderId } },
       relations: ['applicant', 'order']
     });
-    
-    console.log(`Found ${applications.length} applications for order ID: ${orderId}`);
-    
-    return applications;
   }
 } 

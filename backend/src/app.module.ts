@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { AppController } from './app.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -71,6 +72,7 @@ import { Collaboration } from './collaborations/entities/collaboration.entity';
     CollaborationsModule,
     CategoriesModule,
   ],
+  controllers: [AppController],
   providers: [
     {
       provide: APP_GUARD,

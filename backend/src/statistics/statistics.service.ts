@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
+import { Repository, FindOptionsWhere, MoreThanOrEqual, LessThanOrEqual, Between } from 'typeorm';
 import { Match, MatchStatus } from '../matching/entities/match.entity';
 import { Order, OrderStatus } from '../orders/entities/order.entity';
 import { OrderApplication, ApplicationStatus } from '../orders/entities/order-application.entity';
@@ -50,12 +50,7 @@ export class StatisticsService {
     const orderWhere: FindOptionsWhere<Order> = brandProfile
       ? { brandId: brandProfile.id }
       : { brandId: 'unknown-brand-profile' }; // returns []
-    if (dateRange.from) {
-      orderWhere.createdAt = MoreThanOrEqual(dateRange.from);
-    }
-    if (dateRange.to) {
-      orderWhere.createdAt = LessThanOrEqual(dateRange.to);
-    }
+    this.applyDateRange(orderWhere, dateRange);
     if (filters.category) {
       orderWhere.category = filters.category;
     }
@@ -83,8 +78,7 @@ export class StatisticsService {
 
     // Matches the brand User is a party to.
     const matchWhere: FindOptionsWhere<Match> = { brandId: userId };
-    if (dateRange.from) matchWhere.createdAt = MoreThanOrEqual(dateRange.from);
-    if (dateRange.to) matchWhere.createdAt = LessThanOrEqual(dateRange.to);
+    this.applyDateRange(matchWhere, dateRange);
     if (filters.influencerId) matchWhere.influencerId = filters.influencerId;
     if (filters.category) matchWhere.category = filters.category;
 
@@ -137,8 +131,7 @@ export class StatisticsService {
     const applicationWhere: FindOptionsWhere<OrderApplication> = {
       applicant: { id: userId },
     };
-    if (dateRange.from) applicationWhere.createdAt = MoreThanOrEqual(dateRange.from);
-    if (dateRange.to) applicationWhere.createdAt = LessThanOrEqual(dateRange.to);
+    this.applyDateRange(applicationWhere, dateRange);
 
     const applications = await this.applicationRepository.find({
       where: applicationWhere,
@@ -159,8 +152,7 @@ export class StatisticsService {
     ).length;
 
     const matchWhere: FindOptionsWhere<Match> = { influencerId: userId };
-    if (dateRange.from) matchWhere.createdAt = MoreThanOrEqual(dateRange.from);
-    if (dateRange.to) matchWhere.createdAt = LessThanOrEqual(dateRange.to);
+    this.applyDateRange(matchWhere, dateRange);
     if (filters.brandId) matchWhere.brandId = filters.brandId;
     if (filters.category) matchWhere.category = filters.category;
 
@@ -207,6 +199,21 @@ export class StatisticsService {
   }
 
   // --- Helpers ----------------------------------------------------------
+
+  // Apply both bounds correctly: assigning MoreThanOrEqual then LessThanOrEqual
+  // to the same key silently dropped the lower bound (AUDIT §3 date-range bug).
+  private applyDateRange(
+    where: { createdAt?: unknown },
+    range: { from?: Date; to?: Date },
+  ): void {
+    if (range.from && range.to) {
+      where.createdAt = Between(range.from, range.to);
+    } else if (range.from) {
+      where.createdAt = MoreThanOrEqual(range.from);
+    } else if (range.to) {
+      where.createdAt = LessThanOrEqual(range.to);
+    }
+  }
 
   private buildDateRange(filters: StatsFilters): { from?: Date; to?: Date } {
     const range: { from?: Date; to?: Date } = {};

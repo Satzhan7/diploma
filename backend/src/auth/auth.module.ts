@@ -19,13 +19,15 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       useFactory: (configService: ConfigService) => ({
         secret: configService.get('JWT_SECRET'),
         signOptions: {
-          expiresIn: '15m',
+          expiresIn: configService.get('jwt.accessTokenExpiration', '15m'),
         },
       }),
     }),
   ],
   providers: [AuthService, JwtStrategy],
-  exports: [AuthService],
+  // JwtModule exported so other modules (chats gateway) verify tokens with
+  // the same secret/options instead of registering their own copy.
+  exports: [AuthService, JwtModule],
   controllers: [AuthController],
 })
 export class AuthModule {}

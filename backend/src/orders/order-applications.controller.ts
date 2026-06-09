@@ -56,7 +56,6 @@ export class OrderApplicationsController {
     @GetCurrentUser('sub') userId: string,
     @Body() createOrderApplicationDto: CreateOrderApplicationDto,
   ): Promise<OrderApplication> {
-    console.log('Controller: creating application:', { orderId, userId, dto: createOrderApplicationDto });
     return this.orderApplicationsService.create(orderId, userId, createOrderApplicationDto);
   }
 

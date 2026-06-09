@@ -1,7 +1,11 @@
 import { io, Socket } from 'socket.io-client';
 
-// Use the same base URL as the API
-const baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3005';
+// Socket.io namespace lives at <origin>/chats; the socket.io HTTP path is
+// always /socket.io. The API base URL may contain a path (e.g. https://host/api
+// in prod) — appending the namespace to it would silently change the namespace
+// to /api/chats and the backend would reject the connection. Use the origin only.
+const apiUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3005';
+const socketOrigin = new URL(apiUrl).origin;
 
 class SocketService {
   private socket: Socket | null = null;
@@ -20,7 +24,8 @@ class SocketService {
         this.socket.disconnect();
       }
 
-      this.socket = io(`${baseURL}/chats`, {
+      this.socket = io(`${socketOrigin}/chats`, {
+        path: '/socket.io',
         auth: {
           token,
         },

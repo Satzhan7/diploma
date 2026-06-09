@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Logger,
   Post,
   Body,
   Param,
@@ -31,6 +32,8 @@ import { v4 as uuidv4 } from 'uuid';
 @Controller('chats')
 @UseGuards(JwtAuthGuard)
 export class ChatsController {
+  private readonly logger = new Logger(ChatsController.name);
+
   constructor(private readonly chatsService: ChatsService) {}
 
   // ---------------------------------------------------------------------------
@@ -200,7 +203,7 @@ SELECT COUNT(*) FROM message WHERE "chatId" IS NULL;
 
       return message;
     } catch (error) {
-      console.error('Error in direct message creation:', error);
+      this.logger.error(`Error in direct message creation: ${(error as Error).message}`);
       throw new InternalServerErrorException('Failed to create message: ' + (error as Error).message);
     }
   }

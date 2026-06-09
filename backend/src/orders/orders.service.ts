@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { Order, OrderStatus } from './entities/order.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { ProfilesService } from '../profiles/profiles.service';
@@ -12,6 +12,7 @@ export class OrdersService {
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
     private readonly profilesService: ProfilesService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(userId: string, createOrderDto: CreateOrderDto): Promise<Order> {
@@ -65,43 +66,42 @@ export class OrdersService {
   }
 
   async apply(orderId: string, userId: string): Promise<Order> {
-    const order = await this.findOne(orderId);
-    
-    if (order.status !== OrderStatus.OPEN) {
-      throw new BadRequestException('This order is no longer open for applications');
-    }
-
     const influencerProfile = await this.profilesService.findByUserId(userId);
-    
+
     if (influencerProfile.type !== ProfileType.INFLUENCER) {
       throw new BadRequestException('Only influencers can apply to orders');
     }
 
-    order.status = OrderStatus.IN_PROGRESS;
-    order.influencer = influencerProfile;
-    order.influencerId = influencerProfile.id;
+    // Transaction + row lock: two influencers claiming the same open order
+    // concurrently was a lost-update race (SECURITY_AUDIT M1).
+    return this.dataSource.transaction(async (manager) => {
+      const order = await manager.findOne(Order, {
+        where: { id: orderId },
+        lock: { mode: 'pessimistic_write' },
+      });
 
-    return this.orderRepository.save(order);
+      if (!order) {
+        throw new NotFoundException(`Order with ID ${orderId} not found`);
+      }
+      if (order.status !== OrderStatus.OPEN) {
+        throw new ConflictException('This order is no longer open for applications');
+      }
+
+      order.status = OrderStatus.IN_PROGRESS;
+      order.influencerId = influencerProfile.id;
+
+      return manager.save(Order, order);
+    });
   }
 
   async findByBrand(userId: string): Promise<Order[]> {
     const brandProfile = await this.profilesService.findByUserId(userId);
-    
-    console.log('Finding orders for brand profile:', brandProfile.id);
-    
-    const orders = await this.orderRepository.find({
+
+    return this.orderRepository.find({
       where: { brandId: brandProfile.id },
       relations: ['brand', 'brand.user', 'influencer', 'influencer.user', 'applications', 'applications.applicant'],
       order: { createdAt: 'DESC' },
     });
-    
-    console.log(`Found ${orders.length} orders, with applications:`, orders.map(o => ({
-      id: o.id,
-      title: o.title,
-      applicationsCount: o.applications?.length || 0
-    })));
-    
-    return orders;
   }
 
   async findByInfluencer(influencerId: string): Promise<Order[]> {
