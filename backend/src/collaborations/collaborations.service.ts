@@ -1,25 +1,64 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateCollaborationDto } from './dto/create-collaboration.dto';
 import { UpdateCollaborationDto } from './dto/update-collaboration.dto';
 import { Collaboration } from './entities/collaboration.entity';
 import { UsersService } from '../users/users.service';
+import { UserRole } from '../users/entities/user.entity';
+import { Order } from '../orders/entities/order.entity';
 
 @Injectable()
 export class CollaborationsService {
   constructor(
     @InjectRepository(Collaboration)
     private collaborationsRepository: Repository<Collaboration>,
+    @InjectRepository(Order)
+    private ordersRepository: Repository<Order>,
     private usersService: UsersService,
   ) {}
 
   async create(
     createCollaborationDto: CreateCollaborationDto,
   ): Promise<Collaboration> {
-    // Verify that brand and influencer exist
-    await this.usersService.findById(createCollaborationDto.brandId);
-    await this.usersService.findById(createCollaborationDto.influencerId);
+    const brand = await this.usersService.findById(
+      createCollaborationDto.brandId,
+    );
+    const influencer = await this.usersService.findById(
+      createCollaborationDto.influencerId,
+    );
+    if (!brand || brand.role !== UserRole.BRAND) {
+      throw new BadRequestException('brandId must identify a brand user');
+    }
+    if (!influencer || influencer.role !== UserRole.INFLUENCER) {
+      throw new BadRequestException(
+        'influencerId must identify an influencer user',
+      );
+    }
+
+    if (createCollaborationDto.orderId) {
+      const order = await this.ordersRepository.findOne({
+        where: { id: createCollaborationDto.orderId },
+        relations: ['brand', 'brand.user', 'influencer', 'influencer.user'],
+      });
+      if (!order) {
+        throw new NotFoundException(
+          `Order with ID ${createCollaborationDto.orderId} not found`,
+        );
+      }
+      if (
+        order.brand?.user?.id !== brand.id ||
+        order.influencer?.user?.id !== influencer.id
+      ) {
+        throw new BadRequestException(
+          'The order does not belong to the supplied brand and influencer',
+        );
+      }
+    }
 
     const collaboration = this.collaborationsRepository.create(
       createCollaborationDto,
@@ -66,7 +105,7 @@ export class CollaborationsService {
   ): Promise<Collaboration> {
     const collaboration = await this.findOne(id);
 
-    // Update only the fields that are provided
+    // The DTO permits only mutable fields; IDs and order links cannot change.
     Object.assign(collaboration, updateCollaborationDto);
 
     return this.collaborationsRepository.save(collaboration);

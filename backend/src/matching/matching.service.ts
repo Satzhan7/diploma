@@ -15,14 +15,10 @@ import { UsersService } from '../users/users.service';
 import { ChatsService } from '../chats/chats.service';
 import { ProfilesService } from '../profiles/profiles.service';
 import { ProfileType, Profile } from '../profiles/entities/profile.entity';
+import { UserRole } from '../users/entities/user.entity';
+import { UpdateMatchStatsDto } from './dto/update-match-stats.dto';
 
-// DTO for updating match statistics
-export interface UpdateMatchStatsDto {
-  clicks?: number;
-  impressions?: number;
-  engagementRate?: number;
-  followerGrowth?: number;
-}
+export { UpdateMatchStatsDto } from './dto/update-match-stats.dto';
 
 @Injectable()
 export class MatchingService {
@@ -112,14 +108,17 @@ export class MatchingService {
     return this.matchRepository.save(match);
   }
 
-  async createMatch(brandId: string, influencerId: string): Promise<Match> {
+  // This intent-specific method deliberately derives the influencer from the
+  // authenticated request in the controller. It avoids trusting a client to
+  // nominate an arbitrary influencer when expressing interest in a brand.
+  async expressInterest(brandId: string, influencerId: string): Promise<Match> {
     const brandUser = await this.usersService.findById(brandId);
     const influencerUser = await this.usersService.findById(influencerId);
 
-    if (!brandUser || brandUser.role !== 'brand') {
+    if (!brandUser || brandUser.role !== UserRole.BRAND) {
       throw new NotFoundException('Brand user not found');
     }
-    if (!influencerUser || influencerUser.role !== 'influencer') {
+    if (!influencerUser || influencerUser.role !== UserRole.INFLUENCER) {
       throw new NotFoundException('Influencer user not found');
     }
 

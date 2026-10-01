@@ -52,6 +52,18 @@ export class MatchingController {
     return this.matchingService.create(createMatchDto, userId);
   }
 
+  @Post('interests/:brandId')
+  @Roles(UserRole.INFLUENCER)
+  @ApiOperation({
+    summary: 'Express interest in a brand (influencer is derived from JWT)',
+  })
+  createInterest(
+    @Param('brandId') brandId: string,
+    @GetCurrentUser('sub') influencerId: string,
+  ): Promise<Match> {
+    return this.matchingService.expressInterest(brandId, influencerId);
+  }
+
   @Get()
   @Roles(UserRole.BRAND, UserRole.INFLUENCER)
   @ApiOperation({ summary: 'List matches the current user participates in' })
