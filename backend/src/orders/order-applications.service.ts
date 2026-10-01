@@ -17,6 +17,7 @@ import { CreateOrderApplicationDto } from './dto/create-order-application.dto';
 import { UpdateOrderApplicationDto } from './dto/update-order-application.dto';
 import { ProfilesService } from '../profiles/profiles.service';
 import { UserRole } from '../users/entities/user.entity';
+import { toPublicUser } from '../users/public-user';
 import { ChatsService } from '../chats/chats.service';
 import { Match, MatchStatus } from '../matching/entities/match.entity';
 
@@ -89,13 +90,20 @@ export class OrderApplicationsService {
   }
 
   async findAllByUser(userId: string): Promise<OrderApplication[]> {
-    return this.orderApplicationRepository.find({
+    const applications = await this.orderApplicationRepository.find({
       where: { applicant: { id: userId } },
-      relations: ['order', 'order.brand'],
+      relations: ['order', 'order.brand', 'order.brand.user'],
       order: {
         createdAt: 'DESC',
       },
     });
+    // The brand's user id links to its profile page; its email stays private.
+    for (const { order } of applications) {
+      if (order?.brand?.user) {
+        Object.assign(order.brand, { user: toPublicUser(order.brand.user) });
+      }
+    }
+    return applications;
   }
 
   // `requester` is passed from the controller for direct reads; internal

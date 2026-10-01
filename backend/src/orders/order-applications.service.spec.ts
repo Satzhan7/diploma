@@ -59,3 +59,46 @@ describe('OrderApplicationsService.create', () => {
     ).rejects.toBeInstanceOf(ConflictException);
   });
 });
+
+describe('OrderApplicationsService.findAllByUser', () => {
+  it("returns the brand's user id for profile links but not its email", async () => {
+    const repository = {
+      find: jest.fn().mockResolvedValue([
+        {
+          id: 'application-1',
+          order: {
+            id: 'order-1',
+            brand: {
+              id: 'brand-profile',
+              user: {
+                id: 'brand-user',
+                name: 'Brand',
+                role: 'brand',
+                email: 'brand@example.test',
+                password: '$2b$10$hash',
+              },
+            },
+          },
+        },
+      ]),
+    };
+    const service = new OrderApplicationsService(
+      repository as any,
+      {} as any,
+      {} as any,
+      {} as any,
+      {} as any,
+      {} as any,
+    );
+
+    const [application] = await service.findAllByUser('influencer-1');
+
+    expect(repository.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        relations: ['order', 'order.brand', 'order.brand.user'],
+      }),
+    );
+    expect(application.order.brand.user.id).toBe('brand-user');
+    expect(JSON.stringify(application)).not.toMatch(/email|password|\$2b\$/);
+  });
+});

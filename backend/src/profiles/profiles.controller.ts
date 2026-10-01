@@ -82,6 +82,6 @@ export class ProfilesController {
   @ApiOperation({ summary: 'Get a profile by its owning user id' })
   @ApiResponse({ status: 200, type: Profile })
   getProfileByUserId(@Param('userId') userId: string) {
-    return this.profilesService.findByUserId(userId);
+    return this.profilesService.findPublicByUserId(userId);
   }
 }

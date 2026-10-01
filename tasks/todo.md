@@ -23,7 +23,8 @@ Rule: every phase ends with something deployable and usable. Nothing goes to `ma
   - `npm audit --omit=dev` backend: 33 (1 low, 13 moderate, 17 high, 2 critical) → 18 (1 low, 10 moderate, 6 high, 1 critical). typeorm 0.3.31, ws 8.21.3, validator fixed. Lock regenerated in the Node 18 container.
   - Frontend: 65 (14 low, 15 moderate, 33 high, 3 critical) → 31 (9 low, 6 moderate, 16 high, 0 critical). Exact pins bumped in-major: axios 1.16.0 → 1.20.0, react-router-dom 6.30.4 → 6.30.6.
   - Deferred (major bumps only, do not `--force`): `@nestjs/*` 10 → 11/12 (core injection advisory, multer, body-parser, qs, file-type), `@nestjs/swagger` 11 (js-yaml, lodash), `@nestjs/typeorm` 11 (uuid), `bcrypt` 6 (drops node-pre-gyp → tar critical, install-time only), `react-router-dom` 7 (open-redirect via backslash in `<Link>`), `react-scripts` chain (removed by Vite in 1.2).
-- [ ] 0.5 Fix five broken frontend flows: withdraw, `/orders/:id` link, Profile `user` relation, brand profile-id links, and clearing state on logout.
+- [x] 0.5 Fix five broken frontend flows: withdraw, `/orders/:id` link, Profile `user` relation, brand profile-id links, and clearing state on logout.
+  - Withdraw uses `DELETE /order-applications/:id` and is offered for PENDING only (the backend rejects anything else). Title link → `/influencer/orders/:id`. `GET /profiles/:userId` now loads `user` as a public projection; Profile chat falls back to the `userId` route param, never the profile id. Brand links use `order.brand.user.id`; `GET /order-applications` loads `order.brand.user` (public projection). Logout calls `socketService.disconnect()` and `queryClient.clear()`. Manual QA: see Phase 0 review.
 - [ ] 0.6 Application state machine plus a locked re-read on accept. This is superseded by 2.2 if D1 is decided first; otherwise do a minimal version here.
 - **Done when:** the WS payload contains no hashes (test), the IDOR tests return 403, and the five flows pass manual QA.
 

@@ -87,12 +87,12 @@ export const OrderDetail: React.FC = () => {
               Posted by: 
               <Avatar size="sm" name={order.brand?.displayName || 'B'} src={order.brand?.avatarUrl} />
               <ChakraLink 
-                to={`/influencer/profile/${order.brand?.id}`}
+                to={`/influencer/profile/${order.brand?.user?.id}`}
                 as={RouterLink} 
                 fontWeight="medium" 
                 ml={1} 
                 color="brand.500" 
-                onClick={(e) => !order.brand?.id && e.preventDefault()}
+                onClick={(e) => !order.brand?.user?.id && e.preventDefault()}
               >
                 {order.brand?.displayName || 'Brand Name Missing'} <IconWrapper icon={FiExternalLink} />
               </ChakraLink>

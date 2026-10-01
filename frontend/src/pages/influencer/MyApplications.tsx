@@ -52,7 +52,7 @@ export const MyApplications: React.FC = () => {
   });
 
   const withdrawMutation = useMutation({
-    mutationFn: (applicationId: string) => applicationsService.update(applicationId, { status: 'withdrawn' }),
+    mutationFn: (applicationId: string) => applicationsService.withdrawApplication(applicationId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myApplications', user?.id] });
       toast({ title: 'Application Withdrawn', status: 'info' });
@@ -82,8 +82,8 @@ export const MyApplications: React.FC = () => {
     // toast({ title: 'Order details view not implemented yet.', status: 'warning' });
   };
 
-  const handleViewBrand = (brandId: string) => {
-    navigate(`/influencer/profile/${brandId}`);
+  const handleViewBrand = (brandUserId: string) => {
+    navigate(`/influencer/profile/${brandUserId}`);
   };
 
   const renderApplicationStatusBadge = (status: string) => {
@@ -100,7 +100,7 @@ export const MyApplications: React.FC = () => {
       <CardHeader pb={2}>
         <HStack justify="space-between">
           <Heading size="md" noOfLines={1} title={application.order.title}>
-            <ChakraLink as={RouterLink} to={`/orders/${application.order.id}`} isExternal={false}>
+            <ChakraLink as={RouterLink} to={`/influencer/orders/${application.order.id}`} isExternal={false}>
               {application.order.title}
             </ChakraLink>
           </Heading>
@@ -111,7 +111,7 @@ export const MyApplications: React.FC = () => {
         <VStack align="start" spacing={1}>
           <Text fontSize="sm">
             Brand:
-            <ChakraLink ml={1} color="brand.500" onClick={() => application.order.brand?.id && handleViewBrand(application.order.brand.id)}>
+            <ChakraLink ml={1} color="brand.500" onClick={() => application.order.brand?.user?.id && handleViewBrand(application.order.brand.user.id)}>
               {application.order.brand?.displayName || 'Brand Name Missing'} <IconWrapper icon={FiExternalLink} />
             </ChakraLink>
           </Text>
@@ -131,7 +131,7 @@ export const MyApplications: React.FC = () => {
           >
             View Order
           </Button>
-          {(application.status === 'pending' || application.status === 'accepted') && (
+          {application.status === 'pending' && (
             <IconButtonWithWrapper
               icon={FiTrash2}
               size="sm"

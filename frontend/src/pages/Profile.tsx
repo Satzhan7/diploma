@@ -125,7 +125,8 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
   }, [displayUserId, isViewMode, toast, user]);
 
   const handleCreateChat = async () => {
-    const chatTargetId = targetUser?.id || profileData?.id;
+    // Chats are keyed by user id, never by profile id.
+    const chatTargetId = targetUser?.id || (isViewMode ? userId : undefined);
     if (!chatTargetId || !user) return;
     
     try {
@@ -352,7 +353,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
         <HStack spacing={4} justify="center">
           {isViewMode ? (
             <>
-              {user && user.id !== (targetUser?.id || profileData?.id) && (
+              {user && user.id !== (targetUser?.id || userId) && (
                 <Button colorScheme="brand" leftIcon={<IconWrapper icon={FaEnvelope} size="1.25em" />} onClick={handleCreateChat}>
                   Write Message
                 </Button>

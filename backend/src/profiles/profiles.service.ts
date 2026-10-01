@@ -5,6 +5,7 @@ import { Profile, ProfileType } from './entities/profile.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UsersService } from '../users/users.service';
 import { SocialMedia } from './entities/social-media.entity';
+import { PublicUser, toPublicUser } from '../users/public-user';
 
 @Injectable()
 export class ProfilesService {
@@ -41,6 +42,25 @@ export class ProfilesService {
     }
 
     return profile;
+  }
+
+  // Profile plus its owner's public identity (no email or hashes), for
+  // viewing another user's profile page.
+  async findPublicByUserId(
+    userId: string,
+  ): Promise<Profile & { user: PublicUser }> {
+    const profile = await this.profilesRepository.findOne({
+      where: { user: { id: userId } },
+      relations: ['socialMedia', 'user'],
+    });
+
+    if (!profile) {
+      throw new NotFoundException(
+        `Profile for user with ID ${userId} not found`,
+      );
+    }
+
+    return Object.assign(profile, { user: toPublicUser(profile.user) });
   }
 
   async update(
