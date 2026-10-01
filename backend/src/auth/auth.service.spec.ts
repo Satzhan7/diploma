@@ -2,6 +2,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
+import { hashRefreshToken } from './refresh-token-hash';
 
 describe('AuthService token boundaries', () => {
   const accessSecret = 'test-access-secret';
@@ -42,7 +43,7 @@ describe('AuthService token boundaries', () => {
     usersService.findById.mockResolvedValue(user);
     usersService.updateRefreshToken.mockImplementation(
       async (_userId: string, refreshToken: string) => {
-        user.refreshToken = await bcrypt.hash(refreshToken, 4);
+        user.refreshToken = hashRefreshToken(refreshToken);
       },
     );
     jwtService = new JwtService({ secret: accessSecret });
@@ -105,5 +106,31 @@ describe('AuthService token boundaries', () => {
     await expect(service.refreshTokens(expired)).rejects.toBeInstanceOf(
       UnauthorizedException,
     );
+  });
+
+  it('rejects a refresh token once it has been rotated out', async () => {
+    const now = jest.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000);
+    try {
+      const first = await service.login({
+        email: user.email,
+        password: 'correct-password',
+      });
+      // A later iat makes the next token differ only after byte 72.
+      now.mockReturnValue(1_700_000_005_000);
+      const second = await service.refreshTokens(first.refreshToken);
+
+      expect(second.refreshToken).not.toBe(first.refreshToken);
+      expect(first.refreshToken.slice(0, 72)).toBe(
+        second.refreshToken.slice(0, 72),
+      );
+      await expect(
+        service.refreshTokens(first.refreshToken),
+      ).rejects.toBeInstanceOf(UnauthorizedException);
+      await expect(
+        service.refreshTokens(second.refreshToken),
+      ).resolves.toMatchObject({ refreshToken: expect.any(String) });
+    } finally {
+      now.mockRestore();
+    }
   });
 });

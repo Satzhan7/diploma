@@ -5,6 +5,7 @@ import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
+import { hashRefreshToken } from '../auth/refresh-token-hash';
 import { UserRole } from './enums/user-role.enum';
 
 @Injectable()
@@ -97,9 +98,7 @@ export class UsersService {
     const user = await this.findById(userId);
 
     // Hash refresh token if provided, otherwise set to null
-    user.refreshToken = refreshToken
-      ? await bcrypt.hash(refreshToken, 10)
-      : null;
+    user.refreshToken = refreshToken ? hashRefreshToken(refreshToken) : null;
 
     await this.usersRepository.save(user);
   }
