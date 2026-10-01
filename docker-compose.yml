@@ -1,5 +1,3 @@
-version: '3.7'
-
 services:
   postgres:
     image: postgres:14-alpine
@@ -41,7 +39,9 @@ services:
       - JWT_REFRESH_EXPIRATION=7d
       - PORT=3005
       - NODE_ENV=development
-      - CORS_ORIGIN=http://localhost:3000
+      # Support both conventional local URLs used by browsers. This is a
+      # development-only allow-list; production remains explicitly configured.
+      - CORS_ORIGIN=http://localhost:3000,http://127.0.0.1:3000
     volumes:
       - ./backend:/usr/src/app
       - /usr/src/app/node_modules
@@ -50,7 +50,7 @@ services:
         condition: service_healthy
     networks:
       - app-network
-    command: sh -c "npm install && npm run build && npm run start:dev"
+    command: sh -c "npm ci && npm run build && npm run start:dev"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3005/health || exit 1"]
       interval: 15s
@@ -78,4 +78,4 @@ networks:
     driver: bridge
 
 volumes:
-  postgres_data: 
+  postgres_data:

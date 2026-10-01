@@ -1,31 +1,23 @@
-# Development Stage
 FROM node:18-alpine AS development
 
 WORKDIR /usr/src/app
-
 COPY package*.json ./
-
-RUN npm install
-
+RUN npm ci
 COPY . .
-
 RUN npm run build
 
-# Production Stage
 FROM node:18-alpine AS production
 
-ARG NODE_ENV=production
-ENV NODE_ENV=${NODE_ENV}
-
+ENV NODE_ENV=production
 WORKDIR /usr/src/app
 
 COPY package*.json ./
-
-RUN npm install --only=production
-
+RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=development /usr/src/app/dist ./dist
-COPY --from=development /usr/src/app/node_modules ./node_modules
+
+RUN addgroup -S nestjs && adduser -S nestjs -G nestjs \
+  && chown -R nestjs:nestjs /usr/src/app
+USER nestjs
 
 EXPOSE 3005
-
 CMD ["node", "dist/main"]
