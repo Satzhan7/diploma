@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
+import { THROTTLER_LIMIT } from '@nestjs/throttler/dist/throttler.constants';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -89,5 +90,20 @@ describe('AuthController token boundary', () => {
         .set('Authorization', `Bearer ${token}`)
         .expect(401);
     }
+  });
+});
+
+describe('AuthController rate limits', () => {
+  const limitOf = (handler: unknown) =>
+    Reflect.getMetadata(`${THROTTLER_LIMIT}default`, handler as object);
+
+  it('applies the strict limit to login, register and refresh only', () => {
+    const proto = AuthController.prototype;
+    expect(limitOf(proto.login)).toBe(10);
+    expect(limitOf(proto.register)).toBe(10);
+    expect(limitOf(proto.refresh)).toBe(10);
+    // Page loads call GET /auth/profile; it uses the global default.
+    expect(limitOf(proto.getProfile)).toBeUndefined();
+    expect(limitOf(AuthController)).toBeUndefined();
   });
 });

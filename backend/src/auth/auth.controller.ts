@@ -22,15 +22,18 @@ import {
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 
-// Tighter rate limit than the global default — login/register/refresh are
-// the brute-force surface (SECURITY_AUDIT H5).
-@Throttle({ default: { limit: 10, ttl: 60000 } })
+// Tighter rate limit than the global default for login/register/refresh, the
+// brute-force surface (SECURITY_AUDIT H5). Applied per route, not per class:
+// GET /auth/profile runs on every page load and must not share this budget.
+export const AUTH_THROTTLE = { default: { limit: 10, ttl: 60000 } };
+
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
+  @Throttle(AUTH_THROTTLE)
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User successfully registered' })
@@ -40,6 +43,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle(AUTH_THROTTLE)
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login user' })
@@ -59,6 +63,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle(AUTH_THROTTLE)
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token' })
