@@ -27,11 +27,7 @@ import { StarIcon } from '@chakra-ui/icons';
 import { FiSearch } from 'react-icons/fi';
 import { IconWrapper } from '../../components/IconWrapper';
 
-interface BrandRecommendationsProps {
-  influencerId: string;
-}
-
-const BrandRecommendations: React.FC<BrandRecommendationsProps> = ({ influencerId }) => {
+const BrandRecommendations: React.FC = () => {
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -46,14 +42,7 @@ const BrandRecommendations: React.FC<BrandRecommendationsProps> = ({ influencerI
 
   // Mutation for creating a match
   const createMatchMutation = useMutation({
-    mutationFn: (brandId: string) => 
-      matchingService.createMatch({
-        brandId,
-        name: 'New Collaboration Interest',
-        category: 'General',
-        startDate: new Date(),
-        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 days
-      }),
+    mutationFn: (brandId: string) => matchingService.expressInterest(brandId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['userMatches'] });
       toast({
@@ -65,10 +54,10 @@ const BrandRecommendations: React.FC<BrandRecommendationsProps> = ({ influencerI
       });
       setSelectedBrand(null);
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: 'Error',
-        description: 'Failed to send collaboration interest',
+        description: error.message || 'Failed to send collaboration interest',
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -195,7 +184,7 @@ const BrandRecommendations: React.FC<BrandRecommendationsProps> = ({ influencerI
                     <HStack justifyContent="space-between">
                       <Button
                         as={RouterLink}
-                        to={`/brands/${brand.user.id}`}
+                        to={`/influencer/profile/${brand.user.id}`}
                         colorScheme="purple"
                         variant="ghost"
                         size="sm"
@@ -206,6 +195,7 @@ const BrandRecommendations: React.FC<BrandRecommendationsProps> = ({ influencerI
                         colorScheme="purple"
                         size="sm"
                         isLoading={selectedBrand === brand.user.id && createMatchMutation.isPending}
+                        isDisabled={createMatchMutation.isPending}
                         onClick={() => handleExpressInterest(brand.user.id)}
                       >
                         Express Interest
@@ -222,4 +212,4 @@ const BrandRecommendations: React.FC<BrandRecommendationsProps> = ({ influencerI
   );
 };
 
-export default BrandRecommendations; 
+export default BrandRecommendations;
