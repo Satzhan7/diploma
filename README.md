@@ -8,7 +8,7 @@
 
 AdPartners.kz is a full-stack web application that brings influencer-marketing discovery, negotiation, collaboration, and analytics into a single product targeted at the Kazakh and CIS markets. Brands publish campaigns ("orders"), influencers apply, and both sides chat in real time, sign collaborations, and track performance on role-specific dashboards.
 
-The full documentation set lives under [docs/diploma/](docs/diploma/) and includes a Product Requirements Document, function-by-function reference, technical architecture, database schema, API reference, testing plan, thesis structure, and a LaTeX conversion plan.
+Product decisions for the post-diploma launch are in [docs/PRODUCT-BRIEF.md](docs/PRODUCT-BRIEF.md); the build plan is in [tasks/todo.md](tasks/todo.md).
 
 ## Tech stack
 
@@ -118,7 +118,7 @@ The repository does not ship with seed data. Use the registration form to create
 
 ## Main API modules
 
-Full reference: [docs/diploma/06_API_DOCUMENTATION.md](docs/diploma/06_API_DOCUMENTATION.md).
+In development, the full OpenAPI reference is served at `/docs`.
 
 | Module | Base path | Purpose |
 |---|---|---|
@@ -145,7 +145,7 @@ Maintenance endpoints under `/chats/debug/*` and `/chats/fix-messages/*` are res
 
 ## Known limitations
 
-These items are listed honestly so the defense committee can verify what is implemented and what is a future improvement. The full list is in [docs/diploma/02_PRODUCT_REQUIREMENTS_DOCUMENT.md §13–§14](docs/diploma/02_PRODUCT_REQUIREMENTS_DOCUMENT.md).
+These items are listed honestly so the defense committee can verify what is implemented and what is a future improvement.
 
 - **No admin UI.** The `admin` role exists at the API layer (used only for `/chats/...` maintenance endpoints and `/collaborations` deletion) but no admin page is shipped.
 - **No notifications subsystem.** Email and in-app notifications are not implemented; only WebSocket chat updates are real-time.
@@ -163,17 +163,12 @@ These items are listed honestly so the defense committee can verify what is impl
 
 | File | Purpose |
 |---|---|
-| [docs/diploma/00_PROJECT_CONTEXT.md](docs/diploma/00_PROJECT_CONTEXT.md) | Project metadata, stack, confirmed-from-PDF info |
-| [docs/diploma/01_DIPLOMA_MASTER_PLAN.md](docs/diploma/01_DIPLOMA_MASTER_PLAN.md) | Keep / Rewrite / Remove / Add plan + priority tasks + timeline |
-| [docs/diploma/02_PRODUCT_REQUIREMENTS_DOCUMENT.md](docs/diploma/02_PRODUCT_REQUIREMENTS_DOCUMENT.md) | FR / NFR / UX requirements + future improvements |
-| [docs/diploma/03_FUNCTION_BY_FUNCTION_DOCUMENTATION.md](docs/diploma/03_FUNCTION_BY_FUNCTION_DOCUMENTATION.md) | Per-function entries (frontend × backend joined) |
-| [docs/diploma/04_TECHNICAL_DOCUMENTATION.md](docs/diploma/04_TECHNICAL_DOCUMENTATION.md) | Architecture + Mermaid diagrams + module reference |
-| [docs/diploma/05_DATABASE_DOCUMENTATION.md](docs/diploma/05_DATABASE_DOCUMENTATION.md) | Entities, fields, relationships, migrations |
-| [docs/diploma/06_API_DOCUMENTATION.md](docs/diploma/06_API_DOCUMENTATION.md) | Every controller route + WebSocket events + auth model |
-| [docs/diploma/07_TESTING_DOCUMENTATION.md](docs/diploma/07_TESTING_DOCUMENTATION.md) | 50+ functional, security, and DB test cases |
-| [docs/diploma/08_FINAL_THESIS_STRUCTURE.md](docs/diploma/08_FINAL_THESIS_STRUCTURE.md) | SDU 4-chapter ↔ user's 5-chapter mapping |
-| [docs/diploma/09_LATEX_CONVERSION_PLAN.md](docs/diploma/09_LATEX_CONVERSION_PLAN.md) | Markdown → LaTeX file mapping + BibTeX entries |
-| [docs/diploma/10_FINAL_PROJECT_CHECKLIST.md](docs/diploma/10_FINAL_PROJECT_CHECKLIST.md) | Pre-submission action checklist |
+| [docs/PRODUCT-BRIEF.md](docs/PRODUCT-BRIEF.md) | Product decisions for the Kazakhstan launch |
+| [tasks/todo.md](tasks/todo.md) | Productization plan, phase by phase |
+| [DEPLOY.md](DEPLOY.md) | Production deployment with Docker Compose and nginx |
+| [docs/ENVIRONMENT_VARIABLES.md](docs/ENVIRONMENT_VARIABLES.md) | Every environment variable and where it is read |
+| [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) | Theme tokens and shared UI components |
+| [docs/audits/](docs/audits/) | Project audits |
 
 ## License
 
