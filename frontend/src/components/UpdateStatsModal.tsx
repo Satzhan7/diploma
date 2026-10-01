@@ -135,7 +135,7 @@ export const UpdateStatsModal: React.FC<UpdateStatsModalProps> = ({
             Cancel
           </Button>
           <Button 
-            colorScheme="blue" 
+            colorScheme="brand" 
             onClick={handleSubmit}
             isLoading={mutation.isPending}
           >

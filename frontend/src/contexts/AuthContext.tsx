@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
+import socketService from '../services/socket';
 import { User, UserRole } from '../types/user';
 
 interface AuthContextType {
@@ -24,6 +26,7 @@ interface RegisterData {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,6 +81,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+    // Drop the previous user's cached data and live socket so the next login
+    // on this browser never sees it.
+    socketService.disconnect();
+    queryClient.clear();
     setUser(null);
   };
 

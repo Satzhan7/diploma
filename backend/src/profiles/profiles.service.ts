@@ -5,6 +5,17 @@ import { Profile, ProfileType } from './entities/profile.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UsersService } from '../users/users.service';
 import { SocialMedia } from './entities/social-media.entity';
+import { PublicUser, toPublicUser } from '../users/public-user';
+
+export type PublicProfile = Profile & { user: PublicUser };
+
+// Swap the loaded owner for its public projection (no email or hashes).
+// Keeps the Profile instance so class-transformer getters still apply.
+function withPublicUser(profile: Profile): PublicProfile {
+  return Object.assign(profile, {
+    user: profile.user ? toPublicUser(profile.user) : undefined,
+  });
+}
 
 @Injectable()
 export class ProfilesService {
@@ -31,41 +42,63 @@ export class ProfilesService {
   async findByUserId(userId: string): Promise<Profile> {
     const profile = await this.profilesRepository.findOne({
       where: { user: { id: userId } },
-      relations: ['socialMedia']
+      relations: ['socialMedia'],
     });
 
     if (!profile) {
-      throw new NotFoundException(`Profile for user with ID ${userId} not found`);
+      throw new NotFoundException(
+        `Profile for user with ID ${userId} not found`,
+      );
     }
 
     return profile;
   }
 
-  async update(id: string, updateProfileDto: UpdateProfileDto): Promise<Profile> {
-    const profile = await this.profilesRepository.findOne({ 
-      where: { id },
-      relations: ['socialMedia']
+  // Profile plus its owner's public identity (no email or hashes), for
+  // viewing another user's profile page.
+  async findPublicByUserId(userId: string): Promise<PublicProfile> {
+    const profile = await this.profilesRepository.findOne({
+      where: { user: { id: userId } },
+      relations: ['socialMedia', 'user'],
     });
-    
+
+    if (!profile) {
+      throw new NotFoundException(
+        `Profile for user with ID ${userId} not found`,
+      );
+    }
+
+    return withPublicUser(profile);
+  }
+
+  async update(
+    id: string,
+    updateProfileDto: UpdateProfileDto,
+  ): Promise<Profile> {
+    const profile = await this.profilesRepository.findOne({
+      where: { id },
+      relations: ['socialMedia'],
+    });
+
     if (!profile) {
       throw new NotFoundException(`Profile with ID ${id} not found`);
     }
 
     // Handle socialMedia separately
     const { socialMedia, ...profileData } = updateProfileDto;
-    
+
     // Update profile with new data (except socialMedia)
     Object.assign(profile, profileData);
-    
+
     // Handle social media if provided
     if (socialMedia && socialMedia.length > 0) {
       // Remove existing social media entries if any
       if (profile.socialMedia && profile.socialMedia.length > 0) {
         await this.profilesRepository.manager.remove(profile.socialMedia);
       }
-      
+
       // Create new social media entries
-      profile.socialMedia = socialMedia.map(mediaDto => {
+      profile.socialMedia = socialMedia.map((mediaDto) => {
         const socialMediaEntity = new SocialMedia();
         socialMediaEntity.type = mediaDto.type;
         socialMediaEntity.url = mediaDto.url;
@@ -75,73 +108,99 @@ export class ProfilesService {
         return socialMediaEntity;
       });
     }
-    
+
     return this.profilesRepository.save(profile);
   }
 
-  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto): Promise<Profile> {
+  async updateProfile(
+    userId: string,
+    updateProfileDto: UpdateProfileDto,
+  ): Promise<Profile> {
     const profile = await this.findByUserId(userId);
     const profileId = profile.id;
-    
+
     return this.update(profileId, updateProfileDto);
   }
 
-  async findInfluencersForBrand(brandUserId: string, filters: any = {}): Promise<Profile[]> {
+  async findInfluencersForBrand(
+    brandUserId: string,
+    filters: any = {},
+  ): Promise<PublicProfile[]> {
     // Get brand profile to access preferences
     const brandProfile = await this.findByUserId(brandUserId);
-    
+
     // Build query based on brand preferences and provided filters
-    const queryBuilder = this.profilesRepository.createQueryBuilder('profile')
+    const queryBuilder = this.profilesRepository
+      .createQueryBuilder('profile')
       .leftJoinAndSelect('profile.user', 'user')
       .where('profile.type = :type', { type: ProfileType.INFLUENCER });
-    
+
     // Apply filters if provided
     if (filters.niches && filters.niches.length > 0) {
-      queryBuilder.andWhere('profile.niches && :niches', { niches: filters.niches });
+      queryBuilder.andWhere(
+        `string_to_array(COALESCE(profile.niches, ''), ',') && :niches::text[]`,
+        { niches: filters.niches },
+      );
     }
-    
+
     if (filters.minFollowers) {
-      queryBuilder.andWhere('profile.followersCount >= :minFollowers', { minFollowers: filters.minFollowers });
+      queryBuilder.andWhere('profile.followersCount >= :minFollowers', {
+        minFollowers: filters.minFollowers,
+      });
     }
-    
+
     if (filters.maxFollowers) {
-      queryBuilder.andWhere('profile.followersCount <= :maxFollowers', { maxFollowers: filters.maxFollowers });
+      queryBuilder.andWhere('profile.followersCount <= :maxFollowers', {
+        maxFollowers: filters.maxFollowers,
+      });
     }
-    
+
     if (filters.platforms && filters.platforms.length > 0) {
-      queryBuilder.andWhere('profile.socialMediaPlatforms && :platforms', { platforms: filters.platforms });
+      queryBuilder.andWhere(
+        `string_to_array(COALESCE(profile.socialMediaPlatforms, ''), ',') && :platforms::text[]`,
+        { platforms: filters.platforms },
+      );
     }
-    
+
     if (filters.contentTypes && filters.contentTypes.length > 0) {
-      queryBuilder.andWhere('profile.contentTypes && :contentTypes', { contentTypes: filters.contentTypes });
+      queryBuilder.andWhere(
+        `string_to_array(COALESCE(profile.contentTypes, ''), ',') && :contentTypes::text[]`,
+        { contentTypes: filters.contentTypes },
+      );
     }
-    
+
     if (filters.locations && filters.locations.length > 0) {
-      queryBuilder.andWhere('profile.location IN (:...locations)', { locations: filters.locations });
+      queryBuilder.andWhere('profile.location IN (:...locations)', {
+        locations: filters.locations,
+      });
     }
-    
-    return queryBuilder.getMany();
+
+    const profiles = await queryBuilder.getMany();
+    return profiles.map(withPublicUser);
   }
 
-  async findBrandsForInfluencer(influencerUserId: string, filters: any = {}): Promise<Profile[]> {
+  async findBrandsForInfluencer(
+    influencerUserId: string,
+    filters: any = {},
+  ): Promise<PublicProfile[]> {
     // Get influencer profile to access preferences
     const influencerProfile = await this.findByUserId(influencerUserId);
-    
+
     // Build query based on influencer preferences and provided filters
-    const queryBuilder = this.profilesRepository.createQueryBuilder('profile')
+    const queryBuilder = this.profilesRepository
+      .createQueryBuilder('profile')
       .leftJoinAndSelect('profile.user', 'user')
       .where('profile.type = :type', { type: ProfileType.BRAND });
-    
+
     // Apply filters if provided
     if (filters.industries && filters.industries.length > 0) {
-      queryBuilder.andWhere('profile.industry IN (:...industries)', { industries: filters.industries });
+      queryBuilder.andWhere('profile.industry IN (:...industries)', {
+        industries: filters.industries,
+      });
     }
-    
-    if (filters.productCategories && filters.productCategories.length > 0) {
-      queryBuilder.andWhere('profile.productCategories && :categories', { categories: filters.productCategories });
-    }
-    
-    return queryBuilder.getMany();
+
+    const profiles = await queryBuilder.getMany();
+    return profiles.map(withPublicUser);
   }
 
   async findAll(): Promise<Profile[]> {
@@ -169,42 +228,42 @@ export class ProfilesService {
   }
 
   // Метод для поиска инфлюенсеров по категориям
-  async findInfluencersByCategories(categories: string[], limit: number = 10): Promise<Profile[]> {
+  async findInfluencersByCategories(
+    categories: string[],
+    limit: number = 10,
+  ): Promise<Profile[]> {
     const queryBuilder = this.profilesRepository
       .createQueryBuilder('profile')
       .where('profile.type = :type', { type: ProfileType.INFLUENCER })
       .leftJoinAndSelect('profile.user', 'user');
-    
+
     if (categories && categories.length > 0) {
-      // Используем ARRAY_OVERLAP для поиска профилей, у которых есть хотя бы одна общая категория
-      queryBuilder.andWhere('profile.categories && :categories', { 
-        categories: categories 
-      });
+      queryBuilder.andWhere(
+        `string_to_array(COALESCE(profile.categories, ''), ',') && :categories::text[]`,
+        { categories },
+      );
     }
-    
-    return queryBuilder
-      .orderBy('user.name', 'ASC')
-      .limit(limit)
-      .getMany();
+
+    return queryBuilder.orderBy('user.name', 'ASC').limit(limit).getMany();
   }
-  
+
   // Метод для поиска брендов по категориям
-  async findBrandsByCategories(categories: string[], limit: number = 10): Promise<Profile[]> {
+  async findBrandsByCategories(
+    categories: string[],
+    limit: number = 10,
+  ): Promise<Profile[]> {
     const queryBuilder = this.profilesRepository
       .createQueryBuilder('profile')
       .where('profile.type = :type', { type: ProfileType.BRAND })
       .leftJoinAndSelect('profile.user', 'user');
-    
+
     if (categories && categories.length > 0) {
-      // Используем ARRAY_OVERLAP для поиска профилей, у которых есть хотя бы одна общая категория
-      queryBuilder.andWhere('profile.categories && :categories', { 
-        categories: categories 
-      });
+      queryBuilder.andWhere(
+        `string_to_array(COALESCE(profile.categories, ''), ',') && :categories::text[]`,
+        { categories },
+      );
     }
-    
-    return queryBuilder
-      .orderBy('user.name', 'ASC')
-      .limit(limit)
-      .getMany();
+
+    return queryBuilder.orderBy('user.name', 'ASC').limit(limit).getMany();
   }
 }

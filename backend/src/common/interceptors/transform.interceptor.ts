@@ -1,43 +1,37 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { ClassSerializerInterceptor } from '@nestjs/common';
+import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
-export class TransformInterceptor extends ClassSerializerInterceptor {
-  constructor() {
-    super(null, {
-      strategy: 'excludeAll',
-      enableCircularCheck: true,
-    });
-  }
+export class TransformInterceptor implements NestInterceptor {
+  private readonly logger = new Logger(TransformInterceptor.name);
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
-      map(data => {
+      map((data) => {
         // If data is undefined or null, return it directly
         if (data === undefined || data === null) {
           return data;
         }
 
         try {
-          // Handle circular references
-          const seen = new WeakSet();
-          return JSON.parse(JSON.stringify(data, (key, value) => {
-            if (typeof value === 'object' && value !== null) {
-              if (seen.has(value)) {
-                return '[Circular]';
-              }
-              seen.add(value);
-            }
-            return value;
-          }));
+          // Serialize via class-transformer so @Exclude fields (password,
+          // refreshToken) are stripped, while handling circular references.
+          return instanceToPlain(data, { enableCircularCheck: true });
         } catch (error) {
-          // If JSON parsing fails, return the original data
-          console.warn('Error in transform interceptor:', error.message);
-          return data;
+          // Fail closed: the raw entities may still carry @Exclude fields.
+          this.logger.error(`Error in transform interceptor: ${error.message}`);
+          throw new InternalServerErrorException();
         }
       }),
     );
   }
-} 
+}

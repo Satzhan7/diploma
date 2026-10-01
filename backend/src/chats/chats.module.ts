@@ -5,22 +5,14 @@ import { ChatsService } from './chats.service';
 import { Chat } from './entities/chat.entity';
 import { Message } from './entities/message.entity';
 import { ChatsGateway } from './chats.gateway';
-import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Chat, Message]),
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get('JWT_SECRET'),
-        signOptions: {
-          expiresIn: '1d',
-        },
-      }),
-      inject: [ConfigService],
-    }),
+    // Reuse the AuthModule JwtModule (same secret/options) instead of a
+    // second registration that signed with a different TTL (AUDIT §3).
+    AuthModule,
   ],
   controllers: [ChatsController],
   providers: [ChatsService, ChatsGateway],
@@ -36,4 +28,4 @@ export class ChatsModule implements OnModuleInit {
     // Setup circular dependency after initialization
     this.chatsService.setGateway(this.chatsGateway);
   }
-} 
+}

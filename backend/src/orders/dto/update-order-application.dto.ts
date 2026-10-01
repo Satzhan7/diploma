@@ -5,7 +5,8 @@ import { ApplicationStatus } from '../entities/order-application.entity';
 export class UpdateOrderApplicationDto {
   @ApiProperty({
     description: 'The updated message or cover letter from the applicant',
-    example: 'I would like to work on this project because of my expertise in this field.',
+    example:
+      'I would like to work on this project because of my expertise in this field.',
     required: false,
   })
   @IsString()
@@ -30,4 +31,4 @@ export class UpdateOrderApplicationDto {
   @IsEnum(ApplicationStatus)
   @IsOptional()
   status?: ApplicationStatus;
-} 
+}

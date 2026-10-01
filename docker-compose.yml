@@ -1,5 +1,3 @@
-version: '3.7'
-
 services:
   postgres:
     image: postgres:14-alpine
@@ -32,27 +30,56 @@ services:
       - "3005:3005"
     environment:
       - DB_HOST=postgres
-      - DATABASE_PORT=5432
-      - DATABASE_USERNAME=postgres
-      - DATABASE_PASSWORD=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
       - DB_NAME=influencer_platform
       - JWT_SECRET=your-secret-key-change-in-production
       - JWT_ACCESS_EXPIRATION=15m
       - JWT_REFRESH_EXPIRATION=7d
       - PORT=3005
       - NODE_ENV=development
+      # Support both conventional local URLs used by browsers. This is a
+      # development-only allow-list; production remains explicitly configured.
+      - CORS_ORIGIN=http://localhost:3000,http://127.0.0.1:3000
     volumes:
       - ./backend:/usr/src/app
       - /usr/src/app/node_modules
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - app-network
-    command: sh -c "npm install && npm run build && npm run start:dev"
+    command: sh -c "npm ci && npm run build && npm run start:dev"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3005/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_BASE_URL: http://localhost:3005
+    container_name: influencer_platform_frontend
+    environment:
+      # The dev build calls the API cross-origin on :3005, so the CSP must
+      # allow it. Production keeps the Dockerfile default ('self' https: wss:).
+      - CSP_CONNECT_SRC='self' http://localhost:3005 http://127.0.0.1:3005 ws://localhost:3005 ws://127.0.0.1:3005
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
 
 networks:
   app-network:
     driver: bridge
 
 volumes:
-  postgres_data: 
+  postgres_data:

@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ChakraProvider } from '@chakra-ui/react';
+import { ChakraProvider, Center, Spinner, VStack, Text } from '@chakra-ui/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import DashboardLayout from './components/DashboardLayout';
@@ -25,8 +25,26 @@ import theme from './theme';
 import { UserRole } from './types/user';
 import { OrderDetail } from './pages/influencer/OrderDetail';
 import { MatchDetail } from './pages/MatchDetail';
+import { NotFound } from './pages/NotFound';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+    },
+  },
+});
+
+const FullScreenLoader: React.FC = () => (
+  <Center minH="100vh" bg="bg.canvas">
+    <VStack spacing={4}>
+      <Spinner size="lg" color="brand.500" thickness="3px" />
+      <Text color="fg.muted" fontSize="sm">
+        Loading…
+      </Text>
+    </VStack>
+  </Center>
+);
 
 interface ProtectedRouteProps {
   children: React.ReactElement;
@@ -37,7 +55,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles }) => {
   const { isAuthenticated, user, isLoading } = useAuth();
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <FullScreenLoader />;
   }
 
   if (!isAuthenticated) {
@@ -69,7 +87,7 @@ function AppRoutes() {
   const { user, isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return <div>App Loading...</div>;
+    return <FullScreenLoader />;
   }
 
   return (
@@ -105,6 +123,7 @@ function AppRoutes() {
                 <Route path="profile/edit" element={<EditProfile />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="/" element={<Navigate to="dashboard" replace />} /> 
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </DashboardLayout>
           </ProtectedRoute>
@@ -122,9 +141,7 @@ function AppRoutes() {
                 <Route path="orders/:orderId" element={<OrderDetail />} />
                 <Route path="applications" element={<MyApplications />} />
                 <Route path="brands" element={<BrandList />} />
-                <Route path="recommendations" 
-                  element={user?.id ? <BrandRecommendations influencerId={user.id} /> : <div>Loading User...</div>}
-                /> 
+                <Route path="recommendations" element={<BrandRecommendations />} />
                 <Route path="messages" element={<Messages />} />
                 <Route path="matches" element={<Matches />} />
                 <Route path="matches/:matchId" element={<MatchDetail />} />
@@ -133,13 +150,14 @@ function AppRoutes() {
                 <Route path="profile/edit" element={<EditProfile />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="/" element={<Navigate to="dashboard" replace />} /> 
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </DashboardLayout>
           </ProtectedRoute>
         }
       />
       
-      <Route path="*" element={<div>404 Not Found</div>} />
+      <Route path="*" element={<NotFound />} />
 
     </Routes>
   );

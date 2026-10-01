@@ -1,19 +1,32 @@
-import { Injectable, UnauthorizedException, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  UnauthorizedException,
+  ConflictException,
+  NotFoundException,
+  Logger,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
+import { refreshTokenMatches } from './refresh-token-hash';
 import { ProfilesService } from '../profiles/profiles.service';
 import { ProfileType } from '../profiles/entities/profile.entity';
 import { UserRole } from '../users/entities/user.entity';
+import { TokenPayload } from './types/token-payload';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly profilesService: ProfilesService,
+    private readonly configService: ConfigService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -23,11 +36,14 @@ export class AuthService {
     }
 
     const user = await this.usersService.create(registerDto);
-    
+
     // Create a profile for the user based on their role
-    const profileType = registerDto.role === UserRole.BRAND ? ProfileType.BRAND : ProfileType.INFLUENCER;
+    const profileType =
+      registerDto.role === UserRole.BRAND
+        ? ProfileType.BRAND
+        : ProfileType.INFLUENCER;
     await this.profilesService.createProfile(user.id, profileType);
-    
+
     const tokens = await this.generateTokens(user.id, user.email);
     await this.usersService.updateRefreshToken(user.id, tokens.refreshToken);
 
@@ -43,7 +59,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      user.password,
+    );
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -59,14 +78,22 @@ export class AuthService {
 
   async refreshTokens(refreshToken: string) {
     try {
-      const decoded = this.jwtService.verify(refreshToken);
+      const decoded = await this.jwtService.verifyAsync<TokenPayload>(
+        refreshToken,
+        {
+          secret: this.configService.get('jwt.refreshSecret'),
+        },
+      );
+      if (decoded.tokenType !== 'refresh') {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
       const user = await this.usersService.findById(decoded.sub);
 
       if (!user || !user.refreshToken) {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      const isRefreshTokenValid = await bcrypt.compare(
+      const isRefreshTokenValid = refreshTokenMatches(
         refreshToken,
         user.refreshToken,
       );
@@ -85,23 +112,29 @@ export class AuthService {
   }
 
   private async generateTokens(userId: string, email: string) {
+    // TTLs come from configuration (JWT_ACCESS_EXPIRATION / JWT_REFRESH_EXPIRATION)
+    // — previously hardcoded in three different places (AUDIT §3).
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
         {
           sub: userId,
           email,
+          tokenType: 'access',
         },
         {
-          expiresIn: '15m',
+          expiresIn: this.configService.get('jwt.accessTokenExpiration', '15m'),
+          secret: this.configService.get('jwt.secret'),
         },
       ),
       this.jwtService.signAsync(
         {
           sub: userId,
           email,
+          tokenType: 'refresh',
         },
         {
-          expiresIn: '7d',
+          expiresIn: this.configService.get('jwt.refreshTokenExpiration', '7d'),
+          secret: this.configService.get('jwt.refreshSecret'),
         },
       ),
     ]);
@@ -128,15 +161,19 @@ export class AuthService {
         }
       } catch (profileError) {
         // Profile not found is okay, we can proceed with user deletion
-        console.log(`Profile not found for user ${userId}, proceeding with user deletion`);
+        this.logger.warn(
+          `Profile not found for user ${userId}, proceeding with user deletion`,
+        );
       }
-      
+
       // Then delete the user
       await this.usersService.remove(userId);
-      
+
       return { message: 'Account successfully deleted' };
     } catch (error) {
-      throw new Error(`Failed to delete account: ${error.message}`);
+      throw new InternalServerErrorException(
+        `Failed to delete account: ${error.message}`,
+      );
     }
   }
-} 
+}

@@ -8,7 +8,8 @@ export class CreateCollaborationDto {
     example: 'e87b51c3-6d8f-4389-bee7-77c84dc226fe',
   })
   @IsUUID()
-  brandId: string;
+  @IsOptional()
+  brandId?: string;
 
   @ApiProperty({
     description: 'ID of the influencer involved in the collaboration',
@@ -44,4 +45,4 @@ export class CreateCollaborationDto {
   @IsString()
   @IsOptional()
   notes?: string;
-} 
+}

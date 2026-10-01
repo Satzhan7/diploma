@@ -1,10 +1,24 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  GoneException,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { GetCurrentUser } from '../auth/decorators/get-current-user.decorator';
-import { OrdersService } from './orders.service';
+import { OrdersService, OrderViewer, PublicOrder } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Order } from './entities/order.entity';
 import { UserRole } from '../users/entities/user.entity';
@@ -19,7 +33,11 @@ export class OrdersController {
   @Post()
   @Roles(UserRole.BRAND)
   @ApiOperation({ summary: 'Create a new order' })
-  @ApiResponse({ status: 201, description: 'Order successfully created', type: Order })
+  @ApiResponse({
+    status: 201,
+    description: 'Order successfully created',
+    type: Order,
+  })
   create(
     @GetCurrentUser('sub') userId: string,
     @Body() createOrderDto: CreateOrderDto,
@@ -30,30 +48,50 @@ export class OrdersController {
   @Get('available')
   @Roles(UserRole.INFLUENCER)
   @ApiOperation({ summary: 'Get all available orders' })
-  @ApiResponse({ status: 200, description: 'Return all available orders', type: [Order] })
+  @ApiResponse({
+    status: 200,
+    description: 'Return all available orders',
+    type: [Order],
+  })
   findAvailable(
     @Query('category') category?: string,
     @Query('minBudget') minBudget?: number,
     @Query('maxBudget') maxBudget?: number,
-  ): Promise<Order[]> {
+  ): Promise<PublicOrder[]> {
     return this.ordersService.findAvailable({ category, minBudget, maxBudget });
   }
 
   @Post(':id/apply')
   @Roles(UserRole.INFLUENCER)
   @ApiOperation({ summary: 'Apply for an order' })
-  @ApiResponse({ status: 200, description: 'Application successful', type: Order })
+  @ApiResponse({
+    status: 200,
+    description: 'Application successful',
+    type: Order,
+  })
   apply(
     @Param('id') orderId: string,
     @GetCurrentUser('sub') userId: string,
   ): Promise<Order> {
-    return this.ordersService.apply(orderId, userId);
+    // This endpoint formerly assigned an order directly and bypassed the
+    // canonical application workflow. No current frontend consumer uses it.
+    // Keep the route temporarily to return an explicit migration response
+    // rather than silently changing legacy clients' semantics.
+    void orderId;
+    void userId;
+    throw new GoneException(
+      'Direct order application is retired; use POST /order-applications/:orderId',
+    );
   }
 
   @Get('brand')
   @Roles(UserRole.BRAND)
   @ApiOperation({ summary: 'Get all orders for the brand' })
-  @ApiResponse({ status: 200, description: 'Return all brand orders', type: [Order] })
+  @ApiResponse({
+    status: 200,
+    description: 'Return all brand orders',
+    type: [Order],
+  })
   findBrandOrders(@GetCurrentUser('sub') userId: string): Promise<Order[]> {
     return this.ordersService.findByBrand(userId);
   }
@@ -61,15 +99,29 @@ export class OrdersController {
   @Get('influencer')
   @Roles(UserRole.INFLUENCER)
   @ApiOperation({ summary: 'Get all orders for the influencer' })
-  @ApiResponse({ status: 200, description: 'Return all influencer orders', type: [Order] })
-  findInfluencerOrders(@GetCurrentUser('sub') userId: string): Promise<Order[]> {
+  @ApiResponse({
+    status: 200,
+    description: 'Return all influencer orders',
+    type: [Order],
+  })
+  findInfluencerOrders(
+    @GetCurrentUser('sub') userId: string,
+  ): Promise<Order[]> {
     return this.ordersService.findByInfluencer(userId);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get order by id' })
   @ApiResponse({ status: 200, description: 'Return the order', type: Order })
-  findOne(@Param('id') id: string): Promise<Order> {
-    return this.ordersService.findOne(id);
+  @ApiResponse({
+    status: 403,
+    description:
+      'Not the brand, assigned influencer or an admin, and the order is not open',
+  })
+  findOne(
+    @Param('id') id: string,
+    @GetCurrentUser() viewer: OrderViewer,
+  ): Promise<Order | PublicOrder> {
+    return this.ordersService.findOne(id, viewer);
   }
-} 
+}

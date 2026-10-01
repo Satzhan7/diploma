@@ -109,7 +109,7 @@ export const InfluencerList: React.FC = () => {
                     {influencer.profile?.categories && influencer.profile.categories.length > 0 && (
                       <HStack wrap="wrap" justify="center" spacing={2}>
                         {influencer.profile.categories.slice(0, 5).map((cat) => (
-                          <Badge key={cat} colorScheme="blue" variant="subtle">
+                          <Badge key={cat} colorScheme="brand" variant="subtle">
                             {cat}
                           </Badge>
                         ))}

@@ -117,7 +117,7 @@ const BrandOrders: React.FC = () => {
   return (
     <Box p={4}>
       <Heading mb={6}>My Brand Orders</Heading>
-      <Button as={RouterLink} to="/brand/orders/create" colorScheme="blue" mb={6}>
+      <Button as={RouterLink} to="/brand/orders/create" colorScheme="brand" mb={6}>
         Create New Order
       </Button>
 

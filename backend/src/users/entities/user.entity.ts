@@ -22,11 +22,17 @@ export enum UserRole {
 
 @Entity('users')
 export class User {
-  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000', description: 'The unique identifier of the user' })
+  @ApiProperty({
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'The unique identifier of the user',
+  })
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ApiProperty({ example: 'John Doe', description: 'The full name of the user' })
+  @ApiProperty({
+    example: 'John Doe',
+    description: 'The full name of the user',
+  })
   @Column()
   name: string;
 
@@ -38,7 +44,10 @@ export class User {
   @Column({ nullable: true })
   lastName: string;
 
-  @ApiProperty({ example: 'john@example.com', description: 'The email address of the user' })
+  @ApiProperty({
+    example: 'john@example.com',
+    description: 'The email address of the user',
+  })
   @Column({ unique: true })
   email: string;
 
@@ -46,7 +55,11 @@ export class User {
   @Exclude()
   password: string;
 
-  @ApiProperty({ enum: UserRole, example: UserRole.INFLUENCER, description: 'The role of the user' })
+  @ApiProperty({
+    enum: UserRole,
+    example: UserRole.INFLUENCER,
+    description: 'The role of the user',
+  })
   @Column({
     type: 'enum',
     enum: UserRole,
@@ -54,7 +67,10 @@ export class User {
   })
   role: UserRole;
 
-  @ApiProperty({ example: false, description: 'Whether the user email is verified' })
+  @ApiProperty({
+    example: false,
+    description: 'Whether the user email is verified',
+  })
   @Column({ default: false })
   isEmailVerified: boolean;
 
@@ -71,11 +87,11 @@ export class User {
   orders: Order[];
 
   @ApiProperty({ type: () => [Message] })
-  @OneToMany(() => Message, message => message.sender)
+  @OneToMany(() => Message, (message) => message.sender)
   sentMessages: Message[];
 
   @ApiProperty({ type: () => [Message] })
-  @OneToMany(() => Message, message => message.recipient)
+  @OneToMany(() => Message, (message) => message.recipient)
   receivedMessages: Message[];
 
   @ApiProperty({ type: () => [Match] })
@@ -86,11 +102,17 @@ export class User {
   @OneToMany(() => Match, (match) => match.influencer)
   influencerMatches: Match[];
 
-  @ApiProperty({ example: '2024-04-19T09:00:00.000Z', description: 'The creation date of the user' })
+  @ApiProperty({
+    example: '2024-04-19T09:00:00.000Z',
+    description: 'The creation date of the user',
+  })
   @CreateDateColumn()
   createdAt: Date;
 
-  @ApiProperty({ example: '2024-04-19T09:00:00.000Z', description: 'The last update date of the user' })
+  @ApiProperty({
+    example: '2024-04-19T09:00:00.000Z',
+    description: 'The last update date of the user',
+  })
   @UpdateDateColumn()
   updatedAt: Date;
 

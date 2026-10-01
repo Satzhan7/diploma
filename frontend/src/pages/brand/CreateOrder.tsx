@@ -173,7 +173,7 @@ export const CreateOrder: React.FC = () => {
 
                 <Button
                   type="submit"
-                  colorScheme="blue"
+                  colorScheme="brand"
                   size="lg"
                   width="full"
                   isLoading={createOrderMutation.isPending}

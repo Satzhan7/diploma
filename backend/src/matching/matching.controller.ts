@@ -9,7 +9,12 @@ import {
   UseGuards,
   Put,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GetCurrentUser } from '../auth/decorators/get-current-user.decorator';
 import { MatchingService, UpdateMatchStatsDto } from './matching.service';
@@ -32,8 +37,14 @@ export class MatchingController {
 
   @Post()
   @Roles(UserRole.BRAND, UserRole.INFLUENCER)
-  @ApiOperation({ summary: 'Create a new match (the caller must be a participant)' })
-  @ApiResponse({ status: 201, description: 'The match has been successfully created.', type: Match })
+  @ApiOperation({
+    summary: 'Create a new match (the caller must be a participant)',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'The match has been successfully created.',
+    type: Match,
+  })
   create(
     @GetCurrentUser('sub') userId: string,
     @Body() createMatchDto: CreateMatchDto,
@@ -41,17 +52,35 @@ export class MatchingController {
     return this.matchingService.create(createMatchDto, userId);
   }
 
+  @Post('interests/:brandId')
+  @Roles(UserRole.INFLUENCER)
+  @ApiOperation({
+    summary: 'Express interest in a brand (influencer is derived from JWT)',
+  })
+  createInterest(
+    @Param('brandId') brandId: string,
+    @GetCurrentUser('sub') influencerId: string,
+  ): Promise<Match> {
+    return this.matchingService.expressInterest(brandId, influencerId);
+  }
+
   @Get()
   @Roles(UserRole.BRAND, UserRole.INFLUENCER)
   @ApiOperation({ summary: 'List matches the current user participates in' })
-  @ApiResponse({ status: 200, description: 'Return matches scoped to the current user.', type: [Match] })
+  @ApiResponse({
+    status: 200,
+    description: 'Return matches scoped to the current user.',
+    type: [Match],
+  })
   findAll(@GetCurrentUser('sub') userId: string): Promise<Match[]> {
     return this.matchingService.findAllForUser(userId);
   }
 
   @Get('user/matches')
   @Roles(UserRole.BRAND, UserRole.INFLUENCER)
-  @ApiOperation({ summary: 'Alias for GET /matching, kept for frontend compatibility' })
+  @ApiOperation({
+    summary: 'Alias for GET /matching, kept for frontend compatibility',
+  })
   getMatchesForUser(@GetCurrentUser('sub') userId: string): Promise<Match[]> {
     return this.matchingService.getMatchesForUser(userId);
   }
@@ -63,7 +92,10 @@ export class MatchingController {
     @GetCurrentUser() user: any,
     @Query('limit') limit?: number,
   ): Promise<any[]> {
-    return this.matchingService.getRecommendedInfluencersForBrand(user.id, limit);
+    return this.matchingService.getRecommendedInfluencersForBrand(
+      user.id,
+      limit,
+    );
   }
 
   @Get('recommendations/brands')
@@ -73,12 +105,17 @@ export class MatchingController {
     @GetCurrentUser() user: any,
     @Query('limit') limit?: number,
   ): Promise<any[]> {
-    return this.matchingService.getRecommendedBrandsForInfluencer(user.id, limit);
+    return this.matchingService.getRecommendedBrandsForInfluencer(
+      user.id,
+      limit,
+    );
   }
 
   @Post('calculate')
   @Roles(UserRole.BRAND, UserRole.INFLUENCER)
-  @ApiOperation({ summary: 'Calculate the match score between a brand and influencer' })
+  @ApiOperation({
+    summary: 'Calculate the match score between a brand and influencer',
+  })
   calculateMatch(
     @Body('brandId') brandId: string,
     @Body('influencerId') influencerId: string,
@@ -90,7 +127,10 @@ export class MatchingController {
   @Roles(UserRole.BRAND, UserRole.INFLUENCER)
   @ApiOperation({ summary: 'Get a match by id (must be a participant)' })
   @ApiResponse({ status: 404, description: 'Match not found.' })
-  @ApiResponse({ status: 403, description: 'Caller is not a participant of this match.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Caller is not a participant of this match.',
+  })
   findOne(
     @Param('id') id: string,
     @GetCurrentUser('sub') userId: string,
@@ -111,7 +151,9 @@ export class MatchingController {
 
   @Patch(':id/stats')
   @Roles(UserRole.BRAND, UserRole.INFLUENCER)
-  @ApiOperation({ summary: 'Update statistics on a match the caller participates in' })
+  @ApiOperation({
+    summary: 'Update statistics on a match the caller participates in',
+  })
   updateStats(
     @Param('id') id: string,
     @Body() statsDto: UpdateMatchStatsDto,
@@ -122,7 +164,9 @@ export class MatchingController {
 
   @Patch(':id/complete')
   @Roles(UserRole.BRAND)
-  @ApiOperation({ summary: 'Mark a match as completed (only the owning brand)' })
+  @ApiOperation({
+    summary: 'Mark a match as completed (only the owning brand)',
+  })
   completeMatch(
     @Param('id') id: string,
     @GetCurrentUser('sub') userId: string,

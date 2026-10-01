@@ -6,11 +6,22 @@ export default () => ({
     username: process.env.DB_USERNAME || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
     name: process.env.DB_NAME || 'diploma',
-    synchronize: process.env.NODE_ENV !== 'production',
+    // Schema synchronization is never permitted in production. Development
+    // retains the existing convenience default but can explicitly disable it.
+    synchronize:
+      process.env.NODE_ENV !== 'production' &&
+      process.env.DB_SYNCHRONIZE !== 'false',
   },
   jwt: {
     secret: process.env.JWT_SECRET || 'super-secret',
-    accessTokenExpiration: '15m',
-    refreshTokenExpiration: '7d',
+    // A separate secret provides cryptographic separation when configured. The
+    // tokenType check remains mandatory so legacy/dev environments that use a
+    // single secret cannot accidentally treat a refresh token as an access one.
+    refreshSecret:
+      process.env.JWT_REFRESH_SECRET ||
+      process.env.JWT_SECRET ||
+      'super-secret',
+    accessTokenExpiration: process.env.JWT_ACCESS_EXPIRATION || '15m',
+    refreshTokenExpiration: process.env.JWT_REFRESH_EXPIRATION || '7d',
   },
 });

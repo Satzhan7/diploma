@@ -24,10 +24,7 @@ export class ChatsService {
 
   async findAll(userId: string): Promise<Chat[]> {
     return this.chatsRepository.find({
-      where: [
-        { sender: { id: userId } },
-        { recipient: { id: userId } },
-      ],
+      where: [{ sender: { id: userId } }, { recipient: { id: userId } }],
       relations: ['sender', 'recipient', 'messages'],
       order: {
         updatedAt: 'DESC',
@@ -54,7 +51,7 @@ export class ChatsService {
   async getMessages(chatId: string, userId: string): Promise<Message[]> {
     // First verify the user has access to this chat
     const chat = await this.findOne(chatId, userId);
-    
+
     // Use direct SQL to get messages with all relations
     const connection = this.messagesRepository.manager.connection;
     const messageData = await connection.query(
@@ -66,26 +63,26 @@ export class ChatsService {
        LEFT JOIN "users" r ON m."recipientId" = r.id
        WHERE m."chatId" = $1
        ORDER BY m."createdAt" ASC`,
-      [chatId]
+      [chatId],
     );
-    
+
     // Transform the raw SQL results into message objects
-    const messages = messageData.map(row => ({
+    const messages = messageData.map((row) => ({
       id: row.id,
       content: row.content,
-      sender: { 
+      sender: {
         id: row.senderId,
-        name: row.senderName
+        name: row.senderName,
       },
       recipient: {
         id: row.recipientId,
-        name: row.recipientName
+        name: row.recipientName,
       },
       chat: { id: chatId },
       isRead: row.isRead,
-      createdAt: row.createdAt
+      createdAt: row.createdAt,
     })) as Message[];
-    
+
     return messages;
   }
 
@@ -109,7 +106,7 @@ export class ChatsService {
     });
 
     const savedChat = await this.chatsRepository.save(chat);
-    
+
     // Fetch the complete chat with relations for the WebSocket
     const completeChat = await this.chatsRepository.findOne({
       where: { id: savedChat.id },
@@ -124,14 +121,19 @@ export class ChatsService {
     return completeChat;
   }
 
-  async addMessage(chatId: string, senderId: string, content: string): Promise<Message> {
+  async addMessage(
+    chatId: string,
+    senderId: string,
+    content: string,
+  ): Promise<Message> {
     const chat = await this.findOne(chatId, senderId);
 
     if (!content || content.trim() === '') {
       throw new Error('Message content cannot be empty');
     }
 
-    const recipientId = chat.sender.id === senderId ? chat.recipient.id : chat.sender.id;
+    const recipientId =
+      chat.sender.id === senderId ? chat.recipient.id : chat.sender.id;
 
     const message = this.messagesRepository.create({
       content,
@@ -143,9 +145,8 @@ export class ChatsService {
 
     const savedMessage = await this.messagesRepository.save(message);
 
-
     await this.chatsRepository.update(chatId, {
-      unreadCount: chat.unreadCount + 1
+      unreadCount: chat.unreadCount + 1,
     });
 
     const completeMessage = await this.messagesRepository.findOne({
@@ -160,7 +161,6 @@ export class ChatsService {
     return completeMessage;
   }
 
-
   async markAsRead(chatId: string, userId: string): Promise<void> {
     const chat = await this.findOne(chatId, userId);
 
@@ -172,7 +172,7 @@ export class ChatsService {
       // Mark all messages as read - use direct query instead of update with relations
       await this.messagesRepository.manager.query(
         `UPDATE message SET "isRead" = true WHERE "chatId" = $1 AND "isRead" = false`,
-        [chatId]
+        [chatId],
       );
 
       // Notify connected clients that messages have been read
@@ -180,8 +180,8 @@ export class ChatsService {
         this.chatsGateway.emitMessagesRead(chatId, userId);
       }
     }
-    
-    // Return a proper response 
+
+    // Return a proper response
     return;
   }
-} 
+}

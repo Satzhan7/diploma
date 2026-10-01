@@ -5,9 +5,7 @@ import {
   Grid,
   Card,
   CardBody,
-  Heading,
   Text,
-  Badge,
   VStack,
   HStack,
   Button,
@@ -15,9 +13,11 @@ import {
 } from '@chakra-ui/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { FiAward } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../types/user';
 import { Match, matchingService } from '../services/matching';
+import { PageHeader, StatusBadge, EmptyState, CardGridSkeleton } from '../components/ui';
 
 export const Matches: React.FC = () => {
   const toast = useToast();
@@ -35,21 +35,6 @@ export const Matches: React.FC = () => {
     },
     enabled: !!user,
   });
-
-  const getStatusColor = (status: Match['status']) => {
-    switch (status) {
-      case 'accepted':
-        return 'green';
-      case 'completed':
-        return 'blue';
-      case 'rejected':
-        return 'red';
-      case 'pending':
-        return 'yellow';
-      default:
-        return 'gray';
-    }
-  };
 
   const acceptMutation = useMutation({
     mutationFn: (matchId: string) => matchingService.acceptMatch(matchId),
@@ -73,62 +58,76 @@ export const Matches: React.FC = () => {
     },
   });
 
-  if (isLoading) {
-    return <Box p={4}>Loading matches...</Box>;
-  }
+  const counterpartLabel = user?.role === UserRole.BRAND ? 'influencers' : 'brands';
 
   return (
-    <Container maxW="container.xl" py={8}>
-      <VStack spacing={6} align="stretch">
-        <Heading size="lg">My Matches</Heading>
-        
+    <Container maxW="container.xl" px={0}>
+      <PageHeader
+        title="My Matches"
+        subtitle={`Your collaborations with ${counterpartLabel}`}
+      />
+
+      {isLoading ? (
+        <CardGridSkeleton count={6} />
+      ) : !matches || matches.length === 0 ? (
+        <EmptyState
+          icon={FiAward}
+          title="No matches yet"
+          description={
+            user?.role === UserRole.BRAND
+              ? 'Accept an application or send a collaboration request to start a match.'
+              : 'Apply to orders or express interest in brands to start a match.'
+          }
+        />
+      ) : (
         <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }} gap={6}>
-          {matches?.map((match) => (
+          {matches.map((match) => (
             <Card key={match.id}>
-              <CardBody>
+              <CardBody p={5}>
                 <VStack spacing={4} align="stretch">
                   <HStack justify="space-between">
-                    <Text fontWeight="medium">Match ID: {match.id.substring(0, 8)}...</Text>
-                    <Badge colorScheme={getStatusColor(match.status)}>
-                      {match.status}
-                    </Badge>
+                    <Text fontWeight="600" fontSize="sm" color="fg.muted">
+                      Match {match.id.substring(0, 8)}…
+                    </Text>
+                    <StatusBadge status={match.status} />
                   </HStack>
 
+                  <VStack align="start" spacing={0}>
+                    {user?.role === UserRole.BRAND && match.influencer && (
+                      <>
+                        <Text fontSize="sm" color="fg.subtle">Influencer</Text>
+                        <Text fontWeight="600">{match.influencer.name || 'N/A'}</Text>
+                      </>
+                    )}
+                    {user?.role === UserRole.INFLUENCER && match.brand && (
+                      <>
+                        <Text fontSize="sm" color="fg.subtle">Brand</Text>
+                        <Text fontWeight="600">{match.brand.name || 'N/A'}</Text>
+                      </>
+                    )}
+                  </VStack>
+
                   <Box>
-                    <Text fontSize="sm" color="gray.600">Created</Text>
+                    <Text fontSize="sm" color="fg.subtle">Created</Text>
                     <Text fontSize="sm">
                       {new Date(match.createdAt).toLocaleDateString()}
                     </Text>
                   </Box>
 
-                  <VStack align="start" spacing={0}>
-                    {user?.role === UserRole.BRAND && match.influencer && (
-                      <> 
-                        <Text fontSize="sm" color="gray.500">Influencer:</Text>
-                        <Text fontWeight="medium">{match.influencer.name || 'N/A'}</Text>
-                      </>
-                    )}
-                     {user?.role === UserRole.INFLUENCER && match.brand && (
-                      <> 
-                        <Text fontSize="sm" color="gray.500">Brand:</Text>
-                        <Text fontWeight="medium">{match.brand.name || 'N/A'}</Text>
-                      </>
-                    )}
-                  </VStack>
-
                   {user?.role === UserRole.INFLUENCER && match.status === 'pending' && (
-                    <HStack mt={2}>
-                      <Button 
-                        size="xs" 
-                        colorScheme="green" 
+                    <HStack>
+                      <Button
+                        size="sm"
+                        colorScheme="accent"
                         onClick={() => acceptMutation.mutate(match.id)}
                         isLoading={acceptMutation.isPending}
                       >
                         Accept
                       </Button>
-                      <Button 
-                        size="xs" 
-                        colorScheme="red" 
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        colorScheme="red"
                         onClick={() => rejectMutation.mutate(match.id)}
                         isLoading={rejectMutation.isPending}
                       >
@@ -138,7 +137,7 @@ export const Matches: React.FC = () => {
                   )}
 
                   <Button
-                    colorScheme="blue"
+                    variant="outline"
                     size="sm"
                     onClick={() => navigate(`/${user?.role}/matches/${match.id}`)}
                   >
@@ -149,9 +148,9 @@ export const Matches: React.FC = () => {
             </Card>
           ))}
         </Grid>
-      </VStack>
+      )}
     </Container>
   );
 };
 
-export default Matches; 
+export default Matches;

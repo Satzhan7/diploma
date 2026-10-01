@@ -21,7 +21,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import socketService from '../services/socket';
 import { ChevronLeftIcon } from '@chakra-ui/icons';
-import { Conversation, Message } from '../types/messages';
+import { Conversation, Message } from '../types/chat';
 import { User } from '../types/user';
 
 // Helper function to extract user ID safely
@@ -258,7 +258,7 @@ export const Messages: React.FC = () => {
   }
 
   return (
-    <Box p={4} height="calc(100vh - 80px)" bg="gray.50">
+    <Box height={{ base: 'calc(100vh - 104px)', lg: 'calc(100vh - 64px)' }}>
       <Grid
         templateColumns={{ base: '1fr', md: '300px 1fr' }}
         templateRows={{ base: selectedChat ? '1fr' : 'auto', md: '1fr' }}
@@ -271,11 +271,11 @@ export const Messages: React.FC = () => {
           borderRadius="lg"
           height="100%"
           overflow="hidden"
-          bg="white"
+          bg="bg.surface"
           boxShadow="sm"
         >
           <VStack spacing={0} align="stretch" height="100%" maxH="100%">
-            <Box p={4} borderBottomWidth="1px" bg="white">
+            <Box p={4} borderBottomWidth="1px" bg="bg.surface">
               <Heading size="md">Conversations</Heading>
             </Box>
             
@@ -299,10 +299,14 @@ export const Messages: React.FC = () => {
                   return (
                     <Box
                       key={chat.id}
+                      as="button"
+                      type="button"
+                      width="100%"
+                      textAlign="left"
                       p={3}
-                      cursor="pointer"
-                      bg={selectedChat === chat.id ? 'blue.50' : 'white'}
-                      _hover={{ bg: 'gray.50' }}
+                      bg={selectedChat === chat.id ? 'bg.subtle' : 'transparent'}
+                      _hover={{ bg: 'bg.subtle' }}
+                      _focusVisible={{ boxShadow: 'outline' }}
                       onClick={() => setSelectedChat(chat.id)}
                       borderBottomWidth="1px"
                     >
@@ -314,13 +318,13 @@ export const Messages: React.FC = () => {
                               {otherUser.name || 'User'}
                             </Text>
                             {chat.unreadCount > 0 && (
-                              <Badge colorScheme="blue" borderRadius="full">
+                              <Badge colorScheme="brand" borderRadius="full">
                                 {chat.unreadCount}
                               </Badge>
                             )}
                           </HStack>
                           {chat.lastMessage && (
-                            <Text fontSize="sm" color="gray.500" isTruncated>
+                            <Text fontSize="sm" color="fg.subtle" isTruncated>
                               {chat.lastMessage.content}
                             </Text>
                           )}
@@ -331,7 +335,7 @@ export const Messages: React.FC = () => {
                 })
               ) : (
                 <Center py={10}>
-                  <Text color="gray.500">No conversations yet</Text>
+                  <Text color="fg.subtle">No conversations yet</Text>
                 </Center>
               )}
             </Box>
@@ -346,11 +350,11 @@ export const Messages: React.FC = () => {
           overflow="hidden"
         >
           {!selectedChat ? (
-            <Center height="100%" bg="white" borderRadius="lg" boxShadow="sm">
+            <Center height="100%" bg="bg.surface" borderRadius="lg" boxShadow="sm">
               <VStack spacing={4}>
-                <Text color="gray.500">Select a conversation to start chatting</Text>
-                <Text fontSize="sm" color="gray.400">or</Text>
-                <Button colorScheme="blue" size="sm">Start a new chat</Button>
+                <Text color="fg.subtle">Select a conversation to start chatting</Text>
+                <Text fontSize="sm" color="fg.subtle">or</Text>
+                <Button colorScheme="brand" size="sm">Start a new chat</Button>
               </VStack>
             </Center>
           ) : (
@@ -358,7 +362,7 @@ export const Messages: React.FC = () => {
               <HStack
                 p={4}
                 borderBottomWidth="1px"
-                bg="gray.50"
+                bg="bg.surface"
                 spacing={4}
                 align="center"
               >
@@ -399,7 +403,7 @@ export const Messages: React.FC = () => {
                 display="flex"
                 flexDirection="column"
                 height="calc(100% - 140px)"
-                bg="white"
+                bg="bg.surface"
               >
                 {isLoadingMessages ? (
                   <Center flex="1">
@@ -420,15 +424,15 @@ export const Messages: React.FC = () => {
                         mb={3}
                       >
                         <Box
-                          bg={isMyMessage ? 'blue.500' : 'gray.100'}
-                          color={isMyMessage ? 'white' : 'black'}
+                          bg={isMyMessage ? 'brand.500' : 'bg.subtle'}
+                          color={isMyMessage ? 'white' : 'fg.default'}
                           p={3}
                           borderRadius="lg"
                           boxShadow="sm"
                         >
                           <Text>{message.content}</Text>
                         </Box>
-                        <Text fontSize="xs" color="gray.500" textAlign={isMyMessage ? 'right' : 'left'}>
+                        <Text fontSize="xs" color="fg.subtle" textAlign={isMyMessage ? 'right' : 'left'}>
                           {new Date(message.createdAt).toLocaleTimeString([], {
                             hour: '2-digit',
                             minute: '2-digit',
@@ -444,7 +448,7 @@ export const Messages: React.FC = () => {
                   })
                 ) : (
                   <Center flex="1">
-                    <Text color="gray.500">No messages yet</Text>
+                    <Text color="fg.subtle">No messages yet</Text>
                   </Center>
                 )}
                 <div ref={messagesEndRef} />
@@ -453,15 +457,15 @@ export const Messages: React.FC = () => {
               <HStack
                 p={4}
                 borderTopWidth="1px"
-                bg="white"
+                bg="bg.surface"
               >
                 <Input
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Type a message..."
                   borderRadius="full"
-                  bg="gray.50"
-                  _focus={{ bg: "white", boxShadow: "0 0 0 1px var(--chakra-colors-blue-500)" }}
+                  bg="bg.subtle"
+                  _focus={{ bg: 'bg.surface', borderColor: 'brand.400' }}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
@@ -470,7 +474,7 @@ export const Messages: React.FC = () => {
                   }}
                 />
                 <Button
-                  colorScheme="blue"
+                  colorScheme="brand"
                   onClick={handleSendMessage}
                   isDisabled={!newMessage.trim()}
                   borderRadius="full"

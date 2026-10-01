@@ -224,7 +224,7 @@ export const Orders: React.FC = () => {
                     <VStack align="stretch" spacing={2}>
                       <Heading size="md">{order.title}</Heading>
                       <HStack>
-                        <Badge colorScheme="blue">{order.category}</Badge>
+                        <Badge colorScheme="brand">{order.category}</Badge>
                         <Badge colorScheme={order.status === 'open' ? 'green' : 'orange'}>
                           {order.status}
                         </Badge>
@@ -270,7 +270,7 @@ export const Orders: React.FC = () => {
                       </VStack>
                     ) : (
                       <Button
-                        colorScheme="blue"
+                        colorScheme="brand"
                         width="full"
                         onClick={() => handleOpenApplicationForm(order)}
                         isDisabled={order.status !== 'open'}
@@ -324,7 +324,7 @@ export const Orders: React.FC = () => {
                 Cancel
               </Button>
               <Button 
-                colorScheme="blue" 
+                colorScheme="brand" 
                 onClick={handleSubmitApplication}
                 isLoading={submitApplicationMutation.isPending}
                 isDisabled={!applicationForm.message}

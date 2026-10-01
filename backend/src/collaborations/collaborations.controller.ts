@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Req,
+  ForbiddenException,
+} from '@nestjs/common';
 import { CollaborationsService } from './collaborations.service';
 import { CreateCollaborationDto } from './dto/create-collaboration.dto';
 import { UpdateCollaborationDto } from './dto/update-collaboration.dto';
@@ -18,7 +29,12 @@ export class CollaborationsController {
   @Post()
   @ApiOperation({ summary: 'Create a new collaboration' })
   @Roles(UserRole.BRAND, UserRole.ADMIN)
-  create(@Body() createCollaborationDto: CreateCollaborationDto) {
+  create(@Req() req, @Body() createCollaborationDto: CreateCollaborationDto) {
+    // Never trust caller-supplied brandId (SECURITY_AUDIT H2). Brands always
+    // create collaborations as themselves; only admins may set it explicitly.
+    if (req.user.role !== UserRole.ADMIN) {
+      createCollaborationDto.brandId = req.user.id;
+    }
     return this.collaborationsService.create(createCollaborationDto);
   }
 
@@ -37,24 +53,50 @@ export class CollaborationsController {
   }
 
   @Get('influencer')
-  @ApiOperation({ summary: 'Get collaborations for the authenticated influencer' })
+  @ApiOperation({
+    summary: 'Get collaborations for the authenticated influencer',
+  })
   @Roles(UserRole.INFLUENCER)
   findInfluencerCollaborations(@Req() req) {
     return this.collaborationsService.findByInfluencerId(req.user.id);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get a collaboration by id' })
+  @ApiOperation({ summary: 'Get a collaboration by id (participants only)' })
   @Roles(UserRole.BRAND, UserRole.INFLUENCER, UserRole.ADMIN)
-  findOne(@Param('id') id: string) {
-    return this.collaborationsService.findOne(id);
+  async findOne(@Param('id') id: string, @Req() req) {
+    const collaboration = await this.collaborationsService.findOne(id);
+    this.assertParticipant(collaboration, req.user);
+    return collaboration;
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update a collaboration' })
+  @ApiOperation({ summary: 'Update a collaboration (owning brand only)' })
   @Roles(UserRole.BRAND, UserRole.ADMIN)
-  update(@Param('id') id: string, @Body() updateCollaborationDto: UpdateCollaborationDto) {
+  async update(
+    @Param('id') id: string,
+    @Req() req,
+    @Body() updateCollaborationDto: UpdateCollaborationDto,
+  ) {
+    const collaboration = await this.collaborationsService.findOne(id);
+    this.assertParticipant(collaboration, req.user);
     return this.collaborationsService.update(id, updateCollaborationDto);
+  }
+
+  // Ownership guard for per-collaboration operations (SECURITY_AUDIT H2).
+  private assertParticipant(
+    collaboration: { brandId: string; influencerId: string },
+    user: { id: string; role: UserRole },
+  ): void {
+    if (
+      user.role !== UserRole.ADMIN &&
+      collaboration.brandId !== user.id &&
+      collaboration.influencerId !== user.id
+    ) {
+      throw new ForbiddenException(
+        'You do not have access to this collaboration',
+      );
+    }
   }
 
   @Delete(':id')
@@ -63,4 +105,4 @@ export class CollaborationsController {
   remove(@Param('id') id: string) {
     return this.collaborationsService.remove(id);
   }
-} 
+}

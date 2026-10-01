@@ -1,9 +1,18 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
+
+jest.mock('./services/api', () => ({
+  __esModule: true,
+  default: { get: jest.fn() },
+}));
+
 import App from './App';
 
-test('renders learn react link', () => {
+test('renders the public landing page for an unauthenticated visitor', async () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+  expect(
+    await screen.findByRole('heading', {
+      name: /ultimate brand-influencer connection platform/i,
+    }),
+  ).toBeInTheDocument();
 });

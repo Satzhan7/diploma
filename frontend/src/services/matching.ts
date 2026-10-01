@@ -50,6 +50,13 @@ export interface UpdateMatchStatsDto {
   followerGrowth?: number;
 }
 
+export interface CreateMatchDto {
+  brandId: string;
+  influencerId: string;
+  message?: string;
+  metadata?: Record<string, unknown>;
+}
+
 export interface MatchScore {
   brandId: string;
   influencerId: string;
@@ -86,8 +93,14 @@ export const matchingService = {
   },
 
   // Создать новый матч
-  createMatch: async (data: any): Promise<Match> => {
+  createMatch: async (data: CreateMatchDto): Promise<Match> => {
     const response = await api.post('/matching', data);
+    return response.data;
+  },
+
+  // The backend derives the influencer identity from the access token.
+  expressInterest: async (brandId: string): Promise<Match> => {
+    const response = await api.post(`/matching/interests/${brandId}`);
     return response.data;
   },
 
@@ -140,4 +153,4 @@ export const matchingService = {
     const response = await api.get<MatchScore[]>('/matching/user/matches');
     return response.data;
   }
-}; 
+};

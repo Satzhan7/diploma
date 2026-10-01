@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Box,
   Container,
@@ -23,7 +23,7 @@ import {
 } from '@chakra-ui/react';
 import { matchingService, Match } from '../services/matching';
 import { IconWrapper } from '../components/IconWrapper';
-import { FiArrowLeft, FiExternalLink } from 'react-icons/fi';
+import { FiArrowLeft } from 'react-icons/fi';
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { UpdateStatsModal } from '../components/UpdateStatsModal';
@@ -32,6 +32,7 @@ export const MatchDetail: React.FC = () => {
   const { matchId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
   const toast = useToast();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const { isOpen: isStatsModalOpen, onOpen: onStatsModalOpen, onClose: onStatsModalClose } = useDisclosure();
 
@@ -39,6 +40,30 @@ export const MatchDetail: React.FC = () => {
     queryKey: ['match', matchId],
     queryFn: () => matchingService.getMatchById(matchId!),
     enabled: !!matchId,
+  });
+
+  const completeMatchMutation = useMutation({
+    mutationFn: (id: string) => matchingService.completeMatch(id),
+    onSuccess: async (updatedMatch) => {
+      queryClient.setQueryData(['match', updatedMatch.id], updatedMatch);
+      await queryClient.invalidateQueries({ queryKey: ['userMatches'] });
+      toast({
+        title: 'Match completed',
+        description: 'The collaboration has been marked as completed.',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+    },
+    onError: (mutationError: Error) => {
+      toast({
+        title: 'Could not complete match',
+        description: mutationError.message,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    },
   });
 
   if (isLoading) {
@@ -110,7 +135,7 @@ export const MatchDetail: React.FC = () => {
                   {brand ? (
                     <HStack>
                       <Avatar size="sm" name={brand.name} src={brand.profile?.avatarUrl} />
-                      <ChakraLink as={RouterLink} to={`/${user?.role}/profile/${brand.id}`} color="blue.500">
+                      <ChakraLink as={RouterLink} to={`/${user?.role}/profile/${brand.id}`} color="brand.500">
                         {brand.name}
                       </ChakraLink>
                     </HStack>
@@ -125,7 +150,7 @@ export const MatchDetail: React.FC = () => {
                   {influencer ? (
                     <HStack>
                       <Avatar size="sm" name={influencer.name} src={influencer.profile?.avatarUrl} />
-                      <ChakraLink as={RouterLink} to={`/${user?.role}/profile/${influencer.id}`} color="blue.500">
+                      <ChakraLink as={RouterLink} to={`/${user?.role}/profile/${influencer.id}`} color="brand.500">
                          {influencer.name}
                       </ChakraLink>
                     </HStack>
@@ -169,8 +194,14 @@ export const MatchDetail: React.FC = () => {
         {match.status === 'accepted' && (
            <Button colorScheme='blue' onClick={onStatsModalOpen}>Update Stats</Button>
         )}
-        {match.status === 'accepted' && (
-           <Button colorScheme='green' onClick={() => alert('Complete Match TBD')}>Mark as Completed (TBD)</Button>
+        {match.status === 'accepted' && user?.id === match.brandId && (
+           <Button
+             colorScheme='green'
+             isLoading={completeMatchMutation.isPending}
+             onClick={() => completeMatchMutation.mutate(match.id)}
+           >
+             Mark as Completed
+           </Button>
         )}
         
       </VStack>

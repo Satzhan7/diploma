@@ -14,7 +14,12 @@ import { GetCurrentUser } from '../auth/decorators/get-current-user.decorator';
 import { ProfilesService } from './profiles.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { Profile } from './entities/profile.entity';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 
 // `/profiles/me` is the canonical edit route for the authenticated user.
 // Generic admin-only CRUD on profiles is intentionally NOT exposed here —
@@ -36,7 +41,11 @@ export class ProfilesController {
 
   @Patch('me')
   @ApiOperation({ summary: 'Update the current user profile' })
-  @ApiResponse({ status: 200, description: 'Profile has been successfully updated.', type: Profile })
+  @ApiResponse({
+    status: 200,
+    description: 'Profile has been successfully updated.',
+    type: Profile,
+  })
   updateMyProfile(
     @GetCurrentUser('sub') userId: string,
     @Body() updateProfileDto: UpdateProfileDto,
@@ -61,7 +70,10 @@ export class ProfilesController {
     @GetCurrentUser('sub') influencerUserId: string,
     @Query() filters: any,
   ) {
-    return this.profilesService.findBrandsForInfluencer(influencerUserId, filters);
+    return this.profilesService.findBrandsForInfluencer(
+      influencerUserId,
+      filters,
+    );
   }
 
   // Read-only public-within-the-app lookup of any user's profile by their userId
@@ -70,6 +82,6 @@ export class ProfilesController {
   @ApiOperation({ summary: 'Get a profile by its owning user id' })
   @ApiResponse({ status: 200, type: Profile })
   getProfileByUserId(@Param('userId') userId: string) {
-    return this.profilesService.findByUserId(userId);
+    return this.profilesService.findPublicByUserId(userId);
   }
 }

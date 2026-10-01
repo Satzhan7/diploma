@@ -9,7 +9,9 @@ import { Profile } from '../profiles/entities/profile.entity';
 import { User } from '../users/entities/user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Match, Order, OrderApplication, Profile, User])],
+  imports: [
+    TypeOrmModule.forFeature([Match, Order, OrderApplication, Profile, User]),
+  ],
   controllers: [StatisticsController],
   providers: [StatisticsService],
   exports: [StatisticsService],

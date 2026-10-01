@@ -36,7 +36,7 @@ su - deploy
 git clone https://github.com/Satzhan7/diploma.git
 cd diploma
 cp .env.prod.example .env
-nano .env   # strong DB_PASSWORD + JWT_SECRET (openssl rand -hex 32)
+nano .env   # strong DB_PASSWORD + two different JWT secrets (openssl rand -hex 32)
 ```
 
 ## 6. First cert (one-time, before nginx 443 block active)
@@ -62,6 +62,12 @@ docker compose -f docker-compose.prod.yml logs -f nginx backend
 ```
 
 Open: https://adpartners.kz
+
+> Before the first production deployment, generate and verify the complete
+> baseline migration against a disposable PostgreSQL instance, then run
+> `docker compose -f docker-compose.prod.yml exec backend npm run migration:run:prod`.
+> Production compose forces `DB_SYNCHRONIZE=false`; never enable it to bootstrap
+> a real database.
 
 ## 8. Updates
 ```bash

@@ -216,7 +216,7 @@ export const EditProfile: React.FC = () => {
               <Wrap>
                 {categoryFields.map((field: FieldArrayWithId<ProfileFormData, "categories", "id">, index: number) => (
                   <WrapItem key={field.id}>
-                    <Tag size="lg" borderRadius="full" variant="solid" colorScheme="blue">
+                    <Tag size="lg" borderRadius="full" variant="solid" colorScheme="brand">
                       <Avatar name={field.value} size="xs" ml={-1} mr={2} />
                       <TagLabel>{field.value}</TagLabel>
                       <TagCloseButton onClick={() => removeCategory(index)} />
@@ -257,7 +257,7 @@ export const EditProfile: React.FC = () => {
               </InputGroup>
             </FormControl>
 
-            <Button type="submit" colorScheme="blue" isLoading={isSubmitting}>Save Changes</Button>
+            <Button type="submit" colorScheme="brand" isLoading={isSubmitting}>Save Changes</Button>
           </Stack>
         </form>
       </VStack>

@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Message } from './message.entity';
 
@@ -13,7 +21,7 @@ export class Chat {
   @ManyToOne(() => User)
   recipient: User;
 
-  @OneToMany(() => Message, message => message.chat)
+  @OneToMany(() => Message, (message) => message.chat)
   messages: Message[];
 
   @Column({ default: 0 })
@@ -24,4 +32,4 @@ export class Chat {
 
   @UpdateDateColumn()
   updatedAt: Date;
-} 
+}
