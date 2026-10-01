@@ -13,6 +13,8 @@ Rule: every phase ends with something deployable and usable. Nothing goes to `ma
 
 ## Phase 0 — Stabilise (audit P0/P1). Must be first.
 - [ ] 0.1 Commit or split the current `audit/fixes` working tree (98 changed files) into reviewable commits; merge to `main`.
+  - [x] Split into 10 commits (`ddfd5ac`..`431875c`): prettier-only, auth, authz, migrations infra, orders/profile identity, build hardening, UI tokens, frontend fixes, docs, removal of docs/diploma. Every commit typechecks (backend + frontend).
+  - [ ] PR `audit/fixes` → `v1`. Local history (root `354b3c4`) shares no ancestor with GitHub `main`, so the PR targets a new `v1` branch pushed from local `main` (team decision 2026-10-01). Blocked: `/usr/local/bin/gh` is an x86_64 binary on arm64 without Rosetta, and git uses it as its credential helper, so pushes fail.
 - [ ] 0.2 Fix the chat WebSocket leaking password/refresh hashes: emit `{id,name}` DTOs only.
 - [ ] 0.3 Add `trust proxy`; scope `GET /orders/:id` and `GET /users*` to their owners or admins.
 - [ ] 0.4 Run `npm audit fix` in both apps (typeorm, jws, ws, axios).
