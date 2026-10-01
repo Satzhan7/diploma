@@ -8,8 +8,8 @@ This document describes the testing strategy for AdPartners.kz and lists realist
 |---|---|---|
 | Functional / acceptance | Manual scripted execution against a running `docker-compose up` stack with the React frontend (`cd frontend && npm start`). | Browser, curl, Postman. |
 | API | Endpoint-level testing via Swagger UI (`/docs`) and Postman collection. | Swagger UI, Postman. |
-| Unit | NestJS Jest scaffolding exists but only contains boilerplate (`backend/src/app.controller.spec.ts`, `frontend/src/App.test.tsx`). Adding real unit tests is `Future improvement`. | Jest. |
-| Integration | None currently. Recommended targets: `MatchingService.calculateMatchScore`, `AuthService.register/login/refreshTokens`, `OrderApplicationsService.create`. | Jest with TypeORM in-memory or test container. |
+| Unit | Focused backend Jest tests cover auth token boundaries, Socket.IO authentication, matching completion/interest, order/profile identity, duplicate applications, profile-filter predicates, and stats validation. The frontend has an app smoke test. | Jest, Testing Library. |
+| Integration | Not yet automated against PostgreSQL. Required next targets: the full order/application lifecycle, uniqueness migration, and profile filters. | Jest with disposable PostgreSQL/test container. |
 | E2E | None currently. Recommended tool: Playwright. | Playwright. |
 | Performance | Not performed. Recommended baseline: 200 concurrent users on the chat endpoint with a Redis socket adapter. | k6, Artillery. |
 | Security | Manual review of the JWT and `RolesGuard` flows. | Burp Suite, OWASP ZAP. |
@@ -103,7 +103,7 @@ Until automated coverage is added, the manual test cases below are the source of
 | ID | Scenario | Expected |
 |---|---|---|
 | TC-SEC-001 | Cross-role write attempt | An influencer issues `POST /orders` with the brand's category and gets HTTP 403. |
-| TC-SEC-002 | Mass-assignment of `role` | A user attempts `PATCH /users/<id>` with `{ role: "admin" }`. Outcome: needs confirmation; the `/users` controller is currently unguarded — see also Repository Analysis Report risk row. |
+| TC-SEC-002 | Mass-assignment of `role` | A user attempts `PATCH /users/<id>` with `{ role: "admin" }`. | HTTP 200/400 with the role unchanged; `JwtAuthGuard` and controller field stripping prevent escalation. |
 | TC-SEC-003 | XSS in message content | Send a message with `<script>alert(1)</script>`. The frontend must render it as text, not execute. | To be filled by tester. |
 
 ## 7. Performance tests
@@ -126,7 +126,7 @@ Not executed in the current iteration. Suggested benchmarks for future work:
 
 | ID | Severity | Issue | Workaround |
 |---|---|---|---|
-| KI-001 | Medium | Frontend does not auto-refresh expired access tokens (the user is logged out after 15 minutes of inactivity). | Manually log back in. |
+| KI-001 | Low | The frontend performs a single refresh/replay on a 401, but a failed/expired refresh token still logs the user out. | Log in again. |
 | KI-002 | Low | Recommendation listing endpoints (`GET /matching/recommendations/{influencers,brands}`) currently rank by `categoryMatch` only, even though `MatchingService.calculateMatchScore` already produces a deterministic three-factor score. | Wiring the full score into the listings is a documented future improvement (FI-005). |
 | KI-003 | Low | `Settings → Notifications` UI does not persist (no backend endpoints for `/users/settings`). | Document the limitation in the user guide. |
 | KI-004 | Low | (Resolved) All maintenance endpoints now live under `/chats/admin/*`, are gated by `@Roles(UserRole.ADMIN)`, and are hidden from the public Swagger document. |

@@ -17,7 +17,7 @@ The full documentation set lives under [docs/diploma/](docs/diploma/) and includ
 | Frontend | React 18, TypeScript, Chakra UI, React Router 6, TanStack React Query 5, Axios, socket.io-client, React Hook Form, Recharts |
 | Backend | NestJS 10, TypeScript, TypeORM 0.3, `@nestjs/jwt` + Passport, `@nestjs/websockets` + Socket.io 4 |
 | Database | PostgreSQL 14 |
-| API docs | Swagger / OpenAPI at `/docs` |
+| API docs | Swagger / OpenAPI at `/docs` in development only |
 | Containerisation | Docker, docker-compose |
 
 ## Local setup
@@ -42,7 +42,7 @@ This brings up:
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm start
 ```
 
@@ -70,8 +70,9 @@ Variables are read by [backend/src/config/configuration.ts](backend/src/config/c
 | `DB_USERNAME` | PostgreSQL user | `postgres` |
 | `DB_PASSWORD` | PostgreSQL password | `postgres` |
 | `DB_NAME` | Database name | `diploma` (compose: `influencer_platform`) |
-| `NODE_ENV` | Environment flag | unset; `production` disables TypeORM `synchronize` |
-| `JWT_SECRET` | Symmetric JWT signing key | `super-secret` — **must be overridden in production** |
+| `NODE_ENV` | Environment flag | unset; production disables TypeORM synchronization and Swagger |
+| `JWT_SECRET` | Access-token signing key | Development fallback only; **required in production** |
+| `JWT_REFRESH_SECRET` | Refresh-token signing key | Falls back only in development; **required and distinct in production** |
 
 ### Frontend
 
@@ -137,10 +138,10 @@ Maintenance endpoints under `/chats/debug/*` and `/chats/fix-messages/*` are res
 
 ## Authentication model
 
-- JWT access token (15 minutes) + refresh token (7 days, bcrypt-hashed before being persisted on `users.refreshToken`).
+- JWT access token (15 minutes) + refresh token (7 days, bcrypt-hashed before being persisted on `users.refreshToken`). Tokens carry explicit `tokenType` claims; protected REST and Socket.IO accept access tokens only, while `/auth/refresh` accepts refresh tokens only.
 - `JwtAuthGuard` enforces authentication; `RolesGuard` enforces the `@Roles(...)` decorator (values: `admin`, `brand`, `influencer`).
-- Public endpoints: `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, `GET /`, `GET /docs`.
-- Frontend stores both tokens in `localStorage`; an Axios interceptor attaches the access token and redirects to `/login` on a 401.
+- Public endpoints: `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, `GET /`; `/docs` is development-only.
+- Frontend stores both tokens in `localStorage`; its Axios interceptor performs one single-flight refresh/replay before logging out on failed refresh.
 
 ## Known limitations
 
@@ -149,14 +150,13 @@ These items are listed honestly so the defense committee can verify what is impl
 - **No admin UI.** The `admin` role exists at the API layer (used only for `/chats/...` maintenance endpoints and `/collaborations` deletion) but no admin page is shipped.
 - **No notifications subsystem.** Email and in-app notifications are not implemented; only WebSocket chat updates are real-time.
 - **No file uploads.** Avatars and other media must be supplied as external URLs.
-- **No frontend refresh-token rotation.** A 401 currently logs the user out instead of silently refreshing.
 - **Settings preferences are client-only.** Notification, language, and timezone preferences are stored in `localStorage` (key `adpartners.userSettings`); there is no `/users/settings` backend endpoint.
 - **Daily-stat aggregation is illustrative.** `StatisticsService` currently returns Match-level totals and a campaign-distribution array; daily-bucket aggregation is a future improvement.
 - **Recommendation listings rank by category only.** `MatchingService.calculateMatchScore` returns a deterministic three-factor score (category Jaccard + audience overlap + engagement); the listing endpoints (`/matching/recommendations/influencers` and `.../brands`) currently rank by `categoryMatch`. Wiring the full score into the listings is a future improvement.
-- **TypeORM `synchronize: true` is on outside production.** Versioned migrations should be adopted before any production deployment.
-- **No production hosting.** The application runs locally via `docker-compose up`; a production Dockerfile and CI/CD are future deliverables.
-- **Test coverage is manual.** Two boilerplate Jest tests exist; the manual functional test plan in [docs/diploma/07_TESTING_DOCUMENTATION.md](docs/diploma/07_TESTING_DOCUMENTATION.md) is the source of truth for the defense.
-- **Legacy code present.** A standalone `Brand` entity, an empty `influencers` module shell, and an abandoned root-level `src/` prototype exist; consolidation is recommended before submission (see [docs/diploma/11_REPOSITORY_ANALYSIS_REPORT.md](docs/diploma/11_REPOSITORY_ANALYSIS_REPORT.md)).
+- **Production migrations are not yet proven.** Production synchronization is disabled and the migration runner/first uniqueness migration exist, but a full schema baseline must be generated and tested against a disposable PostgreSQL instance before any first production deployment.
+- **Frontend dependency risk remains.** Direct Axios and React Router advisories are remediated, but the deprecated CRA 5 toolchain still carries transitive audit findings (including critical ones); plan a tested migration before production.
+- **No verified production hosting.** A production Docker/NGINX deployment configuration exists in [DEPLOY.md](DEPLOY.md), but it has not been deployed or operationally verified in this repository.
+- **Automated coverage is targeted, not comprehensive.** The backend has focused auth, matching, profile-filter, order, and stats-validation unit tests; the frontend has a smoke test. Disposable-PostgreSQL integration and browser E2E coverage remain required before production.
 - **Order edit / delete are not available.** The brand UI does not expose Edit/Delete buttons in the demo build because the backend does not implement `PATCH /orders/:id` or `DELETE /orders/:id`. Order creation, listing, and application acceptance are fully implemented.
 
 ## Documentation index
@@ -174,7 +174,6 @@ These items are listed honestly so the defense committee can verify what is impl
 | [docs/diploma/08_FINAL_THESIS_STRUCTURE.md](docs/diploma/08_FINAL_THESIS_STRUCTURE.md) | SDU 4-chapter ↔ user's 5-chapter mapping |
 | [docs/diploma/09_LATEX_CONVERSION_PLAN.md](docs/diploma/09_LATEX_CONVERSION_PLAN.md) | Markdown → LaTeX file mapping + BibTeX entries |
 | [docs/diploma/10_FINAL_PROJECT_CHECKLIST.md](docs/diploma/10_FINAL_PROJECT_CHECKLIST.md) | Pre-submission action checklist |
-| [docs/diploma/11_REPOSITORY_ANALYSIS_REPORT.md](docs/diploma/11_REPOSITORY_ANALYSIS_REPORT.md) | Code audit, risks, three-tier evidence base |
 
 ## License
 
