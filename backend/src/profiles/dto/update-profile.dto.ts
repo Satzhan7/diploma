@@ -174,10 +174,6 @@ export class UpdateProfileDto {
   @IsString()
   industry?: string;
 
-  @IsOptional()
-  @IsArray()
-  productCategories?: string[];
-
   // Influencer-specific fields
   @IsOptional()
   @IsArray()

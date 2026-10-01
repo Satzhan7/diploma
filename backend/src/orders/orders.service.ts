@@ -125,9 +125,14 @@ export class OrdersService {
     });
   }
 
-  async findByInfluencer(influencerId: string): Promise<Order[]> {
+  // Order foreign keys reference Profile IDs. Public service methods receive
+  // the authenticated User ID, so resolve it once at this boundary rather than
+  // comparing a User ID to a Profile FK.
+  async findByInfluencer(userId: string): Promise<Order[]> {
+    const influencerProfile = await this.profilesService.findByUserId(userId);
+
     return this.orderRepository.find({
-      where: { influencerId },
+      where: { influencerId: influencerProfile.id },
       relations: ['brand', 'brand.user', 'influencer', 'influencer.user'],
       order: { createdAt: 'DESC' },
     });

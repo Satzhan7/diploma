@@ -6,6 +6,7 @@ import {
   Param,
   Query,
   UseGuards,
+  GoneException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -72,7 +73,15 @@ export class OrdersController {
     @Param('id') orderId: string,
     @GetCurrentUser('sub') userId: string,
   ): Promise<Order> {
-    return this.ordersService.apply(orderId, userId);
+    // This endpoint formerly assigned an order directly and bypassed the
+    // canonical application workflow. No current frontend consumer uses it.
+    // Keep the route temporarily to return an explicit migration response
+    // rather than silently changing legacy clients' semantics.
+    void orderId;
+    void userId;
+    throw new GoneException(
+      'Direct order application is retired; use POST /order-applications/:orderId',
+    );
   }
 
   @Get('brand')

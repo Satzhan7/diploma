@@ -4,6 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not, DataSource } from 'typeorm';
@@ -40,45 +41,51 @@ export class OrderApplicationsService {
     userId: string,
     createOrderApplicationDto: CreateOrderApplicationDto,
   ): Promise<OrderApplication> {
-    const order = await this.orderRepository.findOne({
-      where: { id: orderId },
-      relations: ['brand', 'brand.user'],
-    });
+    try {
+      return await this.dataSource.transaction(async (manager) => {
+        // Lock the order before checking status and inserting. Acceptance uses
+        // the same lock, so no application can be inserted after acceptance
+        // has closed the order.
+        const order = await manager.findOne(Order, {
+          where: { id: orderId },
+          lock: { mode: 'pessimistic_write' },
+        });
 
-    if (!order) {
-      throw new NotFoundException(`Order with ID ${orderId} not found`);
+        if (!order) {
+          throw new NotFoundException(`Order with ID ${orderId} not found`);
+        }
+        if (order.status !== OrderStatus.OPEN) {
+          throw new BadRequestException(
+            'This order is not open for applications',
+          );
+        }
+
+        const existingApplication = await manager.findOne(OrderApplication, {
+          where: {
+            order: { id: orderId },
+            applicant: { id: userId },
+          },
+        });
+        if (existingApplication) {
+          throw new ConflictException('You have already applied to this order');
+        }
+
+        const application = manager.create(OrderApplication, {
+          ...createOrderApplicationDto,
+          order: { id: orderId },
+          applicant: { id: userId },
+          status: ApplicationStatus.PENDING,
+        });
+        return manager.save(OrderApplication, application);
+      });
+    } catch (error) {
+      // PostgreSQL unique_violation closes the race between two concurrent
+      // transactions after they both performed their read checks.
+      if ((error as { code?: string }).code === '23505') {
+        throw new ConflictException('You have already applied to this order');
+      }
+      throw error;
     }
-
-    if (order.status !== OrderStatus.OPEN) {
-      throw new BadRequestException('This order is not open for applications');
-    }
-
-    // Check if the user already applied to this order
-    const existingApplication = await this.orderApplicationRepository.findOne({
-      where: {
-        order: { id: orderId },
-        applicant: { id: userId },
-      },
-    });
-
-    if (existingApplication) {
-      throw new BadRequestException('You have already applied to this order');
-    }
-
-    const application = this.orderApplicationRepository.create({
-      ...createOrderApplicationDto,
-      order: { id: orderId },
-      applicant: { id: userId },
-      status: ApplicationStatus.PENDING,
-    });
-
-    const savedApplication =
-      await this.orderApplicationRepository.save(application);
-    this.logger.log(
-      `Application ${savedApplication.id} created for order ${orderId}`,
-    );
-
-    return savedApplication;
   }
 
   async findAllByUser(userId: string): Promise<OrderApplication[]> {

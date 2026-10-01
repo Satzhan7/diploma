@@ -5,6 +5,7 @@ import {
   ManyToOne,
   CreateDateColumn,
   UpdateDateColumn,
+  Unique,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Order } from './order.entity';
@@ -17,7 +18,10 @@ export enum ApplicationStatus {
   WITHDRAWN = 'withdrawn',
 }
 
+// A user may apply to an order only once. This is enforced at the database
+// level as well as in the service so concurrent requests cannot bypass it.
 @Entity()
+@Unique('UQ_order_application_order_applicant', ['order', 'applicant'])
 export class OrderApplication {
   @ApiProperty({
     example: '550e8400-e29b-41d4-a716-446655440000',

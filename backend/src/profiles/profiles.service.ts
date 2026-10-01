@@ -109,9 +109,10 @@ export class ProfilesService {
 
     // Apply filters if provided
     if (filters.niches && filters.niches.length > 0) {
-      queryBuilder.andWhere('profile.niches && :niches', {
-        niches: filters.niches,
-      });
+      queryBuilder.andWhere(
+        `string_to_array(COALESCE(profile.niches, ''), ',') && :niches::text[]`,
+        { niches: filters.niches },
+      );
     }
 
     if (filters.minFollowers) {
@@ -127,15 +128,17 @@ export class ProfilesService {
     }
 
     if (filters.platforms && filters.platforms.length > 0) {
-      queryBuilder.andWhere('profile.socialMediaPlatforms && :platforms', {
-        platforms: filters.platforms,
-      });
+      queryBuilder.andWhere(
+        `string_to_array(COALESCE(profile.socialMediaPlatforms, ''), ',') && :platforms::text[]`,
+        { platforms: filters.platforms },
+      );
     }
 
     if (filters.contentTypes && filters.contentTypes.length > 0) {
-      queryBuilder.andWhere('profile.contentTypes && :contentTypes', {
-        contentTypes: filters.contentTypes,
-      });
+      queryBuilder.andWhere(
+        `string_to_array(COALESCE(profile.contentTypes, ''), ',') && :contentTypes::text[]`,
+        { contentTypes: filters.contentTypes },
+      );
     }
 
     if (filters.locations && filters.locations.length > 0) {
@@ -164,12 +167,6 @@ export class ProfilesService {
     if (filters.industries && filters.industries.length > 0) {
       queryBuilder.andWhere('profile.industry IN (:...industries)', {
         industries: filters.industries,
-      });
-    }
-
-    if (filters.productCategories && filters.productCategories.length > 0) {
-      queryBuilder.andWhere('profile.productCategories && :categories', {
-        categories: filters.productCategories,
       });
     }
 
@@ -211,10 +208,10 @@ export class ProfilesService {
       .leftJoinAndSelect('profile.user', 'user');
 
     if (categories && categories.length > 0) {
-      // Используем ARRAY_OVERLAP для поиска профилей, у которых есть хотя бы одна общая категория
-      queryBuilder.andWhere('profile.categories && :categories', {
-        categories: categories,
-      });
+      queryBuilder.andWhere(
+        `string_to_array(COALESCE(profile.categories, ''), ',') && :categories::text[]`,
+        { categories },
+      );
     }
 
     return queryBuilder.orderBy('user.name', 'ASC').limit(limit).getMany();
@@ -231,10 +228,10 @@ export class ProfilesService {
       .leftJoinAndSelect('profile.user', 'user');
 
     if (categories && categories.length > 0) {
-      // Используем ARRAY_OVERLAP для поиска профилей, у которых есть хотя бы одна общая категория
-      queryBuilder.andWhere('profile.categories && :categories', {
-        categories: categories,
-      });
+      queryBuilder.andWhere(
+        `string_to_array(COALESCE(profile.categories, ''), ',') && :categories::text[]`,
+        { categories },
+      );
     }
 
     return queryBuilder.orderBy('user.name', 'ASC').limit(limit).getMany();
