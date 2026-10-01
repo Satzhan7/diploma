@@ -7,6 +7,16 @@ import { UsersService } from '../users/users.service';
 import { SocialMedia } from './entities/social-media.entity';
 import { PublicUser, toPublicUser } from '../users/public-user';
 
+export type PublicProfile = Profile & { user: PublicUser };
+
+// Swap the loaded owner for its public projection (no email or hashes).
+// Keeps the Profile instance so class-transformer getters still apply.
+function withPublicUser(profile: Profile): PublicProfile {
+  return Object.assign(profile, {
+    user: profile.user ? toPublicUser(profile.user) : undefined,
+  });
+}
+
 @Injectable()
 export class ProfilesService {
   constructor(
@@ -46,9 +56,7 @@ export class ProfilesService {
 
   // Profile plus its owner's public identity (no email or hashes), for
   // viewing another user's profile page.
-  async findPublicByUserId(
-    userId: string,
-  ): Promise<Profile & { user: PublicUser }> {
+  async findPublicByUserId(userId: string): Promise<PublicProfile> {
     const profile = await this.profilesRepository.findOne({
       where: { user: { id: userId } },
       relations: ['socialMedia', 'user'],
@@ -60,7 +68,7 @@ export class ProfilesService {
       );
     }
 
-    return Object.assign(profile, { user: toPublicUser(profile.user) });
+    return withPublicUser(profile);
   }
 
   async update(
@@ -117,7 +125,7 @@ export class ProfilesService {
   async findInfluencersForBrand(
     brandUserId: string,
     filters: any = {},
-  ): Promise<Profile[]> {
+  ): Promise<PublicProfile[]> {
     // Get brand profile to access preferences
     const brandProfile = await this.findByUserId(brandUserId);
 
@@ -167,13 +175,14 @@ export class ProfilesService {
       });
     }
 
-    return queryBuilder.getMany();
+    const profiles = await queryBuilder.getMany();
+    return profiles.map(withPublicUser);
   }
 
   async findBrandsForInfluencer(
     influencerUserId: string,
     filters: any = {},
-  ): Promise<Profile[]> {
+  ): Promise<PublicProfile[]> {
     // Get influencer profile to access preferences
     const influencerProfile = await this.findByUserId(influencerUserId);
 
@@ -190,7 +199,8 @@ export class ProfilesService {
       });
     }
 
-    return queryBuilder.getMany();
+    const profiles = await queryBuilder.getMany();
+    return profiles.map(withPublicUser);
   }
 
   async findAll(): Promise<Profile[]> {

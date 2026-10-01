@@ -20,6 +20,12 @@ import {
 import { ChatsService } from './chats.service';
 import { Chat } from './entities/chat.entity';
 import { Message } from './entities/message.entity';
+import {
+  MessageEvent,
+  PublicChat,
+  toMessageEvent,
+  toPublicChat,
+} from './chat-events';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -251,19 +257,20 @@ SELECT COUNT(*) FROM message WHERE "chatId" IS NULL;
   @Get()
   @ApiOperation({ summary: 'Get all chats for the current user' })
   @ApiResponse({ status: 200, description: 'Return all chats.', type: [Chat] })
-  findAll(@GetCurrentUser() user: CurrentUser): Promise<Chat[]> {
-    return this.chatsService.findAll(user.id);
+  async findAll(@GetCurrentUser() user: CurrentUser): Promise<PublicChat[]> {
+    const chats = await this.chatsService.findAll(user.id);
+    return chats.map(toPublicChat);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a chat by id' })
   @ApiResponse({ status: 200, description: 'Return the chat.', type: Chat })
   @ApiResponse({ status: 404, description: 'Chat not found.' })
-  findOne(
+  async findOne(
     @Param('id') id: string,
     @GetCurrentUser() user: CurrentUser,
-  ): Promise<Chat> {
-    return this.chatsService.findOne(id, user.id);
+  ): Promise<PublicChat> {
+    return toPublicChat(await this.chatsService.findOne(id, user.id));
   }
 
   @Get(':id/messages')
@@ -283,11 +290,11 @@ SELECT COUNT(*) FROM message WHERE "chatId" IS NULL;
   @Post(':recipientId')
   @ApiOperation({ summary: 'Create a new chat or return existing one' })
   @ApiResponse({ status: 201, description: 'Chat created successfully.' })
-  create(
+  async create(
     @Param('recipientId') recipientId: string,
     @GetCurrentUser() user: CurrentUser,
-  ): Promise<Chat> {
-    return this.chatsService.create(user.id, recipientId);
+  ): Promise<PublicChat> {
+    return toPublicChat(await this.chatsService.create(user.id, recipientId));
   }
 
   @Post(':id/messages')
@@ -298,11 +305,12 @@ SELECT COUNT(*) FROM message WHERE "chatId" IS NULL;
     @Param('id') id: string,
     @Body('content') content: string,
     @GetCurrentUser() user: CurrentUser,
-  ): Promise<Message> {
+  ): Promise<MessageEvent> {
     if (!content || content.trim() === '') {
       throw new BadRequestException('Message content cannot be empty');
     }
-    return this.chatsService.addMessage(id, user.id, content);
+    const message = await this.chatsService.addMessage(id, user.id, content);
+    return toMessageEvent(message, id);
   }
 
   @Post(':id/read')

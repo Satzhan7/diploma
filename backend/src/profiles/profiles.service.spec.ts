@@ -74,3 +74,40 @@ describe('ProfilesService.findPublicByUserId', () => {
     }
   });
 });
+
+describe('ProfilesService search results', () => {
+  it.each([
+    ['influencers for a brand', 'findInfluencersForBrand'],
+    ['brands for an influencer', 'findBrandsForInfluencer'],
+  ] as const)('%s carry a public user only', async (_label, method) => {
+    const queryBuilder = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue([
+        {
+          id: 'profile-2',
+          user: {
+            id: 'user-2',
+            name: 'Other',
+            role: 'influencer',
+            email: 'other@example.test',
+            password: '$2b$10$hash',
+          },
+        },
+      ]),
+    };
+    const service = new ProfilesService(
+      { createQueryBuilder: jest.fn(() => queryBuilder) } as any,
+      {} as any,
+    );
+    jest
+      .spyOn(service, 'findByUserId')
+      .mockResolvedValue({ id: 'my-profile' } as any);
+
+    const [profile] = await service[method]('user-1', {});
+
+    expect(profile.user.id).toBe('user-2');
+    expect(JSON.stringify(profile)).not.toMatch(/email|password|\$2b\$/);
+  });
+});

@@ -57,3 +57,32 @@ export function toChatEvent(chat: Chat): ChatEvent {
     updatedAt: chat.updatedAt,
   };
 }
+
+export interface PublicChatMessage {
+  id: string;
+  content: string;
+  senderId: string;
+  recipientId: string;
+  isRead: boolean;
+  createdAt: Date;
+  sender?: ChatUserEvent;
+}
+
+export type PublicChat = ChatEvent & { messages?: PublicChatMessage[] };
+
+// HTTP chat responses use the same user allow-list as the socket events.
+export function toPublicChat(chat: Chat): PublicChat {
+  const publicChat: PublicChat = toChatEvent(chat);
+  if (chat.messages) {
+    publicChat.messages = chat.messages.map((message) => ({
+      id: message.id,
+      content: message.content,
+      senderId: message.senderId,
+      recipientId: message.recipientId,
+      isRead: message.isRead,
+      createdAt: message.createdAt,
+      ...(message.sender ? { sender: toChatUserEvent(message.sender) } : {}),
+    }));
+  }
+  return publicChat;
+}

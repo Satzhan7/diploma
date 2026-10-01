@@ -4,6 +4,7 @@ import {
   NestInterceptor,
   ExecutionContext,
   CallHandler,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -26,9 +27,9 @@ export class TransformInterceptor implements NestInterceptor {
           // refreshToken) are stripped, while handling circular references.
           return instanceToPlain(data, { enableCircularCheck: true });
         } catch (error) {
-          // If serialization fails, return the original data
-          this.logger.warn(`Error in transform interceptor: ${error.message}`);
-          return data;
+          // Fail closed: the raw entities may still carry @Exclude fields.
+          this.logger.error(`Error in transform interceptor: ${error.message}`);
+          throw new InternalServerErrorException();
         }
       }),
     );
