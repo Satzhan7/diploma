@@ -32,7 +32,7 @@ const PartnerLogo = ({ name, icon }: { name: string, icon?: React.ElementType })
 
 // --- Helper Sub-components ---
 const FeatureItem = ({ icon, title, text }: { icon: IconType, title: string, text: string }) => {
-  const iconColor = useColorModeValue("blue.500", "blue.300");
+  const iconColor = useColorModeValue("brand.500", "brand.300");
   return (
     <HStack align="start" spacing={4}>
       <IconWrapper 
@@ -64,7 +64,7 @@ const HowItWorksStep = ({ num, title, text }: { num: number, title: string, text
       align="center" 
       justify="center" 
       borderRadius="full" 
-      bg="blue.500" 
+      bg="brand.500" 
       color="white" 
       fontSize="2xl" 
       fontWeight="bold"
@@ -91,7 +91,7 @@ const CourseCard = ({ title, imgSrc }: { title: string, imgSrc: string }) => (
       <Heading size="md" mb={2}>{title}</Heading>
     </CardBody>
     <CardFooter>
-      <Button variant="outline" colorScheme="blue" size="sm">Go to course</Button>
+      <Button variant="outline" colorScheme="brand" size="sm">Go to course</Button>
     </CardFooter>
   </Card>
 );
@@ -286,7 +286,7 @@ const Landing: React.FC = () => {
                 minH={{ lg: "300px" }}
               >
                   <Heading size="lg" color={headingColor}>Need free consultation?</Heading>
-                  <Button as={RouterLink} to="/login" variant="outline" colorScheme="blue" size="lg">
+                  <Button as={RouterLink} to="/login" variant="outline" colorScheme="brand" size="lg">
                     Login
                   </Button>
               </VStack>

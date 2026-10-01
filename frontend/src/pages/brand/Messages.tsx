@@ -100,7 +100,7 @@ function Messages() {
               key={contact.id}
               p={4}
               cursor="pointer"
-              bg={selectedContact?.id === contact.id ? 'blue.50' : 'transparent'}
+              bg={selectedContact?.id === contact.id ? 'brand.50' : 'transparent'}
               _hover={{ bg: 'gray.50' }}
               onClick={() => setSelectedContact(contact)}
             >
@@ -114,7 +114,7 @@ function Messages() {
                 </Box>
                 {contact.unreadCount > 0 && (
                   <Box
-                    bg="blue.500"
+                    bg="brand.500"
                     color="white"
                     px={2}
                     py={1}
@@ -161,7 +161,7 @@ function Messages() {
                     bg={
                       message.senderId === selectedContact.id
                         ? 'gray.100'
-                        : 'blue.500'
+                        : 'brand.500'
                     }
                     color={
                       message.senderId === selectedContact.id
@@ -188,7 +188,7 @@ function Messages() {
                     mr={2}
                   />
                   <Button
-                    colorScheme="blue"
+                    colorScheme="brand"
                     type="submit"
                     isLoading={sendMessageMutation.isPending}
                   >

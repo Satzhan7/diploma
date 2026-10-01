@@ -111,7 +111,7 @@ export const MyApplications: React.FC = () => {
         <VStack align="start" spacing={1}>
           <Text fontSize="sm">
             Brand:
-            <ChakraLink ml={1} color="blue.500" onClick={() => application.order.brand?.id && handleViewBrand(application.order.brand.id)}>
+            <ChakraLink ml={1} color="brand.500" onClick={() => application.order.brand?.id && handleViewBrand(application.order.brand.id)}>
               {application.order.brand?.displayName || 'Brand Name Missing'} <IconWrapper icon={FiExternalLink} />
             </ChakraLink>
           </Text>
@@ -163,7 +163,7 @@ export const MyApplications: React.FC = () => {
     <Box p={4}>
       <Heading mb={6}>My Applications</Heading>
 
-      <Tabs variant="soft-rounded" colorScheme="blue">
+      <Tabs variant="soft-rounded" colorScheme="brand">
         <TabList mb={4} flexWrap="wrap">
           <Tab>All ({applications.length})</Tab>
           <Tab>Pending ({pendingApplications.length})</Tab>
@@ -183,7 +183,7 @@ export const MyApplications: React.FC = () => {
               <Box textAlign="center" p={8}>
                 <Text fontSize="xl">No applications found.</Text>
                 <Text color="gray.500">Apply to orders that match your profile!</Text>
-                <Button mt={4} colorScheme="blue" as={RouterLink} to="/influencer/orders">Browse Orders</Button>
+                <Button mt={4} colorScheme="brand" as={RouterLink} to="/influencer/orders">Browse Orders</Button>
               </Box>
             )}
           </TabPanel>

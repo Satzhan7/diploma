@@ -149,7 +149,7 @@ export const Settings: React.FC = () => {
 
             <Button
               type="submit"
-              colorScheme="blue"
+              colorScheme="brand"
               isLoading={isSaving}
               loadingText="Saving..."
             >

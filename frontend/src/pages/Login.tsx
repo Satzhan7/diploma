@@ -79,7 +79,7 @@ export const Login: React.FC = () => {
             </RouterLink>
             <HStack spacing={{ base: 2, md: 4 }}>
               <Text fontSize="sm">Don't have an account?</Text>
-              <Button as={RouterLink} to="/register" colorScheme="blue" size="sm" variant="outline">
+              <Button as={RouterLink} to="/register" colorScheme="brand" size="sm" variant="outline">
                 Sign Up
               </Button>
             </HStack>
@@ -118,7 +118,7 @@ export const Login: React.FC = () => {
                     bg={bgColor}
                   />
                 </FormControl>
-                <Button type="submit" colorScheme="blue" size="lg" fontSize="md" isLoading={isLoading} mt={4}>
+                <Button type="submit" colorScheme="brand" size="lg" fontSize="md" isLoading={isLoading} mt={4}>
                   Sign in
                 </Button>
               </Stack>

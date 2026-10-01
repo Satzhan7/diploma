@@ -13,17 +13,13 @@ import {
   Card,
   CardHeader,
   CardBody,
-  Stat,
-  StatLabel,
-  StatNumber,
-  StatHelpText,
   Text,
   Td,
   Tr,
-  Badge,
   Link,
 } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
+import { FiList, FiActivity, FiInbox, FiUsers, FiMousePointer, FiEye, FiTrendingUp } from 'react-icons/fi';
 import { LineChart } from '../../components/statistics/LineChart';
 import { PieChart } from '../../components/statistics/PieChart';
 import { StatsTable } from '../../components/statistics/StatsTable';
@@ -32,6 +28,7 @@ import { BrandDashboardStats, CampaignStat } from '../../types/statistics';
 import { Link as RouterLink } from 'react-router-dom';
 import { usersService } from '../../services/users';
 import api from '../../services/api';
+import { PageHeader, StatCard, StatusBadge, StatCardSkeleton, EmptyState } from '../../components/ui';
 
 export const BrandDashboard: React.FC = () => {
   const toast = useToast();
@@ -49,30 +46,25 @@ export const BrandDashboard: React.FC = () => {
     queryFn: () => statisticsService.getBrandStats(filters),
   });
 
-  // Загрузка списка инфлюенсеров и категорий
   useEffect(() => {
     const fetchFiltersData = async () => {
       try {
-        // Use usersService to get influencers
-        const influencersData = await usersService.getAllInfluencers(); 
+        const influencersData = await usersService.getAllInfluencers();
         setInfluencers(influencersData.map(inf => ({ id: inf.id, name: inf.name })));
       } catch (err) {
-        console.error('Failed to load influencers', err);
         toast({ title: 'Error loading influencers', status: 'error' });
       }
-      
+
       try {
-        // Use new /categories endpoint
-        const categoriesResponse = await api.get<string[]>('/categories'); 
+        const categoriesResponse = await api.get<string[]>('/categories');
         setCategories(categoriesResponse.data);
       } catch (err) {
-        console.error('Failed to load categories', err);
         toast({ title: 'Error loading categories', status: 'error' });
       }
     };
 
     fetchFiltersData();
-  }, [toast]); // Add toast dependency
+  }, [toast]);
 
   useEffect(() => {
     if (error) {
@@ -103,35 +95,25 @@ export const BrandDashboard: React.FC = () => {
     });
   };
 
-  if (isLoading) {
-    return <Box p={8}>Loading dashboard data...</Box>;
-  }
-
-  if (!stats) {
-    return <Box p={8}>No data available</Box>;
-  }
-
-  // Define headers for the StatsTable
   const campaignTableHeaders = [
-    'Campaign', 
-    'Category', 
-    'Influencer', 
-    'Clicks', 
-    'Impressions', 
+    'Campaign',
+    'Category',
+    'Influencer',
+    'Clicks',
+    'Impressions',
     'Engagement',
     'Status',
-    'Start Date', 
+    'Start Date',
     'End Date'
   ];
 
-  // Update renderCampaignRow to use CampaignStat type and correct fields
   const renderCampaignRow = (item: CampaignStat) => (
     <Tr key={item.id}>
       <Td>{item.name || 'N/A'}</Td>
       <Td>{item.category || 'N/A'}</Td>
       <Td>
         {item.influencerId ? (
-          <Link as={RouterLink} to={`/brand/profile/${item.influencerId}`} color="blue.500">
+          <Link as={RouterLink} to={`/brand/profile/${item.influencerId}`} color="accent.solid">
             {item.influencerName || 'N/A'}
           </Link>
         ) : (
@@ -142,9 +124,7 @@ export const BrandDashboard: React.FC = () => {
       <Td isNumeric>{item.impressions?.toLocaleString() || '0'}</Td>
       <Td isNumeric>{item.engagementRate?.toFixed(1) || '0.0'}%</Td>
       <Td>
-        <Badge colorScheme={item.status === 'completed' ? 'green' : item.status === 'accepted' ? 'blue' : 'gray'}>
-          {item.status || 'pending'}
-        </Badge>
+        <StatusBadge status={item.status || 'pending'} />
       </Td>
       <Td>{item.startDate ? new Date(item.startDate).toLocaleDateString() : '-'}</Td>
       <Td>{item.endDate ? new Date(item.endDate).toLocaleDateString() : '-'}</Td>
@@ -152,13 +132,13 @@ export const BrandDashboard: React.FC = () => {
   );
 
   return (
-    <Box p={6}>
-      <Heading size="lg" mb={6}>Brand Dashboard</Heading>
-      
-      {/* Фильтры */}
-      <Card mb={6}>
-        <CardHeader>
-          <Heading size="md">Filter Data</Heading>
+    <Box>
+      <PageHeader title="Brand Dashboard" subtitle="Campaign performance at a glance" />
+
+      {/* Filters */}
+      <Card mb={8}>
+        <CardHeader pb={0}>
+          <Heading as="h2" size="md">Filter Data</Heading>
         </CardHeader>
         <CardBody>
           <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4}>
@@ -212,122 +192,130 @@ export const BrandDashboard: React.FC = () => {
             </FormControl>
           </SimpleGrid>
           <Flex justify="flex-end" mt={4}>
-            <Button variant="outline" mr={3} onClick={handleResetFilters}>
+            <Button variant="outline" colorScheme="gray" onClick={handleResetFilters}>
               Reset
             </Button>
           </Flex>
         </CardBody>
       </Card>
 
-      {/* Ключевые метрики */}
-      <Heading size="md" mb={4}>Overview</Heading>
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} spacing={6} mb={8}>
-        <Card variant="outline">
-          <CardBody>
-            <Stat>
-              <StatLabel>Orders Created</StatLabel>
-              <StatNumber>{stats.totalOrdersCreated}</StatNumber>
-            </Stat>
-          </CardBody>
-        </Card>
-        <Card variant="outline">
-          <CardBody>
-            <Stat>
-              <StatLabel>Active Orders</StatLabel>
-              <StatNumber>{stats.openOrders + stats.inProgressOrders}</StatNumber>
-              <StatHelpText>Open: {stats.openOrders}, In Progress: {stats.inProgressOrders}</StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
-        <Card variant="outline">
-          <CardBody>
-            <Stat>
-              <StatLabel>Applications Received</StatLabel>
-              <StatNumber>{stats.totalApplicationsReceived}</StatNumber>
-               <StatHelpText>Pending: {stats.pendingApplications}, Accepted: {stats.acceptedApplications}</StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
-         <Card variant="outline">
-          <CardBody>
-            <Stat>
-              <StatLabel>Active Collaborations</StatLabel>
-              <StatNumber>{stats.totalMatches - stats.completedMatches}</StatNumber> {/* Example derived metric */}
-              <StatHelpText>Completed: {stats.completedMatches}</StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
+      {/* KPI cards */}
+      <Heading as="h2" size="md" mb={4}>Overview</Heading>
+      <SimpleGrid columns={{ base: 1, sm: 2, xl: 4 }} spacing={6} mb={8}>
+        {isLoading || !stats ? (
+          <>
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </>
+        ) : (
+          <>
+            <StatCard
+              icon={FiList}
+              label="Orders Created"
+              value={stats.totalOrdersCreated}
+            />
+            <StatCard
+              icon={FiActivity}
+              label="Active Orders"
+              value={stats.openOrders + stats.inProgressOrders}
+              helpText={`Open: ${stats.openOrders} · In Progress: ${stats.inProgressOrders}`}
+            />
+            <StatCard
+              icon={FiInbox}
+              label="Applications Received"
+              value={stats.totalApplicationsReceived}
+              helpText={`Pending: ${stats.pendingApplications} · Accepted: ${stats.acceptedApplications}`}
+            />
+            <StatCard
+              icon={FiUsers}
+              label="Active Collaborations"
+              value={stats.totalMatches - stats.completedMatches}
+              helpText={`Completed: ${stats.completedMatches}`}
+            />
+          </>
+        )}
       </SimpleGrid>
 
-      <Heading size="md" mb={4}>Performance Metrics</Heading>
-       <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6} mb={8}>
-        <Card variant="outline">
-          <CardBody>
-            <Stat>
-              <StatLabel>Total Clicks</StatLabel>
-              <StatNumber>{stats.totalClicks.toLocaleString()}</StatNumber>
-            </Stat>
-          </CardBody>
-        </Card>
-        <Card variant="outline">
-          <CardBody>
-            <Stat>
-              <StatLabel>Total Impressions</StatLabel>
-              <StatNumber>{stats.totalImpressions.toLocaleString()}</StatNumber>
-            </Stat>
-          </CardBody>
-        </Card>
-        <Card variant="outline">
-          <CardBody>
-            <Stat>
-              <StatLabel>Avg. Engagement Rate</StatLabel>
-              <StatNumber>{stats.averageEngagementRate.toFixed(2)}%</StatNumber>
-            </Stat>
-          </CardBody>
-        </Card>
+      <Heading as="h2" size="md" mb={4}>Performance Metrics</Heading>
+      <SimpleGrid columns={{ base: 1, sm: 2, lg: 3 }} spacing={6} mb={8}>
+        {isLoading || !stats ? (
+          <>
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </>
+        ) : (
+          <>
+            <StatCard
+              icon={FiMousePointer}
+              label="Total Clicks"
+              value={stats.totalClicks.toLocaleString()}
+            />
+            <StatCard
+              icon={FiEye}
+              label="Total Impressions"
+              value={stats.totalImpressions.toLocaleString()}
+            />
+            <StatCard
+              icon={FiTrendingUp}
+              label="Avg. Engagement Rate"
+              value={`${stats.averageEngagementRate.toFixed(2)}%`}
+            />
+          </>
+        )}
       </SimpleGrid>
 
-      {/* Графики и Таблицы */}
-      <Heading size="md" mb={4}>Details</Heading>
-      <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6} mb={8}>
-        <Card variant="outline">
-          <CardHeader><Heading size="sm">Performance Over Time</Heading></CardHeader>
-          <CardBody>
-            {stats.dailyStats && stats.dailyStats.length > 0 ? (
-              <LineChart data={stats.dailyStats} dataKey="clicks" />
-            ) : (
-              <Text>No daily data available to display chart.</Text>
-            )}
-          </CardBody>
-        </Card>
-        <Card variant="outline">
-          <CardHeader><Heading size="sm">Engagement by Category</Heading></CardHeader>
-           <CardBody>
-             {stats.campaignStats && stats.campaignStats.length > 0 ? (
-                <PieChart data={stats.campaignStats} nameKey="category" dataKey="engagementRate" />
-             ) : (
-               <Text>No campaign data available.</Text>
-             )}
-          </CardBody>
-        </Card>
-      </SimpleGrid>
+      {/* Charts and table */}
+      {!isLoading && stats && (
+        <>
+          <Heading as="h2" size="md" mb={4}>Details</Heading>
+          <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6} mb={8}>
+            <Card>
+              <CardHeader pb={0}><Heading as="h3" size="sm">Performance Over Time</Heading></CardHeader>
+              <CardBody>
+                {stats.dailyStats && stats.dailyStats.length > 0 ? (
+                  <LineChart data={stats.dailyStats} dataKey="clicks" />
+                ) : (
+                  <Text color="fg.muted">No daily data available to display chart.</Text>
+                )}
+              </CardBody>
+            </Card>
+            <Card>
+              <CardHeader pb={0}><Heading as="h3" size="sm">Engagement by Category</Heading></CardHeader>
+              <CardBody>
+                {stats.campaignStats && stats.campaignStats.length > 0 ? (
+                  <PieChart data={stats.campaignStats} nameKey="category" dataKey="engagementRate" />
+                ) : (
+                  <Text color="fg.muted">No campaign data available.</Text>
+                )}
+              </CardBody>
+            </Card>
+          </SimpleGrid>
 
-      <Card variant="outline">
-        <CardHeader><Heading size="sm">Campaign Performance</Heading></CardHeader>
-        <CardBody overflowX="auto">
-          {stats.campaignStats && stats.campaignStats.length > 0 ? (
-              <StatsTable 
-                headers={campaignTableHeaders}
-                data={stats.campaignStats}
-                renderRow={renderCampaignRow}
-              />
-            ) : (
-              <Text>No campaign data available.</Text>
-          )}
-        </CardBody>
-      </Card>
+          <Card>
+            <CardHeader pb={0}><Heading as="h3" size="sm">Campaign Performance</Heading></CardHeader>
+            <CardBody overflowX="auto">
+              {stats.campaignStats && stats.campaignStats.length > 0 ? (
+                <StatsTable
+                  headers={campaignTableHeaders}
+                  data={stats.campaignStats}
+                  renderRow={renderCampaignRow}
+                />
+              ) : (
+                <EmptyState
+                  icon={FiActivity}
+                  title="No campaign data yet"
+                  description="Performance will appear here once your collaborations report stats."
+                />
+              )}
+            </CardBody>
+          </Card>
+        </>
+      )}
     </Box>
   );
 };
 
-export default BrandDashboard; 
+export default BrandDashboard;

@@ -88,7 +88,7 @@ export const Register: React.FC = () => {
             </RouterLink>
             <HStack spacing={{ base: 2, md: 4 }}>
               <Text fontSize="sm">Already have an account?</Text>
-              <Button as={RouterLink} to="/login" colorScheme="blue" size="sm" variant="outline">
+              <Button as={RouterLink} to="/login" colorScheme="brand" size="sm" variant="outline">
                 Login
               </Button>
             </HStack>
@@ -147,7 +147,7 @@ export const Register: React.FC = () => {
                     <option value={UserRole.INFLUENCER}>Influencer</option>
                   </Select>
                 </FormControl>
-                <Button type="submit" colorScheme="blue" size="lg" fontSize="md" isLoading={isLoading} mt={4}>
+                <Button type="submit" colorScheme="brand" size="lg" fontSize="md" isLoading={isLoading} mt={4}>
                   Register
                 </Button>
               </Stack>

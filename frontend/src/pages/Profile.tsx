@@ -179,19 +179,19 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
   const getSocialMediaIcon = (type: string) => {
     switch (type.toLowerCase()) {
       case 'instagram':
-        return <IconWrapper icon={FaInstagram} size="1.25em" color="gray.600" />;
+        return <IconWrapper icon={FaInstagram} size="1.25em" color="fg.muted" />;
       case 'tiktok':
-        return <IconWrapper icon={FaTiktok} size="1.25em" color="gray.600" />;
+        return <IconWrapper icon={FaTiktok} size="1.25em" color="fg.muted" />;
       case 'facebook':
-        return <IconWrapper icon={FaFacebook} size="1.25em" color="gray.600" />;
+        return <IconWrapper icon={FaFacebook} size="1.25em" color="fg.muted" />;
       case 'twitter':
-        return <IconWrapper icon={FaTwitter} size="1.25em" color="gray.600" />;
+        return <IconWrapper icon={FaTwitter} size="1.25em" color="fg.muted" />;
       case 'threads':
-        return <IconWrapper icon={SiThreads} size="1.25em" color="gray.600" />;
+        return <IconWrapper icon={SiThreads} size="1.25em" color="fg.muted" />;
       case 'linkedin':
-        return <IconWrapper icon={FaLinkedin} size="1.25em" color="gray.600" />;
+        return <IconWrapper icon={FaLinkedin} size="1.25em" color="fg.muted" />;
       default:
-        return <IconWrapper icon={FaInstagram} size="1.25em" color="gray.600" />;
+        return <IconWrapper icon={FaInstagram} size="1.25em" color="fg.muted" />;
     }
   };
 
@@ -231,10 +231,10 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
             <Heading size="lg">{displayName}</Heading>
             {role && (
               <Text 
-                color="gray.500" 
-                fontSize="md" 
+                color="fg.muted"
+                fontSize="md"
                 textTransform="capitalize"
-                bg="gray.100"
+                bg="bg.subtle"
                 px={3}
                 py={1}
                 borderRadius="full"
@@ -244,7 +244,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
             )}
             <Flex direction={{ base: 'column', sm: 'row' }} gap={3} justify="center" mt={4}>
                 {!isViewMode && user && (
-                    <Button colorScheme="blue" onClick={() => navigate(`/${user.role}/profile/edit`)}>
+                    <Button colorScheme="brand" onClick={() => navigate(`/${user.role}/profile/edit`)}>
                         Edit Profile
                     </Button>
                 )}
@@ -271,7 +271,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
             <Stack divider={<StackDivider />} spacing={4}>
               {!isViewMode && user && (
                 <Box>
-                  <Text fontSize="sm" color="gray.500">
+                  <Text fontSize="sm" color="fg.subtle">
                     Email
                   </Text>
                   <Text fontSize="md">{user.email}</Text>
@@ -279,7 +279,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
               )}
               {role && (
                 <Box>
-                  <Text fontSize="sm" color="gray.500">
+                  <Text fontSize="sm" color="fg.subtle">
                     Account Type
                   </Text>
                   <Text fontSize="md" textTransform="capitalize">
@@ -289,7 +289,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
               )}
               {createdAt && (
                 <Box>
-                  <Text fontSize="sm" color="gray.500">
+                  <Text fontSize="sm" color="fg.subtle">
                     Member Since
                   </Text>
                   <Text fontSize="md">
@@ -299,7 +299,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
               )}
               {profileData.bio && (
                 <Box>
-                  <Text fontSize="sm" color="gray.500">
+                  <Text fontSize="sm" color="fg.subtle">
                     Bio
                   </Text>
                   <Text fontSize="md">{profileData.bio}</Text>
@@ -307,7 +307,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
               )}
               {profileData.location && (
                 <Box>
-                  <Text fontSize="sm" color="gray.500">
+                  <Text fontSize="sm" color="fg.subtle">
                     Location
                   </Text>
                   <Text fontSize="md">{profileData.location}</Text>
@@ -315,28 +315,28 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
               )}
               {profileData.websiteUrl && (
                 <Box>
-                  <Text fontSize="sm" color="gray.500">
+                  <Text fontSize="sm" color="fg.subtle">
                     Website
                   </Text>
-                  <Link href={profileData.websiteUrl} isExternal color="blue.500">
+                  <Link href={profileData.websiteUrl} isExternal color="brand.500">
                     {profileData.websiteUrl}
                   </Link>
                 </Box>
               )}
               {profileData.socialMedia && profileData.socialMedia.length > 0 && (
                 <Box>
-                  <Text fontSize="sm" color="gray.500" mb={2}>
+                  <Text fontSize="sm" color="fg.subtle" mb={2}>
                     Social Media
                   </Text>
                   <VStack align="start" spacing={2}>
                     {profileData.socialMedia.map((social) => (
                       <HStack key={social.id}>
                         {getSocialMediaIcon(social.type)}
-                        <Link href={social.url} isExternal color="blue.500">
+                        <Link href={social.url} isExternal color="brand.500">
                           {social.username || social.url}
                         </Link>
                         {social.followers && (
-                          <Text fontSize="sm" color="gray.500">
+                          <Text fontSize="sm" color="fg.subtle">
                             ({social.followers.toLocaleString()} followers)
                           </Text>
                         )}
@@ -353,7 +353,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
           {isViewMode ? (
             <>
               {user && user.id !== (targetUser?.id || profileData?.id) && (
-                <Button colorScheme="blue" leftIcon={<IconWrapper icon={FaEnvelope} size="1.25em" />} onClick={handleCreateChat}>
+                <Button colorScheme="brand" leftIcon={<IconWrapper icon={FaEnvelope} size="1.25em" />} onClick={handleCreateChat}>
                   Write Message
                 </Button>
               )}

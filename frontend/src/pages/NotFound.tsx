@@ -9,7 +9,7 @@ export const NotFound: React.FC = () => {
         <Heading size="2xl">404</Heading>
         <Text fontSize="xl">Page not found</Text>
         <Text>The page you are looking for does not exist or has been moved.</Text>
-        <Button as={RouterLink} to="/" colorScheme="blue">
+        <Button as={RouterLink} to="/" colorScheme="brand">
           Go back home
         </Button>
       </VStack>

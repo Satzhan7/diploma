@@ -91,7 +91,7 @@ export const OrderDetail: React.FC = () => {
                 as={RouterLink} 
                 fontWeight="medium" 
                 ml={1} 
-                color="blue.500" 
+                color="brand.500" 
                 onClick={(e) => !order.brand?.id && e.preventDefault()}
               >
                 {order.brand?.displayName || 'Brand Name Missing'} <IconWrapper icon={FiExternalLink} />
@@ -137,7 +137,7 @@ export const OrderDetail: React.FC = () => {
 
         {/* Add action buttons if needed, e.g., apply button if status is open */}
         {/* {order.status === 'open' && (
-          <Button colorScheme="blue">Apply Now</Button>
+          <Button colorScheme="brand">Apply Now</Button>
         )} */}
         
       </VStack>
