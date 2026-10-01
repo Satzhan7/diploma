@@ -7,7 +7,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not, DataSource } from 'typeorm';
+import { Repository, Not, In, DataSource } from 'typeorm';
 import {
   OrderApplication,
   ApplicationStatus,
@@ -20,6 +20,40 @@ import { UserRole } from '../users/entities/user.entity';
 import { toPublicUser } from '../users/public-user';
 import { ChatsService } from '../chats/chats.service';
 import { Match, MatchStatus } from '../matching/entities/match.entity';
+
+// Allowed application status changes. Every role, admin included, goes
+// through this table; the full Deal state machine replaces it in Phase 2.
+export const APPLICATION_TRANSITIONS: Record<
+  ApplicationStatus,
+  readonly ApplicationStatus[]
+> = {
+  [ApplicationStatus.PENDING]: [
+    ApplicationStatus.ACCEPTED,
+    ApplicationStatus.REJECTED,
+    ApplicationStatus.WITHDRAWN,
+  ],
+  [ApplicationStatus.ACCEPTED]: [],
+  [ApplicationStatus.REJECTED]: [],
+  [ApplicationStatus.WITHDRAWN]: [],
+};
+
+export function assertApplicationTransition(
+  from: ApplicationStatus,
+  to: ApplicationStatus,
+): void {
+  if (!APPLICATION_TRANSITIONS[from].includes(to)) {
+    throw new BadRequestException(
+      `Application cannot move from ${from} to ${to}`,
+    );
+  }
+}
+
+// Statuses from which `to` is reachable, for compare-and-set updates.
+function sourcesOf(to: ApplicationStatus): ApplicationStatus[] {
+  return (Object.keys(APPLICATION_TRANSITIONS) as ApplicationStatus[]).filter(
+    (from) => APPLICATION_TRANSITIONS[from].includes(to),
+  );
+}
 
 @Injectable()
 export class OrderApplicationsService {
@@ -181,19 +215,30 @@ export class OrderApplicationsService {
           'Brands can only update application status',
         );
       }
+
+      if (
+        updateOrderApplicationDto.status &&
+        updateOrderApplicationDto.status !== ApplicationStatus.ACCEPTED &&
+        updateOrderApplicationDto.status !== ApplicationStatus.REJECTED
+      ) {
+        throw new ForbiddenException(
+          'Brands can only accept or reject applications',
+        );
+      }
     }
 
-    // Update the application
-    Object.assign(application, updateOrderApplicationDto);
+    const nextStatus = updateOrderApplicationDto.status;
+    if (nextStatus) {
+      // Early, readable 400. The authoritative check runs again against the
+      // locked or compare-and-set row below.
+      assertApplicationTransition(application.status, nextStatus);
+    }
 
-    // If brand accepts an application: order assignment, application save,
+    // Acceptance (owning brand or admin): order assignment, application save,
     // match upsert and reject-others are one atomic transaction with a row
     // lock on the order (SECURITY_AUDIT M2). The chat seed stays outside the
     // transaction — it is best-effort and must not roll back an acceptance.
-    if (
-      userRole === UserRole.BRAND &&
-      updateOrderApplicationDto.status === ApplicationStatus.ACCEPTED
-    ) {
+    if (nextStatus === ApplicationStatus.ACCEPTED) {
       const applicantProfile = await this.profilesService.findByUserId(
         application.applicant.id,
       );
@@ -221,16 +266,38 @@ export class OrderApplicationsService {
             );
           }
 
+          // Re-read the application under a row lock (after the order lock,
+          // same order as create) so a concurrent withdraw or reject cannot
+          // be overwritten by this acceptance.
+          const current = await manager.findOne(OrderApplication, {
+            where: { id: application.id },
+            lock: { mode: 'pessimistic_write' },
+          });
+          if (!current) {
+            throw new NotFoundException(
+              `Application with ID ${application.id} not found`,
+            );
+          }
+          assertApplicationTransition(
+            current.status,
+            ApplicationStatus.ACCEPTED,
+          );
+
           order.status = OrderStatus.IN_PROGRESS;
           order.influencerId = applicantProfile.id;
           await manager.save(Order, order);
 
-          await manager.save(OrderApplication, application);
+          current.status = ApplicationStatus.ACCEPTED;
+          await manager.save(OrderApplication, current);
 
-          // Reject all other applications for this order
+          // Reject the other applications that are still pending.
           await manager.update(
             OrderApplication,
-            { order: { id: order.id }, id: Not(application.id) },
+            {
+              order: { id: order.id },
+              id: Not(application.id),
+              status: ApplicationStatus.PENDING,
+            },
             { status: ApplicationStatus.REJECTED },
           );
 
@@ -286,10 +353,32 @@ export class OrderApplicationsService {
         );
       }
 
+      application.status = ApplicationStatus.ACCEPTED;
       return application;
     }
 
+    if (nextStatus) {
+      await this.setStatusIfAllowed(application.id, nextStatus);
+    }
+    Object.assign(application, updateOrderApplicationDto);
     return this.orderApplicationRepository.save(application);
+  }
+
+  // Compare-and-set: the row changes only if its current status may move to
+  // `to`, so a concurrent transition is never silently overwritten.
+  private async setStatusIfAllowed(
+    id: string,
+    to: ApplicationStatus,
+  ): Promise<void> {
+    const result = await this.orderApplicationRepository.update(
+      { id, status: In(sourcesOf(to)) },
+      { status: to },
+    );
+    if (!result.affected) {
+      throw new ConflictException(
+        'Application status changed; reload and try again',
+      );
+    }
   }
 
   async withdraw(id: string, userId: string): Promise<OrderApplication> {
@@ -301,14 +390,14 @@ export class OrderApplicationsService {
       );
     }
 
-    if (application.status !== ApplicationStatus.PENDING) {
-      throw new BadRequestException(
-        'You can only withdraw pending applications',
-      );
-    }
+    assertApplicationTransition(
+      application.status,
+      ApplicationStatus.WITHDRAWN,
+    );
+    await this.setStatusIfAllowed(application.id, ApplicationStatus.WITHDRAWN);
 
     application.status = ApplicationStatus.WITHDRAWN;
-    return this.orderApplicationRepository.save(application);
+    return application;
   }
 
   async findByOrder(
