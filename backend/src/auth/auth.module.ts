@@ -17,7 +17,9 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get('JWT_SECRET'),
+        // JwtModule is intentionally configured for access tokens only. Refresh
+        // tokens are signed and verified explicitly in AuthService.
+        secret: configService.get('jwt.secret'),
         signOptions: {
           expiresIn: configService.get('jwt.accessTokenExpiration', '15m'),
         },

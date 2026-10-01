@@ -6,6 +6,25 @@ import helmet from 'helmet';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 async function bootstrap() {
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (isProduction) {
+    const required = [
+      'DB_HOST',
+      'DB_USERNAME',
+      'DB_PASSWORD',
+      'DB_NAME',
+      'JWT_SECRET',
+      'JWT_REFRESH_SECRET',
+      'CORS_ORIGIN',
+    ];
+    const missing = required.filter((name) => !process.env[name]?.trim());
+    if (missing.length > 0) {
+      throw new Error(
+        `Missing required production environment variables: ${missing.join(', ')}`,
+      );
+    }
+  }
+
   const app = await NestFactory.create(AppModule);
 
   // Standard security headers (SECURITY_AUDIT H5/L3).
@@ -31,16 +50,19 @@ async function bootstrap() {
   // Enable global interceptor for handling circular references
   app.useGlobalInterceptors(new TransformInterceptor());
 
-  // Swagger configuration
-  const config = new DocumentBuilder()
-    .setTitle('Influencer Platform API')
-    .setDescription('The Influencer Platform API description')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
+  // Keep API discovery available for local development only. Production does
+  // not expose Swagger to unauthenticated internet users.
+  if (!isProduction) {
+    const config = new DocumentBuilder()
+      .setTitle('Influencer Platform API')
+      .setDescription('The Influencer Platform API description')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('docs', app, document);
+  }
 
   const port = process.env.PORT || 3000;
   await app.listen(port);

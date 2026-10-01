@@ -13,6 +13,7 @@ import { ChatsService } from './chats.service';
 import { Logger } from '@nestjs/common';
 import { Message } from './entities/message.entity';
 import { Chat } from './entities/chat.entity';
+import { TokenPayload } from '../auth/types/token-payload';
 
 @WebSocketGateway({
   cors: {
@@ -49,8 +50,14 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return;
       }
 
-      // Verify token
-      const payload = this.jwtService.verify(token);
+      // JwtModule is configured with the access-token secret. The explicit
+      // token type check prevents a refresh token from opening a chat socket
+      // even if development uses the same JWT secret for both token classes.
+      const payload = await this.jwtService.verifyAsync<TokenPayload>(token);
+      if (payload.tokenType !== 'access') {
+        client.disconnect();
+        return;
+      }
       const userId = payload.sub;
 
       if (!userId) {

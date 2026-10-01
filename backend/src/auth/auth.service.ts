@@ -15,6 +15,7 @@ import * as bcrypt from 'bcrypt';
 import { ProfilesService } from '../profiles/profiles.service';
 import { ProfileType } from '../profiles/entities/profile.entity';
 import { UserRole } from '../users/entities/user.entity';
+import { TokenPayload } from './types/token-payload';
 
 @Injectable()
 export class AuthService {
@@ -76,7 +77,15 @@ export class AuthService {
 
   async refreshTokens(refreshToken: string) {
     try {
-      const decoded = this.jwtService.verify(refreshToken);
+      const decoded = await this.jwtService.verifyAsync<TokenPayload>(
+        refreshToken,
+        {
+          secret: this.configService.get('jwt.refreshSecret'),
+        },
+      );
+      if (decoded.tokenType !== 'refresh') {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
       const user = await this.usersService.findById(decoded.sub);
 
       if (!user || !user.refreshToken) {
@@ -109,18 +118,22 @@ export class AuthService {
         {
           sub: userId,
           email,
+          tokenType: 'access',
         },
         {
           expiresIn: this.configService.get('jwt.accessTokenExpiration', '15m'),
+          secret: this.configService.get('jwt.secret'),
         },
       ),
       this.jwtService.signAsync(
         {
           sub: userId,
           email,
+          tokenType: 'refresh',
         },
         {
           expiresIn: this.configService.get('jwt.refreshTokenExpiration', '7d'),
+          secret: this.configService.get('jwt.refreshSecret'),
         },
       ),
     ]);
