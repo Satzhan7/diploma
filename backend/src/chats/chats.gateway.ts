@@ -14,6 +14,7 @@ import { Logger } from '@nestjs/common';
 import { Message } from './entities/message.entity';
 import { Chat } from './entities/chat.entity';
 import { TokenPayload } from '../auth/types/token-payload';
+import { toChatEvent, toMessageEvent } from './chat-events';
 
 @WebSocketGateway({
   cors: {
@@ -128,16 +129,11 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async emitNewMessage(message: Message, chat: Chat): Promise<void> {
     // No WS server outside the HTTP runtime (e.g. seed script, tests).
     if (!this.server) return;
-    // Ensure chat ID is available in the message
-    if (message && !message.chat) {
-      message.chat = { id: chat.id } as Chat;
-    }
 
-    // Emit to the specific chat room
-    this.server.to(`chat:${chat.id}`).emit('newMessage', {
-      ...message,
-      chat: { id: chat.id },
-    });
+    // Explicit DTO: spreading the entity would leak sender/recipient hashes.
+    this.server
+      .to(`chat:${chat.id}`)
+      .emit('newMessage', toMessageEvent(message, chat.id));
 
     // Emit to recipient's personal room
     this.server.to(`user:${message.recipient.id}`).emit('chatUpdated', {
@@ -163,8 +159,9 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // Emit event when a new chat is created
   emitNewChat(chat: Chat): void {
     if (!this.server) return;
+    const payload = toChatEvent(chat);
     // Emit to both participants
-    this.server.to(`user:${chat.sender.id}`).emit('newChat', chat);
-    this.server.to(`user:${chat.recipient.id}`).emit('newChat', chat);
+    this.server.to(`user:${chat.sender.id}`).emit('newChat', payload);
+    this.server.to(`user:${chat.recipient.id}`).emit('newChat', payload);
   }
 }

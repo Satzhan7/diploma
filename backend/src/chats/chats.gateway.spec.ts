@@ -51,3 +51,98 @@ describe('ChatsGateway authentication', () => {
     }
   });
 });
+
+describe('ChatsGateway event payloads', () => {
+  const user = (id: string) => ({
+    id,
+    name: `User ${id}`,
+    email: `${id}@example.test`,
+    role: 'brand',
+    password: '$2b$10$password-hash',
+    refreshToken: '$2b$10$refresh-hash',
+    isEmailVerified: true,
+  });
+
+  // Collects every key at any depth so nested relations cannot hide a hash.
+  const allKeys = (value: unknown): string[] => {
+    if (Array.isArray(value)) return value.flatMap(allKeys);
+    if (value && typeof value === 'object' && !(value instanceof Date)) {
+      return Object.entries(value).flatMap(([k, v]) => [k, ...allKeys(v)]);
+    }
+    return [];
+  };
+
+  let emitted: { room: string; event: string; payload: unknown }[];
+  let gateway: ChatsGateway;
+
+  beforeEach(() => {
+    emitted = [];
+    gateway = new ChatsGateway({} as any, {} as any);
+    gateway.server = {
+      to: (room: string) => ({
+        emit: (event: string, payload: unknown) => {
+          emitted.push({ room, event, payload });
+          return true;
+        },
+      }),
+    } as any;
+  });
+
+  const chat = () =>
+    ({
+      id: 'chat-1',
+      sender: user('u1'),
+      recipient: user('u2'),
+      unreadCount: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }) as any;
+
+  const expectNoSecrets = () => {
+    expect(emitted.length).toBeGreaterThan(0);
+    for (const { payload } of emitted) {
+      const keys = allKeys(payload);
+      expect(keys).not.toContain('password');
+      expect(keys).not.toContain('refreshToken');
+      expect(keys).not.toContain('email');
+      expect(JSON.stringify(payload)).not.toContain('$2b$');
+    }
+  };
+
+  it('emitNewMessage sends no password, refreshToken or email', async () => {
+    const c = chat();
+    const message = {
+      id: 'm1',
+      content: 'hi',
+      sender: c.sender,
+      recipient: c.recipient,
+      chat: c,
+      isRead: false,
+      createdAt: new Date(),
+    } as any;
+
+    await gateway.emitNewMessage(message, c);
+
+    expectNoSecrets();
+    const newMessage = emitted.find((e) => e.event === 'newMessage');
+    expect(newMessage?.payload).toMatchObject({
+      id: 'm1',
+      chat: { id: 'chat-1' },
+      sender: { id: 'u1', name: 'User u1' },
+      recipient: { id: 'u2' },
+    });
+  });
+
+  it('emitNewChat sends no password, refreshToken or email', () => {
+    gateway.emitNewChat(chat());
+
+    expectNoSecrets();
+    expect(emitted.map((e) => e.room)).toEqual(['user:u1', 'user:u2']);
+  });
+
+  it('emitMessagesRead sends ids only', () => {
+    gateway.emitMessagesRead('chat-1', 'u1');
+
+    expectNoSecrets();
+  });
+});
