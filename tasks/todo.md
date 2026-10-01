@@ -29,6 +29,26 @@ Rule: every phase ends with something deployable and usable. Nothing goes to `ma
   - Minimal version: `APPLICATION_TRANSITIONS` (PENDING → ACCEPTED | REJECTED | WITHDRAWN, all others terminal, admin included). Accept locks the order, then locks and re-reads the application and requires PENDING; bulk-reject only touches PENDING rows. Reject/withdraw are compare-and-set updates (409 if the row moved). Brands may only accept or reject; admins can now accept through the same transaction. 9 new tests in `order-applications.service.spec.ts`.
 - **Done when:** the WS payload contains no hashes (test), the IDOR tests return 403, and the five flows pass manual QA.
 
+### Phase 0 review (2026-10-01, commits `623baff`..`e43f6e5` on top of `6b6c775`)
+
+**Done-when status:** WS payload test ✅ (`chats.gateway.spec.ts`: 2 leak tests fail on the old gateway, pass now) · IDOR 403 tests ✅ (`orders.service.spec.ts`, `users.controller.spec.ts`; live: stranger `GET /orders/:id` on an in-progress order → 403, influencer `GET /users` → 403) · five flows manual QA ✅ (11/11 headless-Chrome checks, below). Merging PR #1 (0.1) is left to the team.
+
+**Verification (real output, final tree `e43f6e5`):**
+- Backend (Node 18 container): `tsc --noEmit` ok · Jest `Test Suites: 13 passed, 13 total` / `Tests: 56 passed, 56 total` (baseline 10/24) · `nest build` exit 0 · `npx eslint` `✖ 27 problems (27 errors, 0 warnings)`, same 27 as baseline (step 1.3).
+- Frontend: `tsc --noEmit` ok · Jest `Test Suites: 2 passed` / `Tests: 3 passed` · `npm run build` exit 0, "Compiled with warnings" · `npx eslint src` 1 error (`App.test.tsx` import/first, pre-existing) + 10 warnings.
+- Manual QA, Docker stack, headless Chrome (playwright-core), disposable `qa-*@example.test` accounts (removed afterwards): withdraw sends `DELETE /order-applications/:id` → 200 and the Withdrawn tab updates; no withdraw button on accepted applications; title link → `/influencer/orders/:id`; OrderDetail and MyApplications brand links → `/influencer/profile/<brand user id>`, profile loads; brand on influencer profile sees "Send Collaboration Request" and the influencer role, "Write Message" posts `/chats/<user id>` → 201; after logout, the next user's delayed `GET /chats` shows none of the previous user's cached chats. Not separately proven: socket disconnect on logout (Messages also disconnects on unmount, so the browser test cannot tell them apart).
+- Live API: accepted → rejected 400, withdraw accepted 400, `/users/:id`, `/orders/:id` (open), `/profiles/:userId`, `POST /chats` bodies contain no `email`.
+
+**Reviews:** code review (ecc:code-reviewer) verdict "approve with comments", no high items. Security review (ecc:security-reviewer) found 2 high + 4 medium. Fixed in this phase:
+- `2eef418` profile search (`/profiles/*/search`) and chat REST responses leaked emails (H) → public projections; TransformInterceptor now fails closed.
+- `cd263f1` refresh-token rotation never revoked: bcrypt reads only 72 bytes, every refresh JWT of a user matched (M, reproduced in the container) → SHA-256 + timingSafeEqual. Users log in again once after deploy.
+- Found during QA: `8f66941` the CSP from `e78efe4` blocked the dev stack's API (login impossible in local Docker); `e43f6e5` `GET /auth/profile` shared the 10/min login throttle, so ~10 reloads/min logged users out.
+
+**Follow-ups (not fixed, by phase):**
+- Phase 2 (Deal model, with D1): counterparty emails still returned on participant/brand paths (`GET /order-applications/:id`, `/order-applications/order/:id`, `/orders/brand`, `/orders/influencer`, participant `GET /orders/:id`, matching, collaborations) — decide when email is revealed. Applicants get 403 on non-OPEN order detail. `POST /chats/:recipientId` lets anyone open a chat with any user id. Admin `PATCH /order-applications/:id` can edit message/price.
+- Phase 1/8: `DELETE /auth/account` returns 500 for users with orders/applications/chats (FK constraints). Dev compose publishes backend `:3005` directly, so `X-Forwarded-For` is spoofable in dev (bind to 127.0.0.1 or drop). Make the trust-proxy hop count configurable if a CDN is added. Socket handshake does not check the user still exists. `PATCH /users/:id` changes email without re-verification. JWT secret has a dev default.
+- Cleanup: `frontend/src/services/settings.ts` calls `/users/settings` routes that do not exist (500 via `:id`); `BrandList`/`InfluencerList` read `bio`/`industry`/`followers` off the wrong objects; `findAvailable` budget filters have no query DTO.
+
 ## Phase 1 — Foundation
 - [ ] 1.1 ∥ Upgrade the backend Docker image and CI to Node 20 LTS; fix the old `jsonwebtoken` chain so all four crashing Jest suites run.
 - [ ] 1.2 ∥ Migrate the frontend from CRA to Vite (keep Chakra v2, switch Jest to Vitest). Needs: none.

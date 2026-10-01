@@ -16,3 +16,8 @@
 - **When a working tree mixes prettier reformatting with logic, normalise both sides first.** Commit prettier(HEAD) on its own, then restore the tree and re-run prettier, so each later commit shows logic only. Verify each commit in a scratch `git worktree` (typecheck at every commit).
 - **The backend `npm run lint` script has `--fix`, so it rewrites files.** For checks use `npx eslint` without it (or `npm run lint:check`).
 - **zsh: `echo =====` fails ("not found") because of `=` expansion.** Use `echo -----` as the separator.
+- **Parallel Bash calls share one cwd.** Two calls that each `cd` raced and ran `npm audit fix`/`tsc` in the wrong directory. Run directory-sensitive commands sequentially, or use `npm --prefix`/absolute paths without `cd`.
+- **bcrypt only reads 72 bytes; never bcrypt a JWT.** Every refresh token of a user shared the first 72 bytes, so rotation revoked nothing. Hash long random tokens with SHA-256 and compare with `timingSafeEqual`.
+- **A class-level `@Throttle` covers every route in the controller.** `GET /auth/profile` (called on each page load) inherited the 10/min login limit. Put strict limits on the brute-force routes only.
+- **A CSP `connect-src` must match every build's API origin.** Prod is same-origin https, dev calls `http://localhost:3005`; a static header broke dev login. Unit tests and builds pass anyway — only a real browser run catches it, so do browser QA before calling a frontend step done.
+
