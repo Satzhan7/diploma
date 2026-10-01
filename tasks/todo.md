@@ -19,7 +19,10 @@ Rule: every phase ends with something deployable and usable. Nothing goes to `ma
 - [x] 0.3 Add `trust proxy`; scope `GET /orders/:id` and `GET /users*` to their owners or admins.
   - `trust proxy` = 1 (nginx `/api/` sets X-Forwarded-For). `GET /orders/:id`: brand owner, assigned influencer or admin get the order; others get a public projection of OPEN orders and 403 otherwise. `GET /orders/available` uses the same projection (it also shipped brand emails). `GET /users` is admin-only; `/users/:id`, `/users/influencers`, `/users/brands` return `toPublicUser` (no email). Tests: `orders.service.spec.ts`, `users.controller.spec.ts`.
   - Follow-up: an applicant whose order is no longer OPEN now gets 403 on its detail page (spec as written). Revisit with the Deal model in Phase 2.
-- [ ] 0.4 Run `npm audit fix` in both apps (typeorm, jws, ws, axios).
+- [x] 0.4 Run `npm audit fix` in both apps (typeorm, jws, ws, axios).
+  - `npm audit --omit=dev` backend: 33 (1 low, 13 moderate, 17 high, 2 critical) → 18 (1 low, 10 moderate, 6 high, 1 critical). typeorm 0.3.31, ws 8.21.3, validator fixed. Lock regenerated in the Node 18 container.
+  - Frontend: 65 (14 low, 15 moderate, 33 high, 3 critical) → 31 (9 low, 6 moderate, 16 high, 0 critical). Exact pins bumped in-major: axios 1.16.0 → 1.20.0, react-router-dom 6.30.4 → 6.30.6.
+  - Deferred (major bumps only, do not `--force`): `@nestjs/*` 10 → 11/12 (core injection advisory, multer, body-parser, qs, file-type), `@nestjs/swagger` 11 (js-yaml, lodash), `@nestjs/typeorm` 11 (uuid), `bcrypt` 6 (drops node-pre-gyp → tar critical, install-time only), `react-router-dom` 7 (open-redirect via backslash in `<Link>`), `react-scripts` chain (removed by Vite in 1.2).
 - [ ] 0.5 Fix five broken frontend flows: withdraw, `/orders/:id` link, Profile `user` relation, brand profile-id links, and clearing state on logout.
 - [ ] 0.6 Application state machine plus a locked re-read on accept. This is superseded by 2.2 if D1 is decided first; otherwise do a minimal version here.
 - **Done when:** the WS payload contains no hashes (test), the IDOR tests return 403, and the five flows pass manual QA.
