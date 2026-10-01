@@ -16,7 +16,9 @@ Rule: every phase ends with something deployable and usable. Nothing goes to `ma
   - [x] Split into 10 commits (`ddfd5ac`..`431875c`): prettier-only, auth, authz, migrations infra, orders/profile identity, build hardening, UI tokens, frontend fixes, docs, removal of docs/diploma. Every commit typechecks (backend + frontend).
   - [x] PR `audit/fixes` → `v1` opened: https://github.com/Satzhan7/diploma/pull/1. Local history (root `354b3c4`) shares no ancestor with GitHub `main`, so the PR targets `v1`. Merge is left to the team.
 - [x] 0.2 Fix the chat WebSocket leaking password/refresh hashes: emit `{id,name}` DTOs only. `chat-events.ts` allow-lists `{id,name,role}`; gateway spec deep-scans `newMessage`/`newChat`/`messagesRead` payloads for `password`/`refreshToken`/`email` (2 tests fail on the old gateway, pass now).
-- [ ] 0.3 Add `trust proxy`; scope `GET /orders/:id` and `GET /users*` to their owners or admins.
+- [x] 0.3 Add `trust proxy`; scope `GET /orders/:id` and `GET /users*` to their owners or admins.
+  - `trust proxy` = 1 (nginx `/api/` sets X-Forwarded-For). `GET /orders/:id`: brand owner, assigned influencer or admin get the order; others get a public projection of OPEN orders and 403 otherwise. `GET /orders/available` uses the same projection (it also shipped brand emails). `GET /users` is admin-only; `/users/:id`, `/users/influencers`, `/users/brands` return `toPublicUser` (no email). Tests: `orders.service.spec.ts`, `users.controller.spec.ts`.
+  - Follow-up: an applicant whose order is no longer OPEN now gets 403 on its detail page (spec as written). Revisit with the Deal model in Phase 2.
 - [ ] 0.4 Run `npm audit fix` in both apps (typeorm, jws, ws, axios).
 - [ ] 0.5 Fix five broken frontend flows: withdraw, `/orders/:id` link, Profile `user` relation, brand profile-id links, and clearing state on logout.
 - [ ] 0.6 Application state machine plus a locked re-read on accept. This is superseded by 2.2 if D1 is decided first; otherwise do a minimal version here.

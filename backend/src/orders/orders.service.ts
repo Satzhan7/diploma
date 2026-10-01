@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
@@ -10,6 +11,52 @@ import { Order, OrderStatus } from './entities/order.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { ProfilesService } from '../profiles/profiles.service';
 import { ProfileType } from '../profiles/entities/profile.entity';
+import { UserRole } from '../users/entities/user.entity';
+import { PublicUser, toPublicUser } from '../users/public-user';
+
+export type PublicOrder = Pick<
+  Order,
+  | 'id'
+  | 'title'
+  | 'description'
+  | 'budget'
+  | 'category'
+  | 'requirements'
+  | 'deadline'
+  | 'status'
+  | 'brandId'
+  | 'createdAt'
+  | 'updatedAt'
+> & {
+  brand: Omit<Order['brand'], 'user' | 'socialMediaData'> & {
+    user?: PublicUser;
+  };
+};
+
+export interface OrderViewer {
+  id: string;
+  role: UserRole;
+}
+
+// What any authenticated user may see of an OPEN order: the brief plus the
+// brand's public identity. No emails, no assigned influencer.
+export function toPublicOrder(order: Order): PublicOrder {
+  const { user, ...brandProfile } = order.brand;
+  return {
+    id: order.id,
+    title: order.title,
+    description: order.description,
+    budget: order.budget,
+    category: order.category,
+    requirements: order.requirements,
+    deadline: order.deadline,
+    status: order.status,
+    brandId: order.brandId,
+    createdAt: order.createdAt,
+    updatedAt: order.updatedAt,
+    brand: { ...brandProfile, user: user ? toPublicUser(user) : undefined },
+  };
+}
 
 @Injectable()
 export class OrdersService {
@@ -36,7 +83,7 @@ export class OrdersService {
     return this.orderRepository.save(order);
   }
 
-  async findAvailable(filters: any = {}): Promise<Order[]> {
+  async findAvailable(filters: any = {}): Promise<PublicOrder[]> {
     const queryBuilder = this.orderRepository
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.brand', 'brand')
@@ -61,10 +108,11 @@ export class OrdersService {
       });
     }
 
-    return queryBuilder.getMany();
+    const orders = await queryBuilder.getMany();
+    return orders.map(toPublicOrder);
   }
 
-  async findOne(id: string): Promise<Order> {
+  async findOne(id: string, viewer: OrderViewer): Promise<Order | PublicOrder> {
     const order = await this.orderRepository.findOne({
       where: { id },
       relations: ['brand', 'brand.user', 'influencer', 'influencer.user'],
@@ -74,7 +122,15 @@ export class OrdersService {
       throw new NotFoundException(`Order with ID ${id} not found`);
     }
 
-    return order;
+    const isParticipant =
+      viewer.role === UserRole.ADMIN ||
+      order.brand?.user?.id === viewer.id ||
+      order.influencer?.user?.id === viewer.id;
+    if (isParticipant) return order;
+
+    if (order.status === OrderStatus.OPEN) return toPublicOrder(order);
+
+    throw new ForbiddenException('You do not have access to this order');
   }
 
   async apply(orderId: string, userId: string): Promise<Order> {

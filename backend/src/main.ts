@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger, ValidationPipe } from '@nestjs/common';
@@ -25,7 +26,12 @@ async function bootstrap() {
     }
   }
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // nginx is the single hop in front of the API. Trusting it makes req.ip the
+  // client address from X-Forwarded-For, so the throttler buckets per client
+  // instead of putting every user behind the proxy into one bucket.
+  app.set('trust proxy', 1);
 
   // Standard security headers (SECURITY_AUDIT H5/L3).
   app.use(helmet());

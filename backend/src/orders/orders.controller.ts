@@ -18,7 +18,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { GetCurrentUser } from '../auth/decorators/get-current-user.decorator';
-import { OrdersService } from './orders.service';
+import { OrdersService, OrderViewer, PublicOrder } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Order } from './entities/order.entity';
 import { UserRole } from '../users/entities/user.entity';
@@ -57,7 +57,7 @@ export class OrdersController {
     @Query('category') category?: string,
     @Query('minBudget') minBudget?: number,
     @Query('maxBudget') maxBudget?: number,
-  ): Promise<Order[]> {
+  ): Promise<PublicOrder[]> {
     return this.ordersService.findAvailable({ category, minBudget, maxBudget });
   }
 
@@ -113,7 +113,15 @@ export class OrdersController {
   @Get(':id')
   @ApiOperation({ summary: 'Get order by id' })
   @ApiResponse({ status: 200, description: 'Return the order', type: Order })
-  findOne(@Param('id') id: string): Promise<Order> {
-    return this.ordersService.findOne(id);
+  @ApiResponse({
+    status: 403,
+    description:
+      'Not the brand, assigned influencer or an admin, and the order is not open',
+  })
+  findOne(
+    @Param('id') id: string,
+    @GetCurrentUser() viewer: OrderViewer,
+  ): Promise<Order | PublicOrder> {
+    return this.ordersService.findOne(id, viewer);
   }
 }

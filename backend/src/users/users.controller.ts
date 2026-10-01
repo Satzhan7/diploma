@@ -15,37 +15,47 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { GetCurrentUser } from '../auth/decorators/get-current-user.decorator';
 import { UserRole } from './entities/user.entity';
+import { toPublicUser } from './public-user';
 
 @ApiTags('users')
 @ApiBearerAuth()
 @Controller('users')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  // Full user records (with emails) are for admins only.
   @Get()
+  @Roles(UserRole.ADMIN)
   findAll() {
     return this.usersService.findAll();
   }
 
   @Get('influencers')
-  findInfluencers(
+  async findInfluencers(
     @Query('search') searchQuery?: string,
     @Query('category') category?: string,
   ) {
-    return this.usersService.findInfluencers(searchQuery, category);
+    const users = await this.usersService.findInfluencers(
+      searchQuery,
+      category,
+    );
+    return users.map(toPublicUser);
   }
 
   @Get('brands')
-  findBrands(@Query('search') searchQuery?: string) {
-    return this.usersService.findBrands(searchQuery);
+  async findBrands(@Query('search') searchQuery?: string) {
+    const users = await this.usersService.findBrands(searchQuery);
+    return users.map(toPublicUser);
   }
 
   @Get(':id')
-  findById(@Param('id') id: string) {
-    return this.usersService.findById(id);
+  async findById(@Param('id') id: string) {
+    return toPublicUser(await this.usersService.findById(id));
   }
 
   @Patch(':id')
