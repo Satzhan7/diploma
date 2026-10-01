@@ -5,7 +5,7 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
   ConnectedSocket,
-  MessageBody
+  MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
@@ -39,9 +39,10 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleConnection(client: Socket): Promise<void> {
     try {
       // Extract token from handshake
-      const token = client.handshake.auth.token || 
-                    client.handshake.headers.authorization?.split(' ')[1];
-      
+      const token =
+        client.handshake.auth.token ||
+        client.handshake.headers.authorization?.split(' ')[1];
+
       if (!token) {
         this.logger.error('No token provided');
         client.disconnect();
@@ -51,7 +52,7 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       // Verify token
       const payload = this.jwtService.verify(token);
       const userId = payload.sub;
-      
+
       if (!userId) {
         this.logger.error('Invalid token payload');
         client.disconnect();
@@ -64,7 +65,7 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       // Join personal room for this user
       client.join(`user:${userId}`);
-      
+
       this.logger.log(`User ${userId} connected with socket ${client.id}`);
     } catch (error) {
       this.logger.error(`Socket connection error: ${error.message}`);
@@ -74,7 +75,7 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   handleDisconnect(client: Socket): void {
     const userId = this.socketUserMap.get(client.id);
-    
+
     if (userId) {
       this.userSocketMap.delete(userId);
       this.socketUserMap.delete(client.id);
@@ -98,7 +99,9 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       await this.chatsService.findOne(chatId, userId);
     } catch {
       this.logger.warn(`User ${userId} denied access to chat ${chatId}`);
-      client.emit('error', { message: 'You are not a participant of this chat' });
+      client.emit('error', {
+        message: 'You are not a participant of this chat',
+      });
       return;
     }
     client.join(`chat:${chatId}`);
@@ -126,9 +129,9 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // Emit to the specific chat room
     this.server.to(`chat:${chat.id}`).emit('newMessage', {
       ...message,
-      chat: { id: chat.id }
+      chat: { id: chat.id },
     });
-    
+
     // Emit to recipient's personal room
     this.server.to(`user:${message.recipient.id}`).emit('chatUpdated', {
       chatId: chat.id,
@@ -157,4 +160,4 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(`user:${chat.sender.id}`).emit('newChat', chat);
     this.server.to(`user:${chat.recipient.id}`).emit('newChat', chat);
   }
-} 
+}

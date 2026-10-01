@@ -1,9 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere, MoreThanOrEqual, LessThanOrEqual, Between } from 'typeorm';
+import {
+  Repository,
+  FindOptionsWhere,
+  MoreThanOrEqual,
+  LessThanOrEqual,
+  Between,
+} from 'typeorm';
 import { Match, MatchStatus } from '../matching/entities/match.entity';
 import { Order, OrderStatus } from '../orders/entities/order.entity';
-import { OrderApplication, ApplicationStatus } from '../orders/entities/order-application.entity';
+import {
+  OrderApplication,
+  ApplicationStatus,
+} from '../orders/entities/order-application.entity';
 import { Profile } from '../profiles/entities/profile.entity';
 import { User } from '../users/entities/user.entity';
 import { DailyStat } from './dto/daily-stat.dto';
@@ -64,8 +73,12 @@ export class StatisticsService {
       : [];
 
     const totalOrdersCreated = orders.length;
-    const openOrders = orders.filter((o) => o.status === OrderStatus.OPEN).length;
-    const inProgressOrders = orders.filter((o) => o.status === OrderStatus.IN_PROGRESS).length;
+    const openOrders = orders.filter(
+      (o) => o.status === OrderStatus.OPEN,
+    ).length;
+    const inProgressOrders = orders.filter(
+      (o) => o.status === OrderStatus.IN_PROGRESS,
+    ).length;
 
     const allApplications = orders.flatMap((o) => o.applications ?? []);
     const totalApplicationsReceived = allApplications.length;
@@ -88,9 +101,12 @@ export class StatisticsService {
     });
 
     const totalMatches = matches.length;
-    const completedMatches = matches.filter((m) => m.status === MatchStatus.COMPLETED).length;
+    const completedMatches = matches.filter(
+      (m) => m.status === MatchStatus.COMPLETED,
+    ).length;
 
-    const { totalClicks, totalImpressions, averageEngagementRate } = this.aggregateMatchKpis(matches);
+    const { totalClicks, totalImpressions, averageEngagementRate } =
+      this.aggregateMatchKpis(matches);
 
     return {
       totalOrdersCreated: safeNumber(totalOrdersCreated),
@@ -162,10 +178,16 @@ export class StatisticsService {
     });
 
     const totalMatches = matches.length;
-    const completedMatches = matches.filter((m) => m.status === MatchStatus.COMPLETED).length;
+    const completedMatches = matches.filter(
+      (m) => m.status === MatchStatus.COMPLETED,
+    ).length;
 
-    const { totalClicks, totalImpressions, averageEngagementRate, followerGrowth } =
-      this.aggregateMatchKpis(matches);
+    const {
+      totalClicks,
+      totalImpressions,
+      averageEngagementRate,
+      followerGrowth,
+    } = this.aggregateMatchKpis(matches);
 
     return {
       totalApplicationsSent: safeNumber(totalApplicationsSent),
@@ -246,9 +268,15 @@ export class StatisticsService {
       .filter((rate) => rate > 0);
     const averageEngagementRate =
       engagementRates.length > 0
-        ? engagementRates.reduce((sum, rate) => sum + rate, 0) / engagementRates.length
+        ? engagementRates.reduce((sum, rate) => sum + rate, 0) /
+          engagementRates.length
         : 0;
 
-    return { totalClicks, totalImpressions, followerGrowth, averageEngagementRate };
+    return {
+      totalClicks,
+      totalImpressions,
+      followerGrowth,
+      averageEngagementRate,
+    };
   }
 }

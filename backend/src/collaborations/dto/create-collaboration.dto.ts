@@ -44,4 +44,4 @@ export class CreateCollaborationDto {
   @IsString()
   @IsOptional()
   notes?: string;
-} 
+}

@@ -20,33 +20,56 @@ export enum ProfileType {
 
 @Entity('profiles')
 export class Profile {
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000', description: 'The unique identifier for the profile' })
+  @ApiProperty({
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: 'The unique identifier for the profile',
+  })
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ nullable: true })
   displayName: string;
 
-  @ApiProperty({ example: 'This is my bio...', description: 'The biography of the user', required: false })
+  @ApiProperty({
+    example: 'This is my bio...',
+    description: 'The biography of the user',
+    required: false,
+  })
   @Column({ type: 'text', nullable: true })
   bio: string;
 
-  @ApiProperty({ example: 'https://example.com/avatar.jpg', description: 'The URL to the user\'s avatar', required: false })
+  @ApiProperty({
+    example: 'https://example.com/avatar.jpg',
+    description: "The URL to the user's avatar",
+    required: false,
+  })
   @Column({ nullable: true })
   avatarUrl: string;
 
   @Column({ nullable: true })
   websiteUrl: string;
 
-  @ApiProperty({ example: '25-34', description: 'Age range of the user', required: false })
+  @ApiProperty({
+    example: '25-34',
+    description: 'Age range of the user',
+    required: false,
+  })
   @Column({ nullable: true })
   ageRange: string;
 
-  @ApiProperty({ example: 'Male', description: 'Gender of the user', required: false })
+  @ApiProperty({
+    example: 'Male',
+    description: 'Gender of the user',
+    required: false,
+  })
   @Column({ nullable: true })
   gender: string;
 
-  @ApiProperty({ example: 'New York', description: 'Location of the user', required: false })
+  @ApiProperty({
+    example: 'New York',
+    description: 'Location of the user',
+    required: false,
+  })
   @Column({ nullable: true })
   location: string;
 
@@ -64,11 +87,19 @@ export class Profile {
   @Column({ nullable: true })
   industry: string;
 
-  @ApiProperty({ example: ['Fashion', 'Beauty'], description: 'Interests of the user', required: false })
+  @ApiProperty({
+    example: ['Fashion', 'Beauty'],
+    description: 'Interests of the user',
+    required: false,
+  })
   @Column('simple-array', { nullable: true })
   interests: string[];
 
-  @ApiProperty({ example: ['Fashion', 'Beauty'], description: 'Categories the user specializes in', required: false })
+  @ApiProperty({
+    example: ['Fashion', 'Beauty'],
+    description: 'Categories the user specializes in',
+    required: false,
+  })
   @Column('simple-array', { nullable: true })
   categories: string[];
 
@@ -113,7 +144,11 @@ export class Profile {
     minimumCompensation: number;
   };
 
-  @ApiProperty({ example: true, description: 'Whether the user is subscribed to new order notifications', required: false })
+  @ApiProperty({
+    example: true,
+    description: 'Whether the user is subscribed to new order notifications',
+    required: false,
+  })
   @Column({ default: false })
   isSubscribedToOrders: boolean;
 
@@ -121,29 +156,37 @@ export class Profile {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @ApiProperty({ example: '2024-04-19T09:00:00.000Z', description: 'The creation date of the profile' })
+  @ApiProperty({
+    example: '2024-04-19T09:00:00.000Z',
+    description: 'The creation date of the profile',
+  })
   @CreateDateColumn()
   createdAt: Date;
 
-  @ApiProperty({ example: '2024-04-19T09:00:00.000Z', description: 'The last update date of the profile' })
+  @ApiProperty({
+    example: '2024-04-19T09:00:00.000Z',
+    description: 'The last update date of the profile',
+  })
   @UpdateDateColumn()
   updatedAt: Date;
 
   @ApiProperty({ type: () => [SocialMedia] })
-  @OneToMany(() => SocialMedia, socialMedia => socialMedia.profile, { cascade: true })
+  @OneToMany(() => SocialMedia, (socialMedia) => socialMedia.profile, {
+    cascade: true,
+  })
   socialMedia: SocialMedia[];
 
   @Expose()
   @Transform(({ obj }) => {
     if (!obj.socialMedia) return [];
-    return obj.socialMedia.map(media => ({
+    return obj.socialMedia.map((media) => ({
       id: media.id,
       type: media.type,
       url: media.url,
       username: media.username,
       followers: media.followers,
       createdAt: media.createdAt,
-      updatedAt: media.updatedAt
+      updatedAt: media.updatedAt,
     }));
   })
   get socialMediaData() {

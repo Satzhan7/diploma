@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Order, OrderStatus } from './entities/order.entity';
@@ -17,7 +22,7 @@ export class OrdersService {
 
   async create(userId: string, createOrderDto: CreateOrderDto): Promise<Order> {
     const brandProfile = await this.profilesService.findByUserId(userId);
-    
+
     if (brandProfile.type !== ProfileType.BRAND) {
       throw new BadRequestException('Only brands can create orders');
     }
@@ -32,21 +37,28 @@ export class OrdersService {
   }
 
   async findAvailable(filters: any = {}): Promise<Order[]> {
-    const queryBuilder = this.orderRepository.createQueryBuilder('order')
+    const queryBuilder = this.orderRepository
+      .createQueryBuilder('order')
       .leftJoinAndSelect('order.brand', 'brand')
       .leftJoinAndSelect('brand.user', 'brandUser')
       .where('order.status = :status', { status: OrderStatus.OPEN });
 
     if (filters.category) {
-      queryBuilder.andWhere('order.category = :category', { category: filters.category });
+      queryBuilder.andWhere('order.category = :category', {
+        category: filters.category,
+      });
     }
 
     if (filters.minBudget) {
-      queryBuilder.andWhere('order.budget >= :minBudget', { minBudget: filters.minBudget });
+      queryBuilder.andWhere('order.budget >= :minBudget', {
+        minBudget: filters.minBudget,
+      });
     }
 
     if (filters.maxBudget) {
-      queryBuilder.andWhere('order.budget <= :maxBudget', { maxBudget: filters.maxBudget });
+      queryBuilder.andWhere('order.budget <= :maxBudget', {
+        maxBudget: filters.maxBudget,
+      });
     }
 
     return queryBuilder.getMany();
@@ -84,7 +96,9 @@ export class OrdersService {
         throw new NotFoundException(`Order with ID ${orderId} not found`);
       }
       if (order.status !== OrderStatus.OPEN) {
-        throw new ConflictException('This order is no longer open for applications');
+        throw new ConflictException(
+          'This order is no longer open for applications',
+        );
       }
 
       order.status = OrderStatus.IN_PROGRESS;
@@ -99,7 +113,14 @@ export class OrdersService {
 
     return this.orderRepository.find({
       where: { brandId: brandProfile.id },
-      relations: ['brand', 'brand.user', 'influencer', 'influencer.user', 'applications', 'applications.applicant'],
+      relations: [
+        'brand',
+        'brand.user',
+        'influencer',
+        'influencer.user',
+        'applications',
+        'applications.applicant',
+      ],
       order: { createdAt: 'DESC' },
     });
   }
@@ -111,4 +132,4 @@ export class OrdersService {
       order: { createdAt: 'DESC' },
     });
   }
-} 
+}

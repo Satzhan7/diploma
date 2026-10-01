@@ -38,7 +38,10 @@ export class MatchingService {
 
   // Internal helper. Throws NotFound if missing, Forbidden if userId is not
   // a participant. Used by every per-match operation that mutates state.
-  private async findOwnedMatch(matchId: string, userId: string): Promise<Match> {
+  private async findOwnedMatch(
+    matchId: string,
+    userId: string,
+  ): Promise<Match> {
     const match = await this.matchRepository.findOne({
       where: { id: matchId },
       relations: ['brand', 'influencer', 'brand.profile', 'influencer.profile'],
@@ -52,7 +55,10 @@ export class MatchingService {
     return match;
   }
 
-  async create(createMatchDto: CreateMatchDto, requesterId: string): Promise<Match> {
+  async create(
+    createMatchDto: CreateMatchDto,
+    requesterId: string,
+  ): Promise<Match> {
     // Only let the authenticated user create a match in which they are a
     // participant — prevents users from impersonating someone else's match.
     if (
@@ -98,7 +104,10 @@ export class MatchingService {
       brandId: _ignoredBrandId,
       influencerId: _ignoredInfluencerId,
       ...safeFields
-    } = updateMatchDto as UpdateMatchDto & { brandId?: string; influencerId?: string };
+    } = updateMatchDto as UpdateMatchDto & {
+      brandId?: string;
+      influencerId?: string;
+    };
     Object.assign(match, safeFields);
     return this.matchRepository.save(match);
   }
@@ -146,7 +155,10 @@ export class MatchingService {
     // introductory message. ChatsService.create returns the existing chat if
     // one already exists, so this is idempotent.
     try {
-      const chat = await this.chatsService.create(match.brandId, match.influencerId);
+      const chat = await this.chatsService.create(
+        match.brandId,
+        match.influencerId,
+      );
       await this.chatsService.addMessage(
         chat.id,
         match.brandId,
@@ -154,7 +166,9 @@ export class MatchingService {
       );
     } catch (error) {
       // Acceptance must succeed even if the chat seed fails.
-      this.logger.error(`Failed to seed chat after match acceptance: ${(error as Error).message}`);
+      this.logger.error(
+        `Failed to seed chat after match acceptance: ${(error as Error).message}`,
+      );
     }
 
     return updatedMatch;
@@ -189,7 +203,8 @@ export class MatchingService {
     }
 
     if (statsDto.impressions !== undefined) {
-      match.stats.impressions = (match.stats.impressions || 0) + statsDto.impressions;
+      match.stats.impressions =
+        (match.stats.impressions || 0) + statsDto.impressions;
     }
 
     if (statsDto.engagementRate !== undefined) {
@@ -197,7 +212,8 @@ export class MatchingService {
     }
 
     if (statsDto.followerGrowth !== undefined) {
-      match.stats.followerGrowth = (match.stats.followerGrowth || 0) + statsDto.followerGrowth;
+      match.stats.followerGrowth =
+        (match.stats.followerGrowth || 0) + statsDto.followerGrowth;
     }
 
     return this.matchRepository.save(match);
@@ -207,7 +223,9 @@ export class MatchingService {
   async completeMatch(matchId: string, userId: string): Promise<Match> {
     const match = await this.findOwnedMatch(matchId, userId);
     if (match.brandId !== userId) {
-      throw new ForbiddenException('Only the owning brand can complete a match');
+      throw new ForbiddenException(
+        'Only the owning brand can complete a match',
+      );
     }
     if (match.status !== MatchStatus.ACCEPTED) {
       throw new BadRequestException('Match must be accepted to be completed');
@@ -217,7 +235,10 @@ export class MatchingService {
   }
 
   // Method to get recommended influencers for a brand
-  async getRecommendedInfluencersForBrand(brandId: string, limit: number = 10): Promise<any[]> {
+  async getRecommendedInfluencersForBrand(
+    brandId: string,
+    limit: number = 10,
+  ): Promise<any[]> {
     const brand = await this.usersService.findById(brandId);
     if (!brand || brand.role !== 'brand') {
       throw new NotFoundException('Brand not found');
@@ -227,59 +248,77 @@ export class MatchingService {
 
     const influencers = await this.usersService.findInfluencers();
 
-    const existingMatches = await this.matchRepository.find({ where: { brandId } });
-    const existingInfluencerIds = existingMatches.map(match => match.influencerId);
-
-    const recommendedInfluencers = influencers.filter(
-      influencer => !existingInfluencerIds.includes(influencer.id)
+    const existingMatches = await this.matchRepository.find({
+      where: { brandId },
+    });
+    const existingInfluencerIds = existingMatches.map(
+      (match) => match.influencerId,
     );
 
-    return recommendedInfluencers.map(influencer => {
-      const influencerProfile = influencer.profile;
-      const influencerCategories = influencerProfile?.categories || [];
-      const categoryMatch = this.calculateCategoryMatch(brandCategories, influencerCategories);
-      const overallScore = categoryMatch * 100;
+    const recommendedInfluencers = influencers.filter(
+      (influencer) => !existingInfluencerIds.includes(influencer.id),
+    );
 
-      return {
-        user: influencer,
-        matchScore: overallScore,
-      };
-    })
-    .sort((a, b) => b.matchScore - a.matchScore)
-    .slice(0, limit);
+    return recommendedInfluencers
+      .map((influencer) => {
+        const influencerProfile = influencer.profile;
+        const influencerCategories = influencerProfile?.categories || [];
+        const categoryMatch = this.calculateCategoryMatch(
+          brandCategories,
+          influencerCategories,
+        );
+        const overallScore = categoryMatch * 100;
+
+        return {
+          user: influencer,
+          matchScore: overallScore,
+        };
+      })
+      .sort((a, b) => b.matchScore - a.matchScore)
+      .slice(0, limit);
   }
 
   // Method to get recommended brands for an influencer
-  async getRecommendedBrandsForInfluencer(influencerId: string, limit: number = 10): Promise<any[]> {
+  async getRecommendedBrandsForInfluencer(
+    influencerId: string,
+    limit: number = 10,
+  ): Promise<any[]> {
     const influencer = await this.usersService.findById(influencerId);
     if (!influencer || influencer.role !== 'influencer') {
       throw new NotFoundException('Influencer not found');
     }
-    const influencerProfile = await this.profilesService.findByUserId(influencerId);
+    const influencerProfile =
+      await this.profilesService.findByUserId(influencerId);
     const influencerCategories = influencerProfile?.categories || [];
 
     const brands = await this.usersService.findBrands();
 
-    const existingMatches = await this.matchRepository.find({ where: { influencerId } });
-    const existingBrandIds = existingMatches.map(match => match.brandId);
+    const existingMatches = await this.matchRepository.find({
+      where: { influencerId },
+    });
+    const existingBrandIds = existingMatches.map((match) => match.brandId);
 
     const recommendedBrands = brands.filter(
-      brand => !existingBrandIds.includes(brand.id)
+      (brand) => !existingBrandIds.includes(brand.id),
     );
 
-    return recommendedBrands.map(brand => {
-      const brandProfile = brand.profile;
-      const brandCategories = brandProfile?.categories || [];
-      const categoryMatch = this.calculateCategoryMatch(influencerCategories, brandCategories);
-      const overallScore = categoryMatch * 100;
+    return recommendedBrands
+      .map((brand) => {
+        const brandProfile = brand.profile;
+        const brandCategories = brandProfile?.categories || [];
+        const categoryMatch = this.calculateCategoryMatch(
+          influencerCategories,
+          brandCategories,
+        );
+        const overallScore = categoryMatch * 100;
 
-      return {
-        user: brand,
-        matchScore: overallScore,
-      };
-    })
-    .sort((a, b) => b.matchScore - a.matchScore)
-    .slice(0, limit);
+        return {
+          user: brand,
+          matchScore: overallScore,
+        };
+      })
+      .sort((a, b) => b.matchScore - a.matchScore)
+      .slice(0, limit);
   }
 
   async calculateMatchScore(brandId: string, influencerId: string) {
@@ -293,14 +332,18 @@ export class MatchingService {
     }
 
     const brandProfile = await this.profilesService.findByUserId(brandId);
-    const influencerProfile = await this.profilesService.findByUserId(influencerId);
+    const influencerProfile =
+      await this.profilesService.findByUserId(influencerId);
 
     const factors = {
       categoryMatch: this.calculateCategoryMatch(
         brandProfile?.categories || [],
         influencerProfile?.categories || [],
       ),
-      audienceMatch: this.calculateAudienceMatch(brandProfile, influencerProfile),
+      audienceMatch: this.calculateAudienceMatch(
+        brandProfile,
+        influencerProfile,
+      ),
       engagementScore: this.calculateEngagementScore(influencer),
     };
 
@@ -311,7 +354,8 @@ export class MatchingService {
     };
 
     const totalScore = Object.entries(factors).reduce(
-      (sum, [key, value]) => sum + value * (weights[key as keyof typeof weights] || 0),
+      (sum, [key, value]) =>
+        sum + value * (weights[key as keyof typeof weights] || 0),
       0,
     );
 
@@ -349,10 +393,16 @@ export class MatchingService {
       brandProfile.contentTypes || [],
       influencerProfile.contentTypes || [],
     );
-    if (!brandProfile.languages?.length || !influencerProfile.languages?.length) {
+    if (
+      !brandProfile.languages?.length ||
+      !influencerProfile.languages?.length
+    ) {
       return contentScore;
     }
-    if (!brandProfile.contentTypes?.length || !influencerProfile.contentTypes?.length) {
+    if (
+      !brandProfile.contentTypes?.length ||
+      !influencerProfile.contentTypes?.length
+    ) {
       return langScore;
     }
     return 0.6 * langScore + 0.4 * contentScore;

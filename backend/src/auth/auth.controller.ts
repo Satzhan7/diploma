@@ -1,11 +1,25 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Get, UseGuards, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Get,
+  UseGuards,
+  Delete,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Public } from './decorators/public.decorator';
 import { GetCurrentUser } from './decorators/get-current-user.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 
 // Tighter rate limit than the global default — login/register/refresh are
@@ -64,4 +78,4 @@ export class AuthController {
   async deleteAccount(@GetCurrentUser('sub') userId: string) {
     return this.authService.deleteAccount(userId);
   }
-} 
+}

@@ -27,7 +27,13 @@ import { GetCurrentUser } from '../auth/decorators/get-current-user.decorator';
 import { UserRole } from '../users/entities/user.entity';
 
 // Shape of the request user produced by JwtStrategy.validate (minimal claims).
-type CurrentUser = { id: string; sub: string; email: string; role: UserRole; name: string };
+type CurrentUser = {
+  id: string;
+  sub: string;
+  email: string;
+  role: UserRole;
+  name: string;
+};
 import { v4 as uuidv4 } from 'uuid';
 
 @ApiTags('chats')
@@ -49,9 +55,12 @@ export class ChatsController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiExcludeEndpoint()
-  @ApiOperation({ summary: 'Maintenance (admin only): raw messages for a chat' })
+  @ApiOperation({
+    summary: 'Maintenance (admin only): raw messages for a chat',
+  })
   async debugMessages(@Param('chatId') chatId: string): Promise<any> {
-    const connection = this.chatsService['messagesRepository'].manager.connection;
+    const connection =
+      this.chatsService['messagesRepository'].manager.connection;
     const result = await connection.query(
       `
       SELECT m.*, c.id as chat_id
@@ -72,11 +81,16 @@ export class ChatsController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiExcludeEndpoint()
-  @ApiOperation({ summary: 'Maintenance (admin only): fix messages with missing chatId' })
+  @ApiOperation({
+    summary: 'Maintenance (admin only): fix messages with missing chatId',
+  })
   async fixMessages(): Promise<any> {
-    const connection = this.chatsService['messagesRepository'].manager.connection;
+    const connection =
+      this.chatsService['messagesRepository'].manager.connection;
 
-    const chats = await connection.query(`SELECT id, "senderId", "recipientId" FROM chat`);
+    const chats = await connection.query(
+      `SELECT id, "senderId", "recipientId" FROM chat`,
+    );
     const messagesWithNullChat = await connection.query(
       `SELECT id, "senderId", "recipientId" FROM message WHERE "chatId" IS NULL`,
     );
@@ -85,15 +99,17 @@ export class ChatsController {
     for (const message of messagesWithNullChat) {
       const matchingChat = chats.find(
         (chat) =>
-          (chat.senderId === message.senderId && chat.recipientId === message.recipientId) ||
-          (chat.senderId === message.recipientId && chat.recipientId === message.senderId),
+          (chat.senderId === message.senderId &&
+            chat.recipientId === message.recipientId) ||
+          (chat.senderId === message.recipientId &&
+            chat.recipientId === message.senderId),
       );
 
       if (matchingChat) {
-        await connection.query(`UPDATE message SET "chatId" = $1 WHERE id = $2`, [
-          matchingChat.id,
-          message.id,
-        ]);
+        await connection.query(
+          `UPDATE message SET "chatId" = $1 WHERE id = $2`,
+          [matchingChat.id, message.id],
+        );
         fixedCount++;
       }
     }
@@ -109,9 +125,12 @@ export class ChatsController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiExcludeEndpoint()
-  @ApiOperation({ summary: 'Maintenance (admin only): SQL recipe to fix chatId' })
+  @ApiOperation({
+    summary: 'Maintenance (admin only): SQL recipe to fix chatId',
+  })
   async getFixMessagesSql(): Promise<any> {
-    const connection = this.chatsService['messagesRepository'].manager.connection;
+    const connection =
+      this.chatsService['messagesRepository'].manager.connection;
     const chats = await connection.query(
       `SELECT id, "senderId", "recipientId" FROM chat LIMIT 10`,
     );
@@ -144,7 +163,9 @@ SELECT COUNT(*) FROM message WHERE "chatId" IS NULL;
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiExcludeEndpoint()
-  @ApiOperation({ summary: 'Maintenance (admin only): direct SQL message insert' })
+  @ApiOperation({
+    summary: 'Maintenance (admin only): direct SQL message insert',
+  })
   async addMessageDirect(
     @Param('chatId') chatId: string,
     @Body() createMessageDto: { content: string },
@@ -153,9 +174,11 @@ SELECT COUNT(*) FROM message WHERE "chatId" IS NULL;
     try {
       const userId = req.user.id;
       const chat = await this.chatsService.findOne(chatId, userId);
-      const recipientId = chat.sender.id === userId ? chat.recipient.id : chat.sender.id;
+      const recipientId =
+        chat.sender.id === userId ? chat.recipient.id : chat.sender.id;
 
-      const connection = this.chatsService['messagesRepository'].manager.connection;
+      const connection =
+        this.chatsService['messagesRepository'].manager.connection;
       const result = await connection.query(
         `INSERT INTO message (id, content, "senderId", "recipientId", "chatId", "isRead", "createdAt")
          VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -190,8 +213,14 @@ SELECT COUNT(*) FROM message WHERE "chatId" IS NULL;
       const message = {
         id: messageData[0].id,
         content: messageData[0].content,
-        sender: { id: messageData[0].senderId, name: messageData[0].senderName },
-        recipient: { id: messageData[0].recipientId, name: messageData[0].recipientName },
+        sender: {
+          id: messageData[0].senderId,
+          name: messageData[0].senderName,
+        },
+        recipient: {
+          id: messageData[0].recipientId,
+          name: messageData[0].recipientName,
+        },
         chat: { id: chatId },
         chatId,
         senderId: messageData[0].senderId,
@@ -206,8 +235,12 @@ SELECT COUNT(*) FROM message WHERE "chatId" IS NULL;
 
       return message;
     } catch (error) {
-      this.logger.error(`Error in direct message creation: ${(error as Error).message}`);
-      throw new InternalServerErrorException('Failed to create message: ' + (error as Error).message);
+      this.logger.error(
+        `Error in direct message creation: ${(error as Error).message}`,
+      );
+      throw new InternalServerErrorException(
+        'Failed to create message: ' + (error as Error).message,
+      );
     }
   }
 
@@ -226,14 +259,24 @@ SELECT COUNT(*) FROM message WHERE "chatId" IS NULL;
   @ApiOperation({ summary: 'Get a chat by id' })
   @ApiResponse({ status: 200, description: 'Return the chat.', type: Chat })
   @ApiResponse({ status: 404, description: 'Chat not found.' })
-  findOne(@Param('id') id: string, @GetCurrentUser() user: CurrentUser): Promise<Chat> {
+  findOne(
+    @Param('id') id: string,
+    @GetCurrentUser() user: CurrentUser,
+  ): Promise<Chat> {
     return this.chatsService.findOne(id, user.id);
   }
 
   @Get(':id/messages')
   @ApiOperation({ summary: 'Get all messages for a chat' })
-  @ApiResponse({ status: 200, description: 'Return all messages.', type: [Message] })
-  getMessages(@Param('id') id: string, @GetCurrentUser() user: CurrentUser): Promise<Message[]> {
+  @ApiResponse({
+    status: 200,
+    description: 'Return all messages.',
+    type: [Message],
+  })
+  getMessages(
+    @Param('id') id: string,
+    @GetCurrentUser() user: CurrentUser,
+  ): Promise<Message[]> {
     return this.chatsService.getMessages(id, user.id);
   }
 

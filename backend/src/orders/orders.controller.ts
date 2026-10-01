@@ -1,5 +1,18 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -19,7 +32,11 @@ export class OrdersController {
   @Post()
   @Roles(UserRole.BRAND)
   @ApiOperation({ summary: 'Create a new order' })
-  @ApiResponse({ status: 201, description: 'Order successfully created', type: Order })
+  @ApiResponse({
+    status: 201,
+    description: 'Order successfully created',
+    type: Order,
+  })
   create(
     @GetCurrentUser('sub') userId: string,
     @Body() createOrderDto: CreateOrderDto,
@@ -30,7 +47,11 @@ export class OrdersController {
   @Get('available')
   @Roles(UserRole.INFLUENCER)
   @ApiOperation({ summary: 'Get all available orders' })
-  @ApiResponse({ status: 200, description: 'Return all available orders', type: [Order] })
+  @ApiResponse({
+    status: 200,
+    description: 'Return all available orders',
+    type: [Order],
+  })
   findAvailable(
     @Query('category') category?: string,
     @Query('minBudget') minBudget?: number,
@@ -42,7 +63,11 @@ export class OrdersController {
   @Post(':id/apply')
   @Roles(UserRole.INFLUENCER)
   @ApiOperation({ summary: 'Apply for an order' })
-  @ApiResponse({ status: 200, description: 'Application successful', type: Order })
+  @ApiResponse({
+    status: 200,
+    description: 'Application successful',
+    type: Order,
+  })
   apply(
     @Param('id') orderId: string,
     @GetCurrentUser('sub') userId: string,
@@ -53,7 +78,11 @@ export class OrdersController {
   @Get('brand')
   @Roles(UserRole.BRAND)
   @ApiOperation({ summary: 'Get all orders for the brand' })
-  @ApiResponse({ status: 200, description: 'Return all brand orders', type: [Order] })
+  @ApiResponse({
+    status: 200,
+    description: 'Return all brand orders',
+    type: [Order],
+  })
   findBrandOrders(@GetCurrentUser('sub') userId: string): Promise<Order[]> {
     return this.ordersService.findByBrand(userId);
   }
@@ -61,8 +90,14 @@ export class OrdersController {
   @Get('influencer')
   @Roles(UserRole.INFLUENCER)
   @ApiOperation({ summary: 'Get all orders for the influencer' })
-  @ApiResponse({ status: 200, description: 'Return all influencer orders', type: [Order] })
-  findInfluencerOrders(@GetCurrentUser('sub') userId: string): Promise<Order[]> {
+  @ApiResponse({
+    status: 200,
+    description: 'Return all influencer orders',
+    type: [Order],
+  })
+  findInfluencerOrders(
+    @GetCurrentUser('sub') userId: string,
+  ): Promise<Order[]> {
     return this.ordersService.findByInfluencer(userId);
   }
 
@@ -72,4 +107,4 @@ export class OrdersController {
   findOne(@Param('id') id: string): Promise<Order> {
     return this.ordersService.findOne(id);
   }
-} 
+}

@@ -1,5 +1,19 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -15,14 +29,16 @@ import { UserRole } from '../users/entities/user.entity';
 @Controller('order-applications')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class OrderApplicationsController {
-  constructor(private readonly orderApplicationsService: OrderApplicationsService) {}
+  constructor(
+    private readonly orderApplicationsService: OrderApplicationsService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get all applications for the current user' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Return all applications for the current user', 
-    type: [OrderApplication] 
+  @ApiResponse({
+    status: 200,
+    description: 'Return all applications for the current user',
+    type: [OrderApplication],
   })
   findAll(@GetCurrentUser('sub') userId: string): Promise<OrderApplication[]> {
     return this.orderApplicationsService.findAllByUser(userId);
@@ -31,10 +47,10 @@ export class OrderApplicationsController {
   @Get('order/:orderId')
   @Roles(UserRole.BRAND)
   @ApiOperation({ summary: 'Get all applications for an order' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Return all applications for the order', 
-    type: [OrderApplication] 
+  @ApiResponse({
+    status: 200,
+    description: 'Return all applications for the order',
+    type: [OrderApplication],
   })
   findByOrder(
     @Param('orderId') orderId: string,
@@ -46,40 +62,49 @@ export class OrderApplicationsController {
   @Post(':orderId')
   @Roles(UserRole.INFLUENCER)
   @ApiOperation({ summary: 'Create a new order application' })
-  @ApiResponse({ 
-    status: 201, 
-    description: 'Order application successfully created', 
-    type: OrderApplication 
+  @ApiResponse({
+    status: 201,
+    description: 'Order application successfully created',
+    type: OrderApplication,
   })
   create(
     @Param('orderId') orderId: string,
     @GetCurrentUser('sub') userId: string,
     @Body() createOrderApplicationDto: CreateOrderApplicationDto,
   ): Promise<OrderApplication> {
-    return this.orderApplicationsService.create(orderId, userId, createOrderApplicationDto);
+    return this.orderApplicationsService.create(
+      orderId,
+      userId,
+      createOrderApplicationDto,
+    );
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get application by id (applicant or order-owning brand)' })
+  @ApiOperation({
+    summary: 'Get application by id (applicant or order-owning brand)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Return the application',
-    type: OrderApplication
+    type: OrderApplication,
   })
   findOne(
     @Param('id') id: string,
     @GetCurrentUser('sub') userId: string,
     @GetCurrentUser('role') userRole: UserRole,
   ): Promise<OrderApplication> {
-    return this.orderApplicationsService.findOne(id, { id: userId, role: userRole });
+    return this.orderApplicationsService.findOne(id, {
+      id: userId,
+      role: userRole,
+    });
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update an application' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Application successfully updated', 
-    type: OrderApplication 
+  @ApiResponse({
+    status: 200,
+    description: 'Application successfully updated',
+    type: OrderApplication,
   })
   update(
     @Param('id') id: string,
@@ -87,16 +112,21 @@ export class OrderApplicationsController {
     @GetCurrentUser('role') userRole: UserRole,
     @Body() updateOrderApplicationDto: UpdateOrderApplicationDto,
   ): Promise<OrderApplication> {
-    return this.orderApplicationsService.update(id, userId, userRole, updateOrderApplicationDto);
+    return this.orderApplicationsService.update(
+      id,
+      userId,
+      userRole,
+      updateOrderApplicationDto,
+    );
   }
 
   @Delete(':id')
   @Roles(UserRole.INFLUENCER)
   @ApiOperation({ summary: 'Withdraw an application' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Application successfully withdrawn', 
-    type: OrderApplication 
+  @ApiResponse({
+    status: 200,
+    description: 'Application successfully withdrawn',
+    type: OrderApplication,
   })
   withdraw(
     @Param('id') id: string,
@@ -104,4 +134,4 @@ export class OrderApplicationsController {
   ): Promise<OrderApplication> {
     return this.orderApplicationsService.withdraw(id, userId);
   }
-} 
+}

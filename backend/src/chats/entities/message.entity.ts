@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  JoinColumn,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Chat } from './chat.entity';
 
@@ -24,7 +31,7 @@ export class Message {
   @Column({ name: 'recipientId' })
   recipientId: string;
 
-  @ManyToOne(() => Chat, chat => chat.messages)
+  @ManyToOne(() => Chat, (chat) => chat.messages)
   @JoinColumn({ name: 'chatId' })
   chat: Chat;
 
@@ -36,4 +43,4 @@ export class Message {
 
   @CreateDateColumn()
   createdAt: Date;
-} 
+}

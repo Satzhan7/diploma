@@ -1,10 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsUUID, IsNumber, IsOptional, IsNotEmpty } from 'class-validator';
+import {
+  IsString,
+  IsUUID,
+  IsNumber,
+  IsOptional,
+  IsNotEmpty,
+} from 'class-validator';
 
 export class CreateOrderApplicationDto {
   @ApiProperty({
     description: 'The message or cover letter from the applicant',
-    example: 'I would like to work on this project because of my expertise in this field.',
+    example:
+      'I would like to work on this project because of my expertise in this field.',
   })
   @IsString()
   @IsNotEmpty()
@@ -18,4 +25,4 @@ export class CreateOrderApplicationDto {
   @IsNumber()
   @IsOptional()
   proposedPrice?: number;
-} 
+}

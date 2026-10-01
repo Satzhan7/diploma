@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, ForbiddenException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Req,
+  ForbiddenException,
+} from '@nestjs/common';
 import { CollaborationsService } from './collaborations.service';
 import { CreateCollaborationDto } from './dto/create-collaboration.dto';
 import { UpdateCollaborationDto } from './dto/update-collaboration.dto';
@@ -42,7 +53,9 @@ export class CollaborationsController {
   }
 
   @Get('influencer')
-  @ApiOperation({ summary: 'Get collaborations for the authenticated influencer' })
+  @ApiOperation({
+    summary: 'Get collaborations for the authenticated influencer',
+  })
   @Roles(UserRole.INFLUENCER)
   findInfluencerCollaborations(@Req() req) {
     return this.collaborationsService.findByInfluencerId(req.user.id);
@@ -80,7 +93,9 @@ export class CollaborationsController {
       collaboration.brandId !== user.id &&
       collaboration.influencerId !== user.id
     ) {
-      throw new ForbiddenException('You do not have access to this collaboration');
+      throw new ForbiddenException(
+        'You do not have access to this collaboration',
+      );
     }
   }
 
@@ -90,4 +105,4 @@ export class CollaborationsController {
   remove(@Param('id') id: string) {
     return this.collaborationsService.remove(id);
   }
-} 
+}

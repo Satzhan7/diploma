@@ -14,12 +14,16 @@ export class CollaborationsService {
     private usersService: UsersService,
   ) {}
 
-  async create(createCollaborationDto: CreateCollaborationDto): Promise<Collaboration> {
+  async create(
+    createCollaborationDto: CreateCollaborationDto,
+  ): Promise<Collaboration> {
     // Verify that brand and influencer exist
     await this.usersService.findById(createCollaborationDto.brandId);
     await this.usersService.findById(createCollaborationDto.influencerId);
 
-    const collaboration = this.collaborationsRepository.create(createCollaborationDto);
+    const collaboration = this.collaborationsRepository.create(
+      createCollaborationDto,
+    );
     return this.collaborationsRepository.save(collaboration);
   }
 
@@ -56,20 +60,23 @@ export class CollaborationsService {
     return collaboration;
   }
 
-  async update(id: string, updateCollaborationDto: UpdateCollaborationDto): Promise<Collaboration> {
+  async update(
+    id: string,
+    updateCollaborationDto: UpdateCollaborationDto,
+  ): Promise<Collaboration> {
     const collaboration = await this.findOne(id);
-    
+
     // Update only the fields that are provided
     Object.assign(collaboration, updateCollaborationDto);
-    
+
     return this.collaborationsRepository.save(collaboration);
   }
 
   async remove(id: string): Promise<void> {
     const result = await this.collaborationsRepository.delete(id);
-    
+
     if (result.affected === 0) {
       throw new NotFoundException(`Collaboration with ID ${id} not found`);
     }
   }
-} 
+}

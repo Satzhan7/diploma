@@ -1,4 +1,11 @@
-import { Injectable, InternalServerErrorException, UnauthorizedException, ConflictException, NotFoundException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  UnauthorizedException,
+  ConflictException,
+  NotFoundException,
+  Logger,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
@@ -27,11 +34,14 @@ export class AuthService {
     }
 
     const user = await this.usersService.create(registerDto);
-    
+
     // Create a profile for the user based on their role
-    const profileType = registerDto.role === UserRole.BRAND ? ProfileType.BRAND : ProfileType.INFLUENCER;
+    const profileType =
+      registerDto.role === UserRole.BRAND
+        ? ProfileType.BRAND
+        : ProfileType.INFLUENCER;
     await this.profilesService.createProfile(user.id, profileType);
-    
+
     const tokens = await this.generateTokens(user.id, user.email);
     await this.usersService.updateRefreshToken(user.id, tokens.refreshToken);
 
@@ -47,7 +57,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      user.password,
+    );
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -134,7 +147,9 @@ export class AuthService {
         }
       } catch (profileError) {
         // Profile not found is okay, we can proceed with user deletion
-        this.logger.warn(`Profile not found for user ${userId}, proceeding with user deletion`);
+        this.logger.warn(
+          `Profile not found for user ${userId}, proceeding with user deletion`,
+        );
       }
 
       // Then delete the user
@@ -142,7 +157,9 @@ export class AuthService {
 
       return { message: 'Account successfully deleted' };
     } catch (error) {
-      throw new InternalServerErrorException(`Failed to delete account: ${error.message}`);
+      throw new InternalServerErrorException(
+        `Failed to delete account: ${error.message}`,
+      );
     }
   }
-} 
+}

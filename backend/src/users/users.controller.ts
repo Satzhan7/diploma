@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, ForbiddenException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  UseGuards,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -49,8 +60,11 @@ export class UsersController {
     if (id !== currentUserId) {
       throw new ForbiddenException('You can only update your own profile');
     }
-    const { role: _ignoredRole, password: _ignoredPassword, ...safeFields } =
-      updateUserDto as UpdateUserDto & { role?: unknown; password?: unknown };
+    const {
+      role: _ignoredRole,
+      password: _ignoredPassword,
+      ...safeFields
+    } = updateUserDto as UpdateUserDto & { role?: unknown; password?: unknown };
     return this.usersService.update(id, safeFields as UpdateUserDto);
   }
 
@@ -66,4 +80,4 @@ export class UsersController {
     }
     return this.usersService.remove(id);
   }
-} 
+}

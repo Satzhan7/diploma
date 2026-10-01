@@ -16,7 +16,10 @@ export class RegisterDto {
   @MinLength(6)
   password: string;
 
-  @ApiProperty({ enum: [UserRole.BRAND, UserRole.INFLUENCER], description: 'User role' })
+  @ApiProperty({
+    enum: [UserRole.BRAND, UserRole.INFLUENCER],
+    description: 'User role',
+  })
   @IsIn([UserRole.BRAND, UserRole.INFLUENCER])
   role: UserRole;
-} 
+}

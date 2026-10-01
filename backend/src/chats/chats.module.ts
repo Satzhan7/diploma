@@ -28,4 +28,4 @@ export class ChatsModule implements OnModuleInit {
     // Setup circular dependency after initialization
     this.chatsService.setGateway(this.chatsGateway);
   }
-} 
+}
