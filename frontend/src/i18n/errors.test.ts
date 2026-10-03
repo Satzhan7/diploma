@@ -29,6 +29,16 @@ describe('getErrorMessage', () => {
     expect(getErrorMessage(undefined)).toMatch(/Something went wrong/);
   });
 
+  it('prefers a known code and NETWORK over the caller fallback', () => {
+    const fallback = 'Could not submit';
+    expect(getErrorMessage({ response: { data: { code: 'NOPE' } } }, fallback)).toBe(fallback);
+    expect(getErrorMessage(new Error('boom'), fallback)).toBe(fallback);
+    expect(getErrorMessage({ response: { data: { code: 'ORDER_NOT_OPEN' } } }, fallback)).toBe(
+      'This order is no longer accepting applications.',
+    );
+    expect(getErrorMessage({ request: {} }, fallback)).toMatch(/Cannot reach the server/);
+  });
+
   it('has a translation for every backend error code', () => {
     expect(backendCodes.length).toBeGreaterThan(20);
     for (const code of backendCodes) {

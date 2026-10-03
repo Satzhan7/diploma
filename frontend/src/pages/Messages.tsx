@@ -25,6 +25,7 @@ import { ChevronLeftIcon } from '@chakra-ui/icons';
 import { Conversation, Message } from '../types/chat';
 import { User } from '../types/user';
 import { formatTime } from '../i18n';
+import { getErrorMessage } from '../i18n/errors';
 
 // Helper function to extract user ID safely
 const getUserId = (user: User | { id: string } | undefined): string => {
@@ -218,7 +219,7 @@ export const Messages: React.FC = () => {
       console.error('Failed to send message:', error);
       toast({
         title: t('common:state.error'),
-        description: t('sendError'),
+        description: getErrorMessage(error, t('sendError')),
         status: 'error',
         duration: 3000,
         isClosable: true,

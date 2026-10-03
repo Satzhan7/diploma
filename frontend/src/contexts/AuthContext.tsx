@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import socketService from '../services/socket';
 import { User, UserRole } from '../types/user';
+import { getErrorMessage } from '../i18n/errors';
 
 interface AuthContextType {
   user: User | null;
@@ -62,8 +63,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       setUser(response.data.user);
       return { user: response.data.user };
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed');
+    } catch (err) {
+      setError(getErrorMessage(err));
       throw err;
     }
   };
@@ -72,8 +73,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setError(null);
       await api.post('/auth/register', data);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed');
+    } catch (err) {
+      setError(getErrorMessage(err));
       throw err;
     }
   };
@@ -95,8 +96,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // After successful deletion, log the user out
       logout();
       return;
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete account');
+    } catch (err) {
+      setError(getErrorMessage(err));
       throw err;
     }
   };

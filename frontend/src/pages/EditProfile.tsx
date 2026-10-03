@@ -25,6 +25,7 @@ import { useForm, SubmitHandler, useFieldArray, FieldArrayWithId } from 'react-h
 import { User, UserRole } from '../types/user';
 import { usersService } from '../services/users';
 import api from '../services/api';
+import { getErrorMessage } from '../i18n/errors';
 
 interface ProfileFormData {
   name: string;
@@ -131,10 +132,10 @@ export const EditProfile: React.FC = () => {
 
       const homeRoute = user.role === UserRole.BRAND ? '/brand/profile' : '/influencer/profile';
       navigate(homeRoute);
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: 'Update failed.',
-        description: error?.response?.data?.message || 'Could not update profile.',
+        description: getErrorMessage(error),
         status: 'error',
         duration: 5000,
         isClosable: true,

@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import Logo from '../components/Logo';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import { getErrorMessage } from '../i18n/errors';
 
 export const Login: React.FC = () => {
   const { t } = useTranslation('auth');
@@ -57,7 +58,7 @@ export const Login: React.FC = () => {
     } catch (error) {
       toast({
         title: t('errors.loginFailed'),
-        description: error instanceof Error ? error.message : t('errors.generic'),
+        description: getErrorMessage(error),
         status: 'error',
         duration: 5000,
         isClosable: true,

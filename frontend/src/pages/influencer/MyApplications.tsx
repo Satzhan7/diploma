@@ -37,6 +37,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { formatDate } from '../../i18n';
 import { StatusBadge } from '../../components/ui';
+import { getErrorMessage } from '../../i18n/errors';
 
 export const MyApplications: React.FC = () => {
   const { t } = useTranslation('influencer');
@@ -63,7 +64,7 @@ export const MyApplications: React.FC = () => {
       setApplicationToWithdraw(null); // Clear selection after withdrawal
     },
     onError: (err) => {
-      toast({ title: t('applications.toast.withdrawError'), description: (err as Error).message, status: 'error' });
+      toast({ title: t('applications.toast.withdrawError'), description: getErrorMessage(err), status: 'error' });
       onClose();
     },
   });
@@ -141,7 +142,7 @@ export const MyApplications: React.FC = () => {
   );
 
   if (isLoading) return <Center p={10}><Spinner /></Center>;
-  if (error) return <Center p={10}><Text color="red.500">{t('applications.loadError', { message: error.message })}</Text></Center>;
+  if (error) return <Center p={10}><Text color="red.500">{t('applications.loadError', { message: getErrorMessage(error) })}</Text></Center>;
   // Now explicitly check if applications is defined *before* rendering tabs
   // This handles the case where the query finishes but returns undefined/null
   if (!applications) return <Center p={10}><Text>{t('applications.empty.all')}</Text></Center>; 

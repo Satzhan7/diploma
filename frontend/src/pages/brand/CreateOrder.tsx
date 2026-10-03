@@ -22,6 +22,7 @@ import {
 import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '../../services/api';
+import { getErrorMessage } from '../../i18n/errors';
 
 interface OrderFormData {
   title: string;
@@ -74,10 +75,10 @@ export const CreateOrder: React.FC = () => {
       });
       navigate('/brand/orders');
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast({
         title: t('common:state.error'),
-        description: error.response?.data?.message || t('createOrder.toasts.errorFallback'),
+        description: getErrorMessage(error, t('createOrder.toasts.errorFallback')),
         status: 'error',
         duration: 5000,
         isClosable: true,

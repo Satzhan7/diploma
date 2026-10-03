@@ -23,6 +23,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatDate, formatMoney } from '../../i18n';
 import { StatusBadge } from '../../components/ui';
+import { getErrorMessage } from '../../i18n/errors';
 
 export const OrderDetail: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
@@ -43,7 +44,7 @@ export const OrderDetail: React.FC = () => {
   if (error) {
     toast({
       title: t('orderDetail.loadErrorTitle'),
-      description: error.message,
+      description: getErrorMessage(error),
       status: 'error',
       duration: 5000,
       isClosable: true,

@@ -37,6 +37,7 @@ import { FiEye } from 'react-icons/fi';
 import { useAuth } from '../../contexts/AuthContext';
 import { StatusBadge } from '../../components/ui';
 import { formatMoney } from '../../i18n';
+import { getErrorMessage } from '../../i18n/errors';
 
 const BrandOrders: React.FC = () => {
   const { t } = useTranslation('brand');
@@ -61,7 +62,7 @@ const BrandOrders: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['brandOrders'] });
       toast({ title: t('orders.toasts.accepted'), status: 'success' });
     },
-    onError: (err) => toast({ title: t('orders.toasts.acceptError'), description: (err as Error).message, status: 'error' }),
+    onError: (err) => toast({ title: t('orders.toasts.acceptError'), description: getErrorMessage(err), status: 'error' }),
   });
 
   const rejectMutation = useMutation({
@@ -70,7 +71,7 @@ const BrandOrders: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['orderApplications', selectedOrder?.id] });
       toast({ title: t('orders.toasts.rejected'), status: 'warning' });
     },
-    onError: (err) => toast({ title: t('orders.toasts.rejectError'), description: (err as Error).message, status: 'error' }),
+    onError: (err) => toast({ title: t('orders.toasts.rejectError'), description: getErrorMessage(err), status: 'error' }),
   });
 
   const { data: orderApplications, isLoading: isLoadingApplications } = useQuery<Application[]>({
@@ -98,7 +99,7 @@ const BrandOrders: React.FC = () => {
 
   if (!user) return <Center p={10}><Text>{t('orders.loadingUser')}</Text></Center>;
   if (isLoading) return <Center p={10}><Spinner /></Center>;
-  if (error) return <Center p={10}><Text color="red.500">{t('orders.loadError', { message: error.message })}</Text></Center>;
+  if (error) return <Center p={10}><Text color="red.500">{t('orders.loadError', { message: getErrorMessage(error) })}</Text></Center>;
 
   return (
     <Box p={4}>

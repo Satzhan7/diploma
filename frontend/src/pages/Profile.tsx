@@ -35,6 +35,7 @@ import { IconWrapper } from '../components/IconWrapper';
 import { User, Profile as ProfileType, UserRole } from '../types/user';
 import { matchingService } from '../services/matching';
 import { formatDate, formatNumber } from '../i18n';
+import { getErrorMessage } from '../i18n/errors';
 
 interface ProfileProps {
   isViewMode?: boolean;
@@ -81,10 +82,10 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
       });
       queryClient.invalidateQueries({ queryKey: ['userMatches'] }); 
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast({
         title: t('view.toast.requestError.title'),
-        description: error.response?.data?.message || error.message || t('view.toast.requestError.description'),
+        description: getErrorMessage(error, t('view.toast.requestError.description')),
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -146,10 +147,10 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
       const messagesRoute = user.role === 'brand' ? '/brand/messages' : '/influencer/messages';
       navigate(messagesRoute, { state: { activeChatId: chatId } });
       
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: t('common:state.error'),
-        description: error.response?.data?.message || t('view.toast.chatError'),
+        description: getErrorMessage(error, t('view.toast.chatError')),
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -169,10 +170,10 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
         isClosable: true,
       });
       navigate('/login');
-    } catch {
+    } catch (error) {
       toast({
         title: t('common:state.error'),
-        description: t('view.toast.deleteError'),
+        description: getErrorMessage(error, t('view.toast.deleteError')),
         status: 'error',
         duration: 5000,
         isClosable: true,

@@ -27,6 +27,7 @@ import { StarIcon } from '@chakra-ui/icons';
 import { FiSearch } from 'react-icons/fi';
 import { IconWrapper } from '../../components/IconWrapper';
 import { useTranslation } from 'react-i18next';
+import { getErrorMessage } from '../../i18n/errors';
 
 const BrandRecommendations: React.FC = () => {
   const { t } = useTranslation('influencer');
@@ -56,10 +57,10 @@ const BrandRecommendations: React.FC = () => {
       });
       setSelectedBrand(null);
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
         title: t('common:state.error'),
-        description: error.message || t('recommendations.toast.interestError'),
+        description: getErrorMessage(error, t('recommendations.toast.interestError')),
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -88,7 +89,7 @@ const BrandRecommendations: React.FC = () => {
   if (error) {
     return (
       <Box p={4}>
-        <Text color="red.500">{t('recommendations.loadError', { message: error.message })}</Text>
+        <Text color="red.500">{t('recommendations.loadError', { message: getErrorMessage(error) })}</Text>
       </Box>
     );
   }

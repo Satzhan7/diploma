@@ -36,6 +36,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { formatDate, formatMoney } from '../../i18n';
 import { StatusBadge } from '../../components/ui';
+import { getErrorMessage } from '../../i18n/errors';
 
 interface FilterState {
   category: string;
@@ -111,11 +112,11 @@ export const Orders: React.FC = () => {
       onClose();
       resetForm();
     },
-    onError: (error: any) => {
+    onError: (error) => {
       console.error('Mutation error handler:', error);
       toast({
         title: t('common:state.error'),
-        description: error.response?.data?.message || t('orders.toast.submitError'),
+        description: getErrorMessage(error, t('orders.toast.submitError')),
         status: 'error',
         duration: 5000,
         isClosable: true,

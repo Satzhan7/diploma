@@ -23,9 +23,6 @@
       "title": "Account deleted",
       "description": "Your account has been successfully deleted."
     },
-    "deleteFailed": {
-      "title": "Deletion failed",
-      "description": "Couldn't delete your account."
-    }
+    "deleteFailed": "Deletion failed"
   }
 }

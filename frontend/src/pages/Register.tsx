@@ -22,6 +22,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../types/user';
 import Logo from '../components/Logo';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import { getErrorMessage } from '../i18n/errors';
 
 export const Register: React.FC = () => {
   const { t } = useTranslation('auth');
@@ -61,12 +62,10 @@ export const Register: React.FC = () => {
         isClosable: true,
       });
       navigate('/login');
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: t('errors.registerFailed'),
-        description:
-          error?.response?.data?.message ||
-          (error instanceof Error ? error.message : t('errors.generic')),
+        description: getErrorMessage(error),
         status: 'error',
         duration: 5000,
         isClosable: true,
