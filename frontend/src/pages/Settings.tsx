@@ -55,9 +55,10 @@ export const Settings: React.FC = () => {
     e.preventDefault();
     setIsSaving(true);
     const formData = new FormData(e.target as HTMLFormElement);
+    // Chakra's Switch submits an empty value when on, so check presence.
     const data: LocalSettings = {
-      emailNotifications: formData.get('emailNotifications') === 'on',
-      pushNotifications: formData.get('pushNotifications') === 'on',
+      emailNotifications: formData.has('emailNotifications'),
+      pushNotifications: formData.has('pushNotifications'),
       timezone: String(formData.get('timezone') ?? 'UTC'),
     };
     try {
