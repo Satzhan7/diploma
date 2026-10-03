@@ -14,8 +14,10 @@ import {
 } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { usersService, User } from '../../services/users';
+import { useTranslation } from 'react-i18next';
 
 const BrandList: React.FC = () => {
+  const { t } = useTranslation('influencer');
   const [searchQuery, setSearchQuery] = useState('');
   const [industryFilter, setIndustryFilter] = useState('');
   const toast = useToast();
@@ -34,41 +36,41 @@ const BrandList: React.FC = () => {
   });
 
   if (isLoading) {
-    return <Text>Loading...</Text>;
+    return <Text>{t('common:state.loading')}</Text>;
   }
 
   if (error) {
     toast({
-      title: 'Error',
-      description: 'Failed to load brands',
+      title: t('common:state.error'),
+      description: t('brandList.loadErrorDescription'),
       status: 'error',
       duration: 5000,
       isClosable: true,
     });
-    return <Text>Error loading brands</Text>;
+    return <Text>{t('brandList.loadError')}</Text>;
   }
 
   return (
     <Box p={4}>
       <VStack spacing={4} align="stretch">
-        <Heading size="lg">Brands</Heading>
+        <Heading size="lg">{t('brandList.title')}</Heading>
         
         <HStack spacing={4}>
           <Input
-            placeholder="Search brands..."
+            placeholder={t('shared.searchBrands')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           <Select
-            placeholder="Filter by industry"
+            placeholder={t('brandList.filterByIndustry')}
             value={industryFilter}
             onChange={(e) => setIndustryFilter(e.target.value)}
           >
-            <option value="fashion">Fashion</option>
-            <option value="beauty">Beauty</option>
-            <option value="lifestyle">Lifestyle</option>
-            <option value="tech">Technology</option>
-            <option value="food">Food</option>
+            <option value="fashion">{t('categories.fashion')}</option>
+            <option value="beauty">{t('categories.beauty')}</option>
+            <option value="lifestyle">{t('categories.lifestyle')}</option>
+            <option value="tech">{t('categories.technology')}</option>
+            <option value="food">{t('categories.food')}</option>
           </Select>
         </HStack>
 
@@ -99,7 +101,7 @@ const BrandList: React.FC = () => {
                       </Badge>
                     )}
                   </HStack>
-                  <Text>Location: {brand.location}</Text>
+                  <Text>{t('brandList.location', { location: brand.location })}</Text>
                 </VStack>
               </HStack>
             </Box>

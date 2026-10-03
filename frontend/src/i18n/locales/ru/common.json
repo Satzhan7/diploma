@@ -4,7 +4,11 @@
     "ru": "Русский",
     "kk": "Қазақша",
     "en": "English",
-    "short": { "ru": "RU", "kk": "KZ", "en": "EN" }
+    "short": {
+      "ru": "RU",
+      "kk": "KZ",
+      "en": "EN"
+    }
   },
   "actions": {
     "save": "Сохранить",
@@ -65,7 +69,10 @@
     "cancelled": "Отменён",
     "withdrawn": "Отозван",
     "closed": "Закрыт",
-    "expired": "Истёк"
+    "expired": "Истёк",
+    "draft": "Черновик",
+    "review": "На проверке",
+    "paused": "Приостановлен"
   },
   "role": {
     "brand": "Бренд",

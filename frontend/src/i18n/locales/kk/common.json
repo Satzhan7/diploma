@@ -4,7 +4,11 @@
     "ru": "Русский",
     "kk": "Қазақша",
     "en": "English",
-    "short": { "ru": "RU", "kk": "KZ", "en": "EN" }
+    "short": {
+      "ru": "RU",
+      "kk": "KZ",
+      "en": "EN"
+    }
   },
   "actions": {
     "save": "Сақтау",
@@ -65,7 +69,10 @@
     "cancelled": "Тоқтатылды",
     "withdrawn": "Кері қайтарылды",
     "closed": "Жабық",
-    "expired": "Мерзімі өтті"
+    "expired": "Мерзімі өтті",
+    "draft": "Жоба",
+    "review": "Тексерілуде",
+    "paused": "Тоқтатыла тұрған"
   },
   "role": {
     "brand": "Бренд",

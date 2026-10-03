@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Container,
@@ -33,12 +34,14 @@ import { SiThreads } from 'react-icons/si';
 import { IconWrapper } from '../components/IconWrapper';
 import { User, Profile as ProfileType, UserRole } from '../types/user';
 import { matchingService } from '../services/matching';
+import { formatDate, formatNumber } from '../i18n';
 
 interface ProfileProps {
   isViewMode?: boolean;
 }
 
 export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
+  const { t } = useTranslation('profile');
   const { user, deleteAccount } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
@@ -67,8 +70,11 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
     },
     onSuccess: (newMatch) => {
       toast({
-        title: "Collaboration Request Sent",
-        description: `Request sent to ${targetUser?.name || 'Influencer'}. Match ID: ${newMatch.id}`,
+        title: t('view.toast.requestSent.title'),
+        description: t('view.toast.requestSent.description', {
+          name: targetUser?.name || t('common:role.influencer'),
+          id: newMatch.id,
+        }),
         status: "success",
         duration: 5000,
         isClosable: true,
@@ -77,8 +83,8 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
     },
     onError: (error: any) => {
       toast({
-        title: "Error Sending Request",
-        description: error.response?.data?.message || error.message || "Could not send collaboration request.",
+        title: t('view.toast.requestError.title'),
+        description: error.response?.data?.message || error.message || t('view.toast.requestError.description'),
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -110,8 +116,8 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
 
       } catch {
         toast({
-          title: 'Error',
-          description: 'Failed to load profile data.',
+          title: t('common:state.error'),
+          description: t('view.toast.loadError'),
           status: 'error',
           duration: 5000,
           isClosable: true,
@@ -122,7 +128,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
     };
 
     fetchProfile();
-  }, [displayUserId, isViewMode, toast, user]);
+  }, [displayUserId, isViewMode, toast, user, t]);
 
   const handleCreateChat = async () => {
     // Chats are keyed by user id, never by profile id.
@@ -131,7 +137,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
     
     try {
       if (chatTargetId === user.id) {
-        toast({ title: 'Cannot chat with yourself', status: 'info' });
+        toast({ title: t('view.toast.chatWithSelf'), status: 'info' });
         return;
       }
       const response = await api.post(`/chats/${chatTargetId}`);
@@ -142,8 +148,8 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
       
     } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Failed to create or open chat.',
+        title: t('common:state.error'),
+        description: error.response?.data?.message || t('view.toast.chatError'),
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -156,8 +162,8 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
       setIsDeleting(true);
       await deleteAccount();
       toast({
-        title: 'Account Deleted',
-        description: 'Your account has been successfully deleted.',
+        title: t('view.toast.accountDeleted.title'),
+        description: t('view.toast.accountDeleted.description'),
         status: 'success',
         duration: 5000,
         isClosable: true,
@@ -165,8 +171,8 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
       navigate('/login');
     } catch {
       toast({
-        title: 'Error',
-        description: 'Failed to delete your account. Please try again.',
+        title: t('common:state.error'),
+        description: t('view.toast.deleteError'),
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -200,7 +206,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
     return (
       <Container centerContent py={10}>
         <Spinner size="xl" />
-        <Text mt={4}>Loading profile...</Text>
+        <Text mt={4}>{t('view.loading')}</Text>
       </Container>
     );
   }
@@ -208,12 +214,12 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
   if (!profileData) {
     return (
       <Container centerContent py={10}>
-        <Text>Profile not found or could not be loaded.</Text>
+        <Text>{t('view.notFound')}</Text>
       </Container>
     );
   }
 
-  const displayName = profileData?.displayName || targetUser?.name || user?.name || 'User';
+  const displayName = profileData?.displayName || targetUser?.name || user?.name || t('view.unknownUser');
   const avatarUrl = profileData?.avatarUrl || targetUser?.avatarUrl || user?.avatarUrl;
   const role = targetUser?.role || user?.role;
   const createdAt = targetUser?.createdAt || user?.createdAt;
@@ -240,13 +246,13 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
                 py={1}
                 borderRadius="full"
               >
-                {role}
+                {t(`common:role.${role}`, { defaultValue: role })}
               </Text>
             )}
             <Flex direction={{ base: 'column', sm: 'row' }} gap={3} justify="center" mt={4}>
                 {!isViewMode && user && (
                     <Button colorScheme="brand" onClick={() => navigate(`/${user.role}/profile/edit`)}>
-                        Edit Profile
+                        {t('view.editProfile')}
                     </Button>
                 )}
                 {isBrandViewingInfluencer && (
@@ -255,12 +261,12 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
                         onClick={() => createMatchMutation.mutate()}
                         isLoading={createMatchMutation.isPending}
                     >
-                        Send Collaboration Request
+                        {t('view.sendRequest')}
                     </Button>
                 )}
                 {isViewMode && user?.id !== targetUser?.id && (
                     <Button colorScheme="gray" onClick={handleCreateChat}>
-                        Start Chat
+                        {t('view.startChat')}
                     </Button>
                 )}
             </Flex>
@@ -273,7 +279,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
               {!isViewMode && user && (
                 <Box>
                   <Text fontSize="sm" color="fg.subtle">
-                    Email
+                    {t('view.fields.email')}
                   </Text>
                   <Text fontSize="md">{user.email}</Text>
                 </Box>
@@ -281,27 +287,27 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
               {role && (
                 <Box>
                   <Text fontSize="sm" color="fg.subtle">
-                    Account Type
+                    {t('view.fields.accountType')}
                   </Text>
                   <Text fontSize="md" textTransform="capitalize">
-                    {role}
+                    {t(`common:role.${role}`, { defaultValue: role })}
                   </Text>
                 </Box>
               )}
               {createdAt && (
                 <Box>
                   <Text fontSize="sm" color="fg.subtle">
-                    Member Since
+                    {t('view.fields.memberSince')}
                   </Text>
                   <Text fontSize="md">
-                    {new Date(createdAt).toLocaleDateString()}
+                    {formatDate(createdAt)}
                   </Text>
                 </Box>
               )}
               {profileData.bio && (
                 <Box>
                   <Text fontSize="sm" color="fg.subtle">
-                    Bio
+                    {t('view.fields.bio')}
                   </Text>
                   <Text fontSize="md">{profileData.bio}</Text>
                 </Box>
@@ -309,7 +315,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
               {profileData.location && (
                 <Box>
                   <Text fontSize="sm" color="fg.subtle">
-                    Location
+                    {t('view.fields.location')}
                   </Text>
                   <Text fontSize="md">{profileData.location}</Text>
                 </Box>
@@ -317,7 +323,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
               {profileData.websiteUrl && (
                 <Box>
                   <Text fontSize="sm" color="fg.subtle">
-                    Website
+                    {t('view.fields.website')}
                   </Text>
                   <Link href={profileData.websiteUrl} isExternal color="brand.500">
                     {profileData.websiteUrl}
@@ -327,7 +333,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
               {profileData.socialMedia && profileData.socialMedia.length > 0 && (
                 <Box>
                   <Text fontSize="sm" color="fg.subtle" mb={2}>
-                    Social Media
+                    {t('view.fields.socialMedia')}
                   </Text>
                   <VStack align="start" spacing={2}>
                     {profileData.socialMedia.map((social) => (
@@ -338,7 +344,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
                         </Link>
                         {social.followers && (
                           <Text fontSize="sm" color="fg.subtle">
-                            ({social.followers.toLocaleString()} followers)
+                            ({t('view.followers', { count: social.followers, formatted: formatNumber(social.followers) })})
                           </Text>
                         )}
                       </HStack>
@@ -355,17 +361,17 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
             <>
               {user && user.id !== (targetUser?.id || userId) && (
                 <Button colorScheme="brand" leftIcon={<IconWrapper icon={FaEnvelope} size="1.25em" />} onClick={handleCreateChat}>
-                  Write Message
+                  {t('view.writeMessage')}
                 </Button>
               )}
               <Button onClick={() => navigate(-1)}>
-                Back
+                {t('common:actions.back')}
               </Button>
             </>
           ) : (
             <>
               <Button colorScheme="red" variant="outline" onClick={onOpen}>
-                Delete Account
+                {t('view.deleteAccount')}
               </Button>
             </>
           )}
@@ -376,17 +382,16 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
         <AlertDialogOverlay>
           <AlertDialogContent>
             <AlertDialogHeader fontSize="lg" fontWeight="bold">
-              Delete Account
+              {t('view.deleteDialog.title')}
             </AlertDialogHeader>
 
             <AlertDialogBody>
-              Are you sure? You can't undo this action afterwards. All your data will be permanently
-              removed.
+              {t('view.deleteDialog.body')}
             </AlertDialogBody>
 
             <AlertDialogFooter>
               <Button ref={cancelRef} onClick={onClose}>
-                Cancel
+                {t('common:actions.cancel')}
               </Button>
               <Button
                 colorScheme="red"
@@ -394,7 +399,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
                 ml={3}
                 isLoading={isDeleting}
               >
-                Delete
+                {t('common:actions.delete')}
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>

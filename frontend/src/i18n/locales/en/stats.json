@@ -1,0 +1,11 @@
+{
+  "metrics": {
+    "clicks": "Clicks",
+    "impressions": "Impressions",
+    "engagementRate": "Engagement rate",
+    "followerGrowth": "Follower growth"
+  },
+  "axis": {
+    "thousands": "{{value}}k"
+  }
+}

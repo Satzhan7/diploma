@@ -1,0 +1,21 @@
+{
+  "title": "Chats",
+  "loadingChats": "Loading chats…",
+  "chatsLoadError": "Couldn't load chats. Please try again later.",
+  "conversationsLoadError": "Couldn't load chats",
+  "noConversations": "No chats yet",
+  "selectConversation": "Select a chat to start messaging",
+  "or": "or",
+  "startNewChat": "Start a new chat",
+  "messagesLoadError": "Couldn't load messages",
+  "noMessages": "No messages yet",
+  "inputPlaceholder": "Type a message…",
+  "unknownUser": "User",
+  "unread_one": "{{count}} unread message",
+  "unread_other": "{{count}} unread messages",
+  "socketError": {
+    "title": "Connection error",
+    "description": "Couldn't establish a real-time connection. Retrying in 5 seconds…"
+  },
+  "sendError": "Couldn't send the message. Please try again."
+}

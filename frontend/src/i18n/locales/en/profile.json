@@ -1,0 +1,80 @@
+{
+  "view": {
+    "loading": "Loading profile…",
+    "notFound": "Profile not found or couldn't be loaded.",
+    "unknownUser": "User",
+    "editProfile": "Edit profile",
+    "sendRequest": "Send collaboration request",
+    "startChat": "Start chat",
+    "writeMessage": "Write a message",
+    "deleteAccount": "Delete account",
+    "fields": {
+      "email": "Email",
+      "accountType": "Account type",
+      "memberSince": "Member since",
+      "bio": "Bio",
+      "location": "Location",
+      "website": "Website",
+      "socialMedia": "Social media"
+    },
+    "followers_one": "{{formatted}} follower",
+    "followers_other": "{{formatted}} followers",
+    "deleteDialog": {
+      "title": "Delete account",
+      "body": "Are you sure? You can't undo this action. All your data will be permanently removed."
+    },
+    "toast": {
+      "loadError": "Couldn't load profile data.",
+      "requestSent": {
+        "title": "Collaboration request sent",
+        "description": "Request sent to {{name}}. Match ID: {{id}}"
+      },
+      "requestError": {
+        "title": "Couldn't send request",
+        "description": "Couldn't send the collaboration request."
+      },
+      "chatWithSelf": "You can't start a chat with yourself",
+      "chatError": "Couldn't create or open the chat.",
+      "accountDeleted": {
+        "title": "Account deleted",
+        "description": "Your account has been successfully deleted."
+      },
+      "deleteError": "Couldn't delete your account. Please try again."
+    }
+  },
+  "edit": {
+    "title": "Edit profile",
+    "fields": {
+      "name": "Name",
+      "email": "Email",
+      "avatarUrl": "Avatar URL",
+      "profileImage": "Profile image URL",
+      "coverImage": "Cover image URL",
+      "bio": "Bio",
+      "followers": "Followers",
+      "engagementRate": "Engagement rate (%)",
+      "categories": "Categories / niches",
+      "languages": "Languages",
+      "location": "Location",
+      "industry": "Industry",
+      "website": "Website",
+      "instagram": "Instagram profile URL"
+    },
+    "placeholders": {
+      "category": "Add a category",
+      "languages": "Kazakh, Russian, English…",
+      "instagram": "username"
+    },
+    "addCategory": "Add",
+    "save": "Save changes",
+    "validation": {
+      "nameRequired": "Name is required",
+      "emailRequired": "Email is required"
+    },
+    "toast": {
+      "updated": "Profile updated",
+      "updateFailed": "Update failed",
+      "updateFailedDescription": "Couldn't update the profile."
+    }
+  }
+}

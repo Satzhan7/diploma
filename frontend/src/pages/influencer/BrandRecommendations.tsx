@@ -26,8 +26,10 @@ import { Link as RouterLink } from 'react-router-dom';
 import { StarIcon } from '@chakra-ui/icons';
 import { FiSearch } from 'react-icons/fi';
 import { IconWrapper } from '../../components/IconWrapper';
+import { useTranslation } from 'react-i18next';
 
 const BrandRecommendations: React.FC = () => {
+  const { t } = useTranslation('influencer');
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -46,8 +48,8 @@ const BrandRecommendations: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['userMatches'] });
       toast({
-        title: 'Interest indicated',
-        description: 'The brand will be notified of your interest in collaboration',
+        title: t('recommendations.toast.interestTitle'),
+        description: t('recommendations.toast.interestDescription'),
         status: 'success',
         duration: 5000,
         isClosable: true,
@@ -56,8 +58,8 @@ const BrandRecommendations: React.FC = () => {
     },
     onError: (error: Error) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to send collaboration interest',
+        title: t('common:state.error'),
+        description: error.message || t('recommendations.toast.interestError'),
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -86,7 +88,7 @@ const BrandRecommendations: React.FC = () => {
   if (error) {
     return (
       <Box p={4}>
-        <Text color="red.500">Error loading recommendations: {error.message}</Text>
+        <Text color="red.500">{t('recommendations.loadError', { message: error.message })}</Text>
       </Box>
     );
   }
@@ -94,7 +96,7 @@ const BrandRecommendations: React.FC = () => {
   return (
     <Box p={4}>
       <Stack spacing={6}>
-        <Heading size="lg">Recommended Brands</Heading>
+        <Heading size="lg">{t('recommendations.title')}</Heading>
         
         <HStack spacing={4}>
           <InputGroup maxW="300px">
@@ -102,29 +104,29 @@ const BrandRecommendations: React.FC = () => {
               <IconWrapper icon={FiSearch} color="gray.400" />
             </InputLeftElement>
             <Input
-              placeholder="Search brands..."
+              placeholder={t('shared.searchBrands')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </InputGroup>
           
           <Select
-            placeholder="Filter by category"
+            placeholder={t('recommendations.filterByCategory')}
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
             maxW="200px"
           >
-            <option value="fashion">Fashion</option>
-            <option value="beauty">Beauty</option>
-            <option value="technology">Technology</option>
-            <option value="food">Food & Beverage</option>
-            <option value="lifestyle">Lifestyle</option>
+            <option value="fashion">{t('categories.fashion')}</option>
+            <option value="beauty">{t('categories.beauty')}</option>
+            <option value="technology">{t('categories.technology')}</option>
+            <option value="food">{t('categories.foodBeverage')}</option>
+            <option value="lifestyle">{t('categories.lifestyle')}</option>
           </Select>
         </HStack>
 
         {isLoading ? (
           <Flex justify="center" align="center" minH="200px">
-            <Text>Loading recommendations...</Text>
+            <Text>{t('recommendations.loading')}</Text>
           </Flex>
         ) : (
           <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
@@ -155,12 +157,12 @@ const BrandRecommendations: React.FC = () => {
                       </HStack>
                     </Flex>
 
-                    <Text noOfLines={2}>{brand.user.bio || 'No description available'}</Text>
+                    <Text noOfLines={2}>{brand.user.bio || t('recommendations.noDescription')}</Text>
 
                     {brand.user.categories && brand.user.categories.length > 0 && (
                       <Box>
                         <Text fontSize="sm" fontWeight="semibold" mb={1}>
-                          Categories
+                          {t('recommendations.categories')}
                         </Text>
                         <HStack flexWrap="wrap" spacing={2}>
                           {brand.user.categories.slice(0, 3).map((category) => (
@@ -189,7 +191,7 @@ const BrandRecommendations: React.FC = () => {
                         variant="ghost"
                         size="sm"
                       >
-                        View Profile
+                        {t('recommendations.viewProfile')}
                       </Button>
                       <Button
                         colorScheme="purple"
@@ -198,7 +200,7 @@ const BrandRecommendations: React.FC = () => {
                         isDisabled={createMatchMutation.isPending}
                         onClick={() => handleExpressInterest(brand.user.id)}
                       >
-                        Express Interest
+                        {t('recommendations.expressInterest')}
                       </Button>
                     </HStack>
                   </Stack>

@@ -20,6 +20,7 @@ import {
   CardBody,
 } from '@chakra-ui/react';
 import { useMutation } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '../../services/api';
 
 interface OrderFormData {
@@ -35,6 +36,7 @@ interface OrderFormData {
 // the backend does not implement PATCH/DELETE /orders/:id. This page only
 // covers order creation; re-introduce edit support once those endpoints exist.
 export const CreateOrder: React.FC = () => {
+  const { t } = useTranslation('brand');
   const navigate = useNavigate();
   const toast = useToast();
   const [formData, setFormData] = useState<OrderFormData>({
@@ -64,8 +66,8 @@ export const CreateOrder: React.FC = () => {
     mutationFn: (data: OrderFormData) => api.post('/orders', data),
     onSuccess: () => {
       toast({
-        title: 'Order created',
-        description: 'Your order has been successfully created',
+        title: t('createOrder.toasts.successTitle'),
+        description: t('createOrder.toasts.successDescription'),
         status: 'success',
         duration: 3000,
         isClosable: true,
@@ -74,8 +76,8 @@ export const CreateOrder: React.FC = () => {
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Failed to create order',
+        title: t('common:state.error'),
+        description: error.response?.data?.message || t('createOrder.toasts.errorFallback'),
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -91,27 +93,27 @@ export const CreateOrder: React.FC = () => {
   return (
     <Box p={8}>
       <VStack spacing={8} align="stretch">
-        <Heading size="lg">Create New Order</Heading>
+        <Heading size="lg">{t('createOrder.title')}</Heading>
 
         <Card>
           <CardBody>
             <form onSubmit={handleSubmit}>
               <VStack spacing={6}>
                 <FormControl isRequired>
-                  <FormLabel>Title</FormLabel>
+                  <FormLabel>{t('createOrder.fields.title')}</FormLabel>
                   <Input
                     name="title"
-                    placeholder="Enter order title"
+                    placeholder={t('createOrder.fields.titlePlaceholder')}
                     value={formData.title}
                     onChange={handleInputChange}
                   />
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>{t('createOrder.fields.description')}</FormLabel>
                   <Textarea
                     name="description"
-                    placeholder="Describe your order in detail"
+                    placeholder={t('createOrder.fields.descriptionPlaceholder')}
                     rows={4}
                     value={formData.description}
                     onChange={handleInputChange}
@@ -119,7 +121,7 @@ export const CreateOrder: React.FC = () => {
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel>Budget</FormLabel>
+                  <FormLabel>{t('createOrder.fields.budget')}</FormLabel>
                   <NumberInput
                     min={0}
                     value={formData.budget}
@@ -134,27 +136,27 @@ export const CreateOrder: React.FC = () => {
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel>Category</FormLabel>
+                  <FormLabel>{t('createOrder.fields.category')}</FormLabel>
                   <Select
                     name="category"
-                    placeholder="Select category"
+                    placeholder={t('createOrder.fields.categoryPlaceholder')}
                     value={formData.category}
                     onChange={handleInputChange}
                   >
-                    <option value="fashion">Fashion</option>
-                    <option value="beauty">Beauty</option>
-                    <option value="technology">Technology</option>
-                    <option value="food">Food & Beverage</option>
-                    <option value="lifestyle">Lifestyle</option>
-                    <option value="travel">Travel</option>
+                    <option value="fashion">{t('categories.fashion')}</option>
+                    <option value="beauty">{t('categories.beauty')}</option>
+                    <option value="technology">{t('categories.technology')}</option>
+                    <option value="food">{t('categories.food')}</option>
+                    <option value="lifestyle">{t('categories.lifestyle')}</option>
+                    <option value="travel">{t('categories.travel')}</option>
                   </Select>
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel>Requirements</FormLabel>
+                  <FormLabel>{t('createOrder.fields.requirements')}</FormLabel>
                   <Textarea
                     name="requirements"
-                    placeholder="List your specific requirements"
+                    placeholder={t('createOrder.fields.requirementsPlaceholder')}
                     rows={4}
                     value={formData.requirements}
                     onChange={handleInputChange}
@@ -162,7 +164,7 @@ export const CreateOrder: React.FC = () => {
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel>Deadline</FormLabel>
+                  <FormLabel>{t('createOrder.fields.deadline')}</FormLabel>
                   <Input
                     name="deadline"
                     type="date"
@@ -178,7 +180,7 @@ export const CreateOrder: React.FC = () => {
                   width="full"
                   isLoading={createOrderMutation.isPending}
                 >
-                  Create Order
+                  {t('createOrder.submit')}
                 </Button>
               </VStack>
             </form>

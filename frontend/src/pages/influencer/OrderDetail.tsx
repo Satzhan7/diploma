@@ -10,7 +10,6 @@ import {
   Center,
   VStack,
   HStack,
-  Badge,
   Button,
   Divider,
   useToast,
@@ -21,9 +20,13 @@ import { ordersService, Order } from '../../services/orders';
 import { IconWrapper } from '../../components/IconWrapper';
 import { FiArrowLeft, FiExternalLink } from 'react-icons/fi';
 import { Link as RouterLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { formatDate, formatMoney } from '../../i18n';
+import { StatusBadge } from '../../components/ui';
 
 export const OrderDetail: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
+  const { t } = useTranslation('influencer');
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -39,40 +42,31 @@ export const OrderDetail: React.FC = () => {
 
   if (error) {
     toast({
-      title: 'Error loading order',
+      title: t('orderDetail.loadErrorTitle'),
       description: error.message,
       status: 'error',
       duration: 5000,
       isClosable: true,
     });
-    return <Center p={10}><Text color="red.500">Could not load order details.</Text></Center>;
+    return <Center p={10}><Text color="red.500">{t('orderDetail.loadError')}</Text></Center>;
   }
 
   if (!order) {
-    return <Center p={10}><Text>Order not found.</Text></Center>;
+    return <Center p={10}><Text>{t('orderDetail.notFound')}</Text></Center>;
   }
-
-  const renderOrderStatusBadge = (status: string) => {
-    let colorScheme = 'gray';
-    if (status === 'open') colorScheme = 'green';
-    if (status === 'in_progress') colorScheme = 'yellow';
-    if (status === 'completed') colorScheme = 'blue';
-    if (status === 'cancelled') colorScheme = 'red';
-    return <Badge colorScheme={colorScheme}>{status}</Badge>;
-  };
 
   return (
     <Container maxW="container.lg" py={8}>
       <VStack spacing={6} align="stretch">
         <HStack justify="space-between">
-          <Heading size="lg">Order Details</Heading>
+          <Heading size="lg">{t('orderDetail.title')}</Heading>
           <Button
             leftIcon={<IconWrapper icon={FiArrowLeft} />}
             onClick={() => navigate(-1)} // Go back
             variant="outline"
             size="sm"
           >
-            Back
+            {t('common:actions.back')}
           </Button>
         </HStack>
 
@@ -80,11 +74,11 @@ export const OrderDetail: React.FC = () => {
           <VStack spacing={4} align="stretch">
             <HStack justify="space-between">
               <Heading size="md">{order.title}</Heading>
-              {renderOrderStatusBadge(order.status)}
+              <StatusBadge status={order.status} />
             </HStack>
             
             <Text color="gray.600">
-              Posted by: 
+              {t('orderDetail.postedBy')}
               <Avatar size="sm" name={order.brand?.displayName || 'B'} src={order.brand?.avatarUrl} />
               <ChakraLink 
                 to={`/influencer/profile/${order.brand?.user?.id}`}
@@ -94,24 +88,24 @@ export const OrderDetail: React.FC = () => {
                 color="brand.500" 
                 onClick={(e) => !order.brand?.user?.id && e.preventDefault()}
               >
-                {order.brand?.displayName || 'Brand Name Missing'} <IconWrapper icon={FiExternalLink} />
+                {order.brand?.displayName || t('shared.brandNameMissing')} <IconWrapper icon={FiExternalLink} />
               </ChakraLink>
             </Text>
 
             <Divider />
 
-            <Text fontSize="lg" fontWeight="semibold">Description</Text>
+            <Text fontSize="lg" fontWeight="semibold">{t('orderDetail.description')}</Text>
             <Text>{order.description}</Text>
 
             <Divider />
 
             <HStack spacing={8}>
               <Box>
-                <Text fontWeight="semibold">Budget</Text>
-                <Text>${order.budget.toLocaleString()}</Text>
+                <Text fontWeight="semibold">{t('orderDetail.budget')}</Text>
+                <Text>{formatMoney(order.budget)}</Text>
               </Box>
               <Box>
-                <Text fontWeight="semibold">Category</Text>
+                <Text fontWeight="semibold">{t('orderDetail.category')}</Text>
                 <Text>{order.category}</Text>
               </Box>
             </HStack>
@@ -119,7 +113,7 @@ export const OrderDetail: React.FC = () => {
             {order.requirements && (
               <>
                 <Divider />
-                <Text fontSize="lg" fontWeight="semibold">Requirements</Text>
+                <Text fontSize="lg" fontWeight="semibold">{t('orderDetail.requirements')}</Text>
                 <Text>{order.requirements}</Text>
               </>
             )}
@@ -127,8 +121,8 @@ export const OrderDetail: React.FC = () => {
              {order.deadline && (
               <>
                 <Divider />
-                <Text fontSize="lg" fontWeight="semibold">Deadline</Text>
-                <Text>{new Date(order.deadline).toLocaleDateString()}</Text>
+                <Text fontSize="lg" fontWeight="semibold">{t('orderDetail.deadline')}</Text>
+                <Text>{formatDate(order.deadline)}</Text>
               </>
             )}
 

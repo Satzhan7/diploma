@@ -1,0 +1,133 @@
+{
+  "notAvailable": "Жоқ",
+  "categories": {
+    "fashion": "Сән",
+    "beauty": "Сұлулық",
+    "lifestyle": "Өмір салты",
+    "technology": "Технология",
+    "tech": "Технология",
+    "fitness": "Фитнес",
+    "food": "Тамақ және сусындар",
+    "travel": "Саяхат",
+    "gaming": "Ойындар",
+    "education": "Білім",
+    "music": "Музыка",
+    "business": "Бизнес",
+    "health": "Денсаулық"
+  },
+  "dashboard": {
+    "title": "Бренд тақтасы",
+    "subtitle": "Науқандардың нәтижелері бір жерде",
+    "errors": {
+      "loadInfluencers": "Инфлюенсерлерді жүктеу мүмкін болмады",
+      "loadCategories": "Санаттарды жүктеу мүмкін болмады",
+      "loadStats": "Статистиканы жүктеу мүмкін болмады"
+    },
+    "filters": {
+      "title": "Сүзгілер",
+      "startDate": "Басталу күні",
+      "endDate": "Аяқталу күні",
+      "influencer": "Инфлюенсер",
+      "allInfluencers": "Барлық инфлюенсерлер",
+      "category": "Санат",
+      "allCategories": "Барлық санаттар",
+      "reset": "Тазарту"
+    },
+    "overview": {
+      "title": "Шолу",
+      "ordersCreated": "Құрылған тапсырыстар",
+      "activeOrders": "Белсенді тапсырыстар",
+      "activeOrdersHelp": "Ашық: {{open}} · Орындалуда: {{inProgress}}",
+      "applicationsReceived": "Келген өтінімдер",
+      "applicationsHelp": "Қаралуда: {{pending}} · Қабылданды: {{accepted}}",
+      "activeCollaborations": "Белсенді ынтымақтастықтар",
+      "collaborationsHelp": "Аяқталды: {{completed}}"
+    },
+    "performance": {
+      "title": "Тиімділік көрсеткіштері",
+      "totalClicks": "Барлық басулар",
+      "totalImpressions": "Барлық көрсетілімдер",
+      "avgEngagement": "Орташа қызығушылық деңгейі"
+    },
+    "details": {
+      "title": "Толығырақ",
+      "overTime": "Көрсеткіштер динамикасы",
+      "noDailyData": "Графикті құруға күндік деректер жоқ.",
+      "byCategory": "Санаттар бойынша қызығушылық",
+      "noCampaignData": "Науқандар бойынша деректер жоқ.",
+      "campaigns": "Науқандардың тиімділігі"
+    },
+    "table": {
+      "campaign": "Науқан",
+      "category": "Санат",
+      "influencer": "Инфлюенсер",
+      "clicks": "Басулар",
+      "impressions": "Көрсетілімдер",
+      "engagement": "Қызығушылық",
+      "status": "Күйі",
+      "startDate": "Басталу күні",
+      "endDate": "Аяқталу күні"
+    },
+    "empty": {
+      "title": "Науқандар бойынша деректер әлі жоқ",
+      "description": "Ынтымақтастықтарыңыз бойынша статистика түскенде, көрсеткіштер осында пайда болады."
+    }
+  },
+  "orders": {
+    "loadingUser": "Пайдаланушы деректері жүктелуде…",
+    "loadError": "Тапсырыстарды жүктеу мүмкін болмады: {{message}}",
+    "title": "Менің тапсырыстарым",
+    "createNew": "Жаңа тапсырыс жасау",
+    "budget": "Бюджет: {{amount}}",
+    "newApplications_one": "{{count}} жаңа",
+    "newApplications_other": "{{count}} жаңа",
+    "viewApplicants": "Өтінімдерді көру",
+    "empty": "Сіз әлі бірде-бір тапсырыс жасамадыңыз.",
+    "applicants": {
+      "title": "«{{title}}» тапсырысына өтінімдер",
+      "empty": "Әзірге өтінімдер жоқ.",
+      "unknown": "Белгісіз инфлюенсер",
+      "proposed": "Ұсынылған баға: {{amount}}",
+      "message": "«{{message}}»",
+      "accept": "Қабылдау",
+      "reject": "Қабылдамау",
+      "viewProfile": "Профильді ашу"
+    },
+    "toasts": {
+      "accepted": "Өтінім қабылданды",
+      "rejected": "Өтінім қабылданбады",
+      "acceptError": "Өтінімді қабылдау мүмкін болмады",
+      "rejectError": "Өтінімді қабылдамау мүмкін болмады"
+    }
+  },
+  "createOrder": {
+    "title": "Жаңа тапсырыс",
+    "fields": {
+      "title": "Атауы",
+      "titlePlaceholder": "Тапсырыс атауын енгізіңіз",
+      "description": "Сипаттама",
+      "descriptionPlaceholder": "Тапсырысыңызды толық сипаттаңыз",
+      "budget": "Бюджет (₸)",
+      "category": "Санат",
+      "categoryPlaceholder": "Санатты таңдаңыз",
+      "requirements": "Талаптар",
+      "requirementsPlaceholder": "Талаптарыңызды тізіп жазыңыз",
+      "deadline": "Орындау мерзімі"
+    },
+    "submit": "Тапсырыс жасау",
+    "toasts": {
+      "successTitle": "Тапсырыс жасалды",
+      "successDescription": "Тапсырысыңыз сәтті жасалды",
+      "errorFallback": "Тапсырысты жасау мүмкін болмады"
+    }
+  },
+  "influencerList": {
+    "title": "Инфлюенсерлер",
+    "loading": "Инфлюенсерлер жүктелуде…",
+    "loadError": "Инфлюенсерлерді жүктеу мүмкін болмады",
+    "searchPlaceholder": "Инфлюенсерлерді іздеу…",
+    "categoryPlaceholder": "Санат бойынша сүзу",
+    "followers": "Жазылушылар: {{followers}}",
+    "noBio": "Сипаттама көрсетілмеген."
+  }
+}

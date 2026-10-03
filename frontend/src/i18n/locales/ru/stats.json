@@ -1,0 +1,11 @@
+{
+  "metrics": {
+    "clicks": "Клики",
+    "impressions": "Показы",
+    "engagementRate": "Вовлечённость",
+    "followerGrowth": "Прирост подписчиков"
+  },
+  "axis": {
+    "thousands": "{{value}} тыс."
+  }
+}

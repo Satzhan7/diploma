@@ -1,0 +1,82 @@
+{
+  "view": {
+    "loading": "Загружаем профиль…",
+    "notFound": "Профиль не найден или не удалось его загрузить.",
+    "unknownUser": "Пользователь",
+    "editProfile": "Редактировать профиль",
+    "sendRequest": "Предложить сотрудничество",
+    "startChat": "Начать чат",
+    "writeMessage": "Написать сообщение",
+    "deleteAccount": "Удалить аккаунт",
+    "fields": {
+      "email": "Эл. почта",
+      "accountType": "Тип аккаунта",
+      "memberSince": "На платформе с",
+      "bio": "О себе",
+      "location": "Местоположение",
+      "website": "Сайт",
+      "socialMedia": "Соцсети"
+    },
+    "followers_one": "{{formatted}} подписчик",
+    "followers_few": "{{formatted}} подписчика",
+    "followers_many": "{{formatted}} подписчиков",
+    "followers_other": "{{formatted}} подписчика",
+    "deleteDialog": {
+      "title": "Удалить аккаунт",
+      "body": "Вы уверены? Это действие нельзя отменить. Все ваши данные будут удалены безвозвратно."
+    },
+    "toast": {
+      "loadError": "Не удалось загрузить профиль.",
+      "requestSent": {
+        "title": "Запрос на сотрудничество отправлен",
+        "description": "Запрос отправлен пользователю {{name}}. ID совпадения: {{id}}"
+      },
+      "requestError": {
+        "title": "Не удалось отправить запрос",
+        "description": "Не удалось отправить запрос на сотрудничество."
+      },
+      "chatWithSelf": "Нельзя начать чат с самим собой",
+      "chatError": "Не удалось создать или открыть чат.",
+      "accountDeleted": {
+        "title": "Аккаунт удалён",
+        "description": "Ваш аккаунт успешно удалён."
+      },
+      "deleteError": "Не удалось удалить аккаунт. Попробуйте ещё раз."
+    }
+  },
+  "edit": {
+    "title": "Редактирование профиля",
+    "fields": {
+      "name": "Имя",
+      "email": "Эл. почта",
+      "avatarUrl": "Ссылка на аватар",
+      "profileImage": "Ссылка на фото профиля",
+      "coverImage": "Ссылка на обложку",
+      "bio": "О себе",
+      "followers": "Подписчики",
+      "engagementRate": "Вовлечённость (%)",
+      "categories": "Категории и ниши",
+      "languages": "Языки",
+      "location": "Местоположение",
+      "industry": "Отрасль",
+      "website": "Сайт",
+      "instagram": "Ссылка на профиль в Instagram"
+    },
+    "placeholders": {
+      "category": "Добавьте категорию",
+      "languages": "Казахский, русский, английский…",
+      "instagram": "имя пользователя"
+    },
+    "addCategory": "Добавить",
+    "save": "Сохранить изменения",
+    "validation": {
+      "nameRequired": "Укажите имя",
+      "emailRequired": "Укажите эл. почту"
+    },
+    "toast": {
+      "updated": "Профиль обновлён",
+      "updateFailed": "Не удалось сохранить",
+      "updateFailedDescription": "Не удалось обновить профиль."
+    }
+  }
+}

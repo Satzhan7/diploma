@@ -1,0 +1,127 @@
+{
+  "nav": {
+    "features": "Features",
+    "howItWorks": "How it Works",
+    "faq": "FAQ",
+    "login": "Login",
+    "signUp": "Sign Up"
+  },
+  "hero": {
+    "title": "Welcome to Your Ultimate Brand-Influencer Connection Platform",
+    "cta": "Try it!"
+  },
+  "intro": {
+    "text": "We connect local influencers with top brands in Kazakhstan and the CIS region, making collaborations seamless, efficient, and impactful. Whether you're a business looking to expand your reach or an influencer seeking exciting opportunities, our platform is designed to help you grow"
+  },
+  "forBrands": {
+    "title": "For Brands",
+    "imageAlt": "Brand collaboration example",
+    "perfectMatch": {
+      "title": "Find the Perfect Match",
+      "text": "Discover influencers that align with your brand values and audience."
+    },
+    "campaignManagement": {
+      "title": "Easy Campaign Management",
+      "text": "Track performance, engagement, and ROI effortlessly."
+    },
+    "insights": {
+      "title": "Data-Driven Insights",
+      "text": "Make informed decisions with real-time analytics and reporting."
+    }
+  },
+  "forInfluencers": {
+    "title": "For Influencers",
+    "imageAlt": "Influencer creating content",
+    "monetize": {
+      "title": "Monetize Your Influence",
+      "text": "Get paid partnerships with leading brands."
+    },
+    "reach": {
+      "title": "Expand Your Reach",
+      "text": "Connect with new audiences and grow your community."
+    },
+    "flexible": {
+      "title": "Flexible Collaboration",
+      "text": "Work on projects that fit your niche and style."
+    }
+  },
+  "whyUs": {
+    "title": "Why choose us?",
+    "aiMatching": {
+      "title": "AI-Powered Matching",
+      "text": "Connect with the best fit for your needs"
+    },
+    "communication": {
+      "title": "Seamless Communication",
+      "text": "Manage collaborations in one place"
+    },
+    "secure": {
+      "title": "Transparent & Secure",
+      "text": "Verified influencers and trusted brands"
+    },
+    "tracking": {
+      "title": "Performance Tracking",
+      "text": "Get real-time insights and analytics"
+    }
+  },
+  "howItWorks": {
+    "title": "HOW IT WORKS?",
+    "signUp": {
+      "title": "Sign Up & Create a Profile",
+      "text": "Register as a brand or an influencer."
+    },
+    "match": {
+      "title": "Match & Connect",
+      "text": "Our AI suggests the best collaborations."
+    },
+    "launch": {
+      "title": "Launch & Track",
+      "text": "Run campaigns and measure success."
+    },
+    "getPaid": {
+      "title": "Get Paid Securely",
+      "text": "Hassle-free payments and transactions."
+    },
+    "consultation": "Need free consultation?"
+  },
+  "partners": {
+    "title": "Our Partners"
+  },
+  "courses": {
+    "title": "Recommended courses for influencers",
+    "goToCourse": "Go to course",
+    "academy": "Influence Academy: Build, Brand & Monetize",
+    "contentEmpire": "Content Empire: From Posts to Profit",
+    "viralBlueprint": "Viral Blueprint: Scale Your Influence"
+  },
+  "faq": {
+    "title": "FAQ",
+    "register": {
+      "question": "How do I register as a brand or an influencer?",
+      "answer": "You can sign up by clicking the 'Register' button on the homepage and selecting your role (brand or influencer). Fill out your profile to start connecting!"
+    },
+    "free": {
+      "question": "Is the platform free to use?",
+      "answer": "Yes, creating an account is free for both brands and influencers. Some advanced features may be available through premium plans in the future."
+    },
+    "matching": {
+      "question": "How does the matching system work?",
+      "answer": "Our AI-based algorithm analyzes your profile, interests, and campaign needs to recommend the most relevant and compatible collaborations."
+    },
+    "payment": {
+      "question": "How do I get paid as an influencer?",
+      "answer": "Payments are processed securely through the platform once the brand approves your work. You'll be notified when funds are transferred to your account."
+    },
+    "multipleCampaigns": {
+      "question": "Can I run multiple campaigns at once?",
+      "answer": "Absolutely! Both brands and influencers can manage multiple ongoing campaigns from their dashboard for maximum flexibility and reach."
+    }
+  },
+  "contact": {
+    "title": "Contact us",
+    "address": "Kazakhstan, Kaskelen, Abylaykhan street 1"
+  },
+  "footer": {
+    "copyright": "© {{year}} adPartners. All rights reserved."
+  }
+}

@@ -11,6 +11,9 @@ const STATUS_COLOR_SCHEMES: Record<string, string> = {
   completed: 'green',
   pending: 'yellow',
   in_progress: 'blue',
+  review: 'blue',
+  draft: 'gray',
+  paused: 'gray',
   rejected: 'red',
   cancelled: 'red',
   withdrawn: 'gray',
@@ -24,7 +27,8 @@ interface StatusBadgeProps extends BadgeProps {
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, ...props }) => {
   const { t } = useTranslation();
-  const key = status?.toLowerCase();
+  // The API sends `in-progress`; keys and colors use `in_progress`.
+  const key = status?.toLowerCase().replace(/-/g, '_');
   return (
     <Badge colorScheme={STATUS_COLOR_SCHEMES[key] ?? 'gray'} {...props}>
       {key ? t(`status.${key}`, { defaultValue: status }) : t('state.unknown')}

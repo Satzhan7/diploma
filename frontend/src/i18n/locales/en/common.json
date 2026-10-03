@@ -4,7 +4,11 @@
     "ru": "Русский",
     "kk": "Қазақша",
     "en": "English",
-    "short": { "ru": "RU", "kk": "KZ", "en": "EN" }
+    "short": {
+      "ru": "RU",
+      "kk": "KZ",
+      "en": "EN"
+    }
   },
   "actions": {
     "save": "Save",
@@ -65,7 +69,10 @@
     "cancelled": "Cancelled",
     "withdrawn": "Withdrawn",
     "closed": "Closed",
-    "expired": "Expired"
+    "expired": "Expired",
+    "draft": "Draft",
+    "review": "In review",
+    "paused": "Paused"
   },
   "role": {
     "brand": "Brand",

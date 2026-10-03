@@ -16,10 +16,13 @@ import {
   HStack,
   useColorModeValue,
 } from '@chakra-ui/react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import Logo from '../components/Logo';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 export const Login: React.FC = () => {
+  const { t } = useTranslation('auth');
   const navigate = useNavigate();
   const toast = useToast();
   const { login, isAuthenticated } = useAuth();
@@ -45,7 +48,7 @@ export const Login: React.FC = () => {
     try {
       await login(email, password);
       toast({
-        title: 'Login successful',
+        title: t('toast.loginSuccess'),
         status: 'success',
         duration: 3000,
         isClosable: true,
@@ -53,8 +56,8 @@ export const Login: React.FC = () => {
       navigate('/');
     } catch (error) {
       toast({
-        title: 'Login failed',
-        description: error instanceof Error ? error.message : 'An error occurred',
+        title: t('errors.loginFailed'),
+        description: error instanceof Error ? error.message : t('errors.generic'),
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -77,9 +80,9 @@ export const Login: React.FC = () => {
               <Logo />
             </RouterLink>
             <HStack spacing={{ base: 2, md: 4 }}>
-              <Text fontSize="sm">Don't have an account?</Text>
+              <Text fontSize="sm" display={{ base: 'none', sm: 'block' }}>{t('header.noAccount')}</Text>
               <Button as={RouterLink} to="/register" colorScheme="brand" size="sm" variant="outline">
-                Sign Up
+                {t('header.signUp')}
               </Button>
             </HStack>
           </Flex>
@@ -96,29 +99,32 @@ export const Login: React.FC = () => {
           p={8}
         >
           <VStack spacing={6} align="stretch">
-            <Heading size="lg" textAlign="center">Sign in to your account</Heading>
+            <Flex justify="flex-end">
+              <LanguageSwitcher />
+            </Flex>
+            <Heading size="lg" textAlign="center">{t('login.title')}</Heading>
             <form onSubmit={handleSubmit}>
               <Stack spacing={4}>
                 <FormControl isRequired>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{t('form.emailLabel')}</FormLabel>
                   <Input 
                     type="email" 
                     name="email" 
-                    placeholder="Enter your email" 
+                    placeholder={t('form.emailPlaceholder')} 
                     bg={bgColor}
                   />
                 </FormControl>
                 <FormControl isRequired>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>{t('form.passwordLabel')}</FormLabel>
                   <Input 
                     type="password" 
                     name="password" 
-                    placeholder="Enter your password" 
+                    placeholder={t('form.passwordPlaceholder')} 
                     bg={bgColor}
                   />
                 </FormControl>
                 <Button type="submit" colorScheme="brand" size="lg" fontSize="md" isLoading={isLoading} mt={4}>
-                  Sign in
+                  {t('login.submit')}
                 </Button>
               </Stack>
             </form>
@@ -129,7 +135,7 @@ export const Login: React.FC = () => {
       {/* Footer */}
       <Box as="footer" py={6} px={8} mt={10} bg={formBg} borderTopWidth={1}>
         <Text textAlign="center" fontSize="sm" color={footerTextColor}>
-          © {new Date().getFullYear()} adPartners. All rights reserved.
+          {t('footer.copyright', { year: new Date().getFullYear() })}
         </Text>
       </Box>
     </Flex>
