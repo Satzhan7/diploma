@@ -30,6 +30,9 @@ export default new DataSource({
     Message,
     Collaboration,
   ],
-  migrations: [`${__dirname}/migrations/*{.ts,.js}`],
+  // ts-node runs the .ts sources; dist only loads .js (not the emitted .d.ts).
+  migrations: [
+    `${__dirname}/migrations/*.${__filename.endsWith('.ts') ? 'ts' : 'js'}`,
+  ],
   synchronize: false,
 });

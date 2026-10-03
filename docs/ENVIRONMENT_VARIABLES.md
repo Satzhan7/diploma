@@ -7,7 +7,7 @@
 | Variable | Required | Used in | Defined (dev compose) | Defined (prod compose) | Default | Notes |
 |---|---|---|---|---|---|---|
 | `PORT` | no | `configuration.ts:2`, `main.ts:34` | ✅ `3005` | ✅ `3005` | `3000` | OK |
-| `NODE_ENV` | no | `configuration.ts:12`, Dockerfile | ✅ `development` | ✅ `production` | — | Gates synchronize fallback |
+| `NODE_ENV` | no | `configuration.ts:12`, Dockerfile | ✅ `development` | ✅ `production` | — | Gates synchronize fallback; `production` applies the migrations on boot |
 | `DB_HOST` | yes (Docker) | `configuration.ts:4` | ✅ `postgres` | ✅ `postgres` | `localhost` | OK |
 | `DB_PORT` | no | `configuration.ts:5` | ✅ `5432` | ✅ `5432` | `5432` | OK |
 | `DB_USERNAME` | yes (prod) | `configuration.ts:6` | ✅ `postgres` | ✅ `${DB_USER}` | `postgres` | Aligned since `6664b8e` |

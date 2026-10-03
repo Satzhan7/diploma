@@ -68,7 +68,7 @@ export const EditProfile: React.FC = () => {
       setValue('bio', user.bio || '');
       setValue('followers', user.followers || 0);
       setValue('engagementRate', user.engagementRate || 0);
-      setValue('categories', user.categories?.map(cat => ({ value: cat })) || []);
+      setValue('categories', user.profile?.categories?.map(cat => ({ value: cat })) || []);
       setValue('languages', user.languages || []);
       setValue('location', user.location || '');
       if (user.role === UserRole.BRAND) {

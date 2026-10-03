@@ -11,7 +11,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Profile } from '../../profiles/entities/profile.entity';
 import { Message } from '../../chats/entities/message.entity';
 import { Exclude } from 'class-transformer';
-import { Order } from '../../orders/entities/order.entity';
 import { Match } from '../../matching/entities/match.entity';
 
 export enum UserRole {
@@ -82,10 +81,6 @@ export class User {
   @OneToOne(() => Profile, (profile) => profile.user)
   profile: Profile;
 
-  @ApiProperty({ type: () => [Order] })
-  @OneToMany(() => Order, (order) => order.brand)
-  orders: Order[];
-
   @ApiProperty({ type: () => [Message] })
   @OneToMany(() => Message, (message) => message.sender)
   sentMessages: Message[];
@@ -131,10 +126,6 @@ export class User {
   @ApiProperty({ example: 0.045 })
   @Column('decimal', { precision: 4, scale: 4, nullable: true })
   engagementRate: number;
-
-  @ApiProperty({ example: ['Travel', 'Lifestyle'] })
-  @Column('text', { array: true, nullable: true })
-  categories: string[];
 
   @ApiProperty({ example: ['English', 'Spanish'] })
   @Column('text', { array: true, nullable: true })
