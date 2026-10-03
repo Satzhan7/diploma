@@ -11,7 +11,7 @@ import {
 import { User } from '../../users/entities/user.entity';
 import { SocialMedia } from './social-media.entity';
 import { ApiProperty } from '@nestjs/swagger';
-import { Exclude, Expose, Transform } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 
 export enum ProfileType {
   BRAND = 'brand',
