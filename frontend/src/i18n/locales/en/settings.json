@@ -1,0 +1,28 @@
+{
+  "title": "Settings",
+  "notifications": {
+    "title": "Notifications",
+    "email": "Email notifications",
+    "push": "Push notifications"
+  },
+  "preferences": {
+    "title": "Preferences",
+    "timezone": "Time zone"
+  },
+  "save": "Save changes",
+  "saving": "Saving…",
+  "deleteAccount": "Delete account",
+  "deleteConfirm": "Are you sure you want to delete your account? This action cannot be undone.",
+  "toast": {
+    "saved": {
+      "title": "Preferences saved",
+      "description": "Stored locally on this device."
+    },
+    "saveFailed": "Couldn't save preferences",
+    "deleted": {
+      "title": "Account deleted",
+      "description": "Your account has been successfully deleted."
+    },
+    "deleteFailed": "Deletion failed"
+  }
+}

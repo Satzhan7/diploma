@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ChakraProvider, Center, Spinner, VStack, Text } from '@chakra-ui/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import DashboardLayout from './components/DashboardLayout';
 import { Login } from './pages/Login';
@@ -35,16 +36,19 @@ const queryClient = new QueryClient({
   },
 });
 
-const FullScreenLoader: React.FC = () => (
-  <Center minH="100vh" bg="bg.canvas">
-    <VStack spacing={4}>
-      <Spinner size="lg" color="brand.500" thickness="3px" />
-      <Text color="fg.muted" fontSize="sm">
-        Loading…
-      </Text>
-    </VStack>
-  </Center>
-);
+const FullScreenLoader: React.FC = () => {
+  const { t } = useTranslation();
+  return (
+    <Center minH="100vh" bg="bg.canvas">
+      <VStack spacing={4}>
+        <Spinner size="lg" color="brand.500" thickness="3px" />
+        <Text color="fg.muted" fontSize="sm">
+          {t('common:state.loading')}
+        </Text>
+      </VStack>
+    </Center>
+  );
+};
 
 interface ProtectedRouteProps {
   children: React.ReactElement;

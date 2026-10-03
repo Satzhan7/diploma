@@ -1,0 +1,176 @@
+{
+  "shared": {
+    "notAvailable": "N/A",
+    "brandNameMissing": "Brand name missing",
+    "yourMessage": "Your message: \"{{message}}\"",
+    "searchBrands": "Search brands..."
+  },
+  "categories": {
+    "fashion": "Fashion",
+    "beauty": "Beauty",
+    "technology": "Technology",
+    "food": "Food",
+    "foodBeverage": "Food & Beverage",
+    "lifestyle": "Lifestyle",
+    "travel": "Travel"
+  },
+  "dashboard": {
+    "title": "My Statistics",
+    "subtitle": "Your applications and collaboration performance",
+    "errors": {
+      "brands": "Error loading brands",
+      "categories": "Error loading categories",
+      "stats": "Failed to load statistics"
+    },
+    "filters": {
+      "title": "Filter Data",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "brand": "Brand",
+      "allBrands": "All Brands",
+      "category": "Category",
+      "allCategories": "All Categories",
+      "reset": "Reset"
+    },
+    "overview": {
+      "title": "Overview",
+      "applicationsSent": "Applications Sent",
+      "activeApplications": "Active Applications",
+      "acceptedRejected": "Accepted / Rejected",
+      "withdrawn": "Withdrawn: {{value}}",
+      "collaborations": "Collaborations",
+      "completed": "Completed: {{value}}"
+    },
+    "metrics": {
+      "title": "Performance Metrics",
+      "totalClicks": "Total Clicks",
+      "totalImpressions": "Total Impressions",
+      "avgEngagementRate": "Avg. Engagement Rate",
+      "followerGrowth": "Follower Growth"
+    },
+    "details": {
+      "title": "Details",
+      "performanceOverTime": "Performance Over Time",
+      "noDailyData": "No daily data available to display chart.",
+      "impressionsByCategory": "Impressions by Category",
+      "noCampaignData": "No campaign data available.",
+      "collaborationPerformance": "Collaboration Performance",
+      "emptyTitle": "No collaboration data yet",
+      "emptyDescription": "Performance will appear here once your collaborations report stats."
+    },
+    "table": {
+      "campaign": "Campaign",
+      "category": "Category",
+      "brand": "Brand",
+      "clicks": "Clicks",
+      "impressions": "Impressions",
+      "engagement": "Engagement",
+      "status": "Status",
+      "startDate": "Start Date",
+      "endDate": "End Date"
+    }
+  },
+  "orders": {
+    "title": "Available Orders",
+    "filters": {
+      "category": "Category",
+      "allCategories": "All categories",
+      "minBudget": "Min Budget",
+      "maxBudget": "Max Budget"
+    },
+    "loading": "Loading orders...",
+    "empty": "No orders available matching your filters.",
+    "card": {
+      "budget": "Budget:",
+      "deadline": "Deadline:",
+      "brand": "Brand:",
+      "applied": "Applied ({{status}})",
+      "applyNow": "Apply Now"
+    },
+    "applyModal": {
+      "title": "Apply for {{title}}",
+      "messageLabel": "Your Message to the Brand",
+      "messagePlaceholder": "Explain why you're a good fit for this order and what you can offer...",
+      "priceLabel": "Your Proposed Price (₸)",
+      "originalBudget": "Original budget: {{amount}}",
+      "submit": "Submit Application"
+    },
+    "toast": {
+      "submittedTitle": "Application submitted",
+      "submittedDescription": "Your application has been sent to the brand",
+      "submitError": "Failed to submit application"
+    }
+  },
+  "orderDetail": {
+    "title": "Order Details",
+    "loadErrorTitle": "Error loading order",
+    "loadError": "Could not load order details.",
+    "notFound": "Order not found.",
+    "postedBy": "Posted by:",
+    "description": "Description",
+    "budget": "Budget",
+    "category": "Category",
+    "requirements": "Requirements",
+    "deadline": "Deadline"
+  },
+  "applications": {
+    "title": "My Applications",
+    "loadError": "Error loading applications: {{message}}",
+    "tabs": {
+      "all": "All ({{count}})",
+      "pending": "Pending ({{count}})",
+      "accepted": "Accepted ({{count}})",
+      "rejected": "Rejected ({{count}})",
+      "withdrawn": "Withdrawn ({{count}})"
+    },
+    "card": {
+      "brand": "Brand:",
+      "category": "Category: {{category}}",
+      "appliedOn": "Applied on: {{date}}",
+      "viewOrder": "View Order",
+      "withdraw": "Withdraw Application"
+    },
+    "empty": {
+      "all": "No applications found.",
+      "allHint": "Apply to orders that match your profile!",
+      "browseOrders": "Browse Orders",
+      "pending": "No pending applications.",
+      "pendingHint": "Your active applications will appear here.",
+      "accepted": "No accepted applications yet.",
+      "acceptedHint": "Accepted collaborations will show up here.",
+      "rejected": "No rejected applications.",
+      "withdrawn": "No withdrawn applications."
+    },
+    "withdrawDialog": {
+      "title": "Withdraw Application",
+      "body": "Are you sure you want to withdraw your application for \"{{title}}\"?",
+      "confirm": "Withdraw"
+    },
+    "toast": {
+      "withdrawn": "Application Withdrawn",
+      "withdrawError": "Error withdrawing application"
+    }
+  },
+  "brandList": {
+    "title": "Brands",
+    "loadError": "Error loading brands",
+    "loadErrorDescription": "Failed to load brands",
+    "filterByIndustry": "Filter by industry",
+    "location": "Location: {{location}}"
+  },
+  "recommendations": {
+    "title": "Recommended Brands",
+    "loadError": "Error loading recommendations: {{message}}",
+    "filterByCategory": "Filter by category",
+    "loading": "Loading recommendations...",
+    "noDescription": "No description available",
+    "categories": "Categories",
+    "viewProfile": "View Profile",
+    "expressInterest": "Express Interest",
+    "toast": {
+      "interestTitle": "Interest indicated",
+      "interestDescription": "The brand will be notified of your interest in collaboration",
+      "interestError": "Failed to send collaboration interest"
+    }
+  }
+}

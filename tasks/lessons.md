@@ -25,3 +25,6 @@
 ## 2026-10-03 — Phase 1
 
 - **npm `overrides` with a relative `file:` spec resolves against the dependent package**, not the project root (`node_modules/jwa/vendor/...`, an empty entry). Declare the local package as a root dependency (`"x": "file:vendor/x"`) and override with `"x": "$x"`; check the lockfile has one `"link": true` entry before building.
+- **Do i18n extraction inline, file by file; spawn at most one reviewer agent.** Four parallel extraction subagents stalled on the stream watchdog (~600 s) and had to be resumed; session cost went from ~$90 to ~$182. Two read-only Explore agents for code mapping were fine.
+- **The Playwright MCP needs the "Playwright MCP Bridge" browser extension, which is not connected.** For browser QA use a playwright-core script in the scratchpad with `executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'`.
+- **Claude Design `.dc.html` canvases need `support.js` beside them and an HTTP server (not `file://`).** Frames scroll internally, so full-page screenshots cut them off; read the inline `<script type="text/x-dc">` for tokens and sample data.

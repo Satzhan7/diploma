@@ -17,11 +17,15 @@ import {
   HStack,
   useColorModeValue,
 } from '@chakra-ui/react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../types/user';
 import Logo from '../components/Logo';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import { getErrorMessage } from '../i18n/errors';
 
 export const Register: React.FC = () => {
+  const { t } = useTranslation('auth');
   const navigate = useNavigate();
   const toast = useToast();
   const { register, isAuthenticated } = useAuth();
@@ -51,19 +55,17 @@ export const Register: React.FC = () => {
     try {
       await register(data);
       toast({
-        title: 'Registration successful',
-        description: 'Please login with your credentials',
+        title: t('toast.registerSuccess'),
+        description: t('toast.registerSuccessDescription'),
         status: 'success',
         duration: 5000,
         isClosable: true,
       });
       navigate('/login');
-    } catch (error: any) {
+    } catch (error) {
       toast({
-        title: 'Registration failed',
-        description:
-          error?.response?.data?.message ||
-          (error instanceof Error ? error.message : 'An error occurred'),
+        title: t('errors.registerFailed'),
+        description: getErrorMessage(error),
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -86,9 +88,9 @@ export const Register: React.FC = () => {
               <Logo />
             </RouterLink>
             <HStack spacing={{ base: 2, md: 4 }}>
-              <Text fontSize="sm">Already have an account?</Text>
+              <Text fontSize="sm" display={{ base: 'none', sm: 'block' }}>{t('header.haveAccount')}</Text>
               <Button as={RouterLink} to="/login" colorScheme="brand" size="sm" variant="outline">
-                Login
+                {t('header.login')}
               </Button>
             </HStack>
           </Flex>
@@ -105,49 +107,52 @@ export const Register: React.FC = () => {
           p={8}
         >
           <VStack spacing={6} align="stretch">
-            <Heading size="lg" textAlign="center">Create an account</Heading>
+            <Flex justify="flex-end">
+              <LanguageSwitcher />
+            </Flex>
+            <Heading size="lg" textAlign="center">{t('register.title')}</Heading>
             <form onSubmit={handleSubmit}>
               <Stack spacing={4}>
                 <FormControl isRequired>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>{t('form.nameLabel')}</FormLabel>
                   <Input 
                     type="text" 
                     name="name" 
-                    placeholder="Enter your name or brand name" 
+                    placeholder={t('form.namePlaceholder')} 
                     bg={bgColor}
                   />
                 </FormControl>
                 <FormControl isRequired>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{t('form.emailLabel')}</FormLabel>
                   <Input 
                     type="email" 
                     name="email" 
-                    placeholder="Enter your email" 
+                    placeholder={t('form.emailPlaceholder')} 
                     bg={bgColor}
                   />
                 </FormControl>
                 <FormControl isRequired>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>{t('form.passwordLabel')}</FormLabel>
                   <Input 
                     type="password" 
                     name="password" 
-                    placeholder="Enter your password" 
+                    placeholder={t('form.passwordPlaceholder')} 
                     bg={bgColor}
                   />
                 </FormControl>
                 <FormControl isRequired>
-                  <FormLabel>Role</FormLabel>
+                  <FormLabel>{t('form.roleLabel')}</FormLabel>
                   <Select 
                     name="role" 
-                    placeholder="Select your role" 
+                    placeholder={t('form.rolePlaceholder')} 
                     bg={bgColor}
                   >
-                    <option value={UserRole.BRAND}>Brand</option>
-                    <option value={UserRole.INFLUENCER}>Influencer</option>
+                    <option value={UserRole.BRAND}>{t('common:role.brand')}</option>
+                    <option value={UserRole.INFLUENCER}>{t('common:role.influencer')}</option>
                   </Select>
                 </FormControl>
                 <Button type="submit" colorScheme="brand" size="lg" fontSize="md" isLoading={isLoading} mt={4}>
-                  Register
+                  {t('register.submit')}
                 </Button>
               </Stack>
             </form>
@@ -158,7 +163,7 @@ export const Register: React.FC = () => {
       {/* Footer */}
       <Box as="footer" py={6} px={8} mt={10} bg={formBg} borderTopWidth={1}>
         <Text textAlign="center" fontSize="sm" color={footerTextColor}>
-          © {new Date().getFullYear()} adPartners. All rights reserved.
+          {t('footer.copyright', { year: new Date().getFullYear() })}
         </Text>
       </Box>
     </Flex>

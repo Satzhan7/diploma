@@ -18,6 +18,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { GetCurrentUser } from '../auth/decorators/get-current-user.decorator';
 import { UserRole } from './entities/user.entity';
 import { toPublicUser } from './public-user';
+import { apiError, ErrorCode } from '../common/errors/error-codes';
 
 @ApiTags('users')
 @ApiBearerAuth()
@@ -66,7 +67,12 @@ export class UsersController {
     // also stripped — role escalation must not be possible via this endpoint,
     // and password changes belong to a dedicated flow.
     if (id !== currentUserId) {
-      throw new ForbiddenException('You can only update your own profile');
+      throw new ForbiddenException(
+        apiError(
+          ErrorCode.USER_NOT_SELF,
+          'You can only update your own profile',
+        ),
+      );
     }
     const {
       role: _ignoredRole,
@@ -84,7 +90,12 @@ export class UsersController {
     // Ownership: same rule as PATCH — only the account owner (or an admin)
     // may delete a user record.
     if (id !== currentUser.id && currentUser.role !== UserRole.ADMIN) {
-      throw new ForbiddenException('You can only delete your own account');
+      throw new ForbiddenException(
+        apiError(
+          ErrorCode.USER_NOT_SELF,
+          'You can only delete your own account',
+        ),
+      );
     }
     return this.usersService.remove(id);
   }

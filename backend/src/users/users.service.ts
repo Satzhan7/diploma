@@ -7,6 +7,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
 import { hashRefreshToken } from '../auth/refresh-token-hash';
 import { UserRole } from './enums/user-role.enum';
+import { apiError, ErrorCode } from '../common/errors/error-codes';
 
 @Injectable()
 export class UsersService {
@@ -58,7 +59,9 @@ export class UsersService {
     const user = await this.usersRepository.findOne({ where: { id } });
 
     if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+      throw new NotFoundException(
+        apiError(ErrorCode.USER_NOT_FOUND, `User with ID ${id} not found`),
+      );
     }
 
     return user;

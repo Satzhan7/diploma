@@ -6,6 +6,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UsersService } from '../users/users.service';
 import { SocialMedia } from './entities/social-media.entity';
 import { PublicUser, toPublicUser } from '../users/public-user';
+import { apiError, ErrorCode } from '../common/errors/error-codes';
 
 export type PublicProfile = Profile & { user: PublicUser };
 
@@ -28,7 +29,9 @@ export class ProfilesService {
   async createProfile(userId: string, type: ProfileType): Promise<Profile> {
     const user = await this.usersService.findById(userId);
     if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
+      throw new NotFoundException(
+        apiError(ErrorCode.USER_NOT_FOUND, `User with ID ${userId} not found`),
+      );
     }
 
     const profile = this.profilesRepository.create({
@@ -47,7 +50,10 @@ export class ProfilesService {
 
     if (!profile) {
       throw new NotFoundException(
-        `Profile for user with ID ${userId} not found`,
+        apiError(
+          ErrorCode.PROFILE_NOT_FOUND,
+          `Profile for user with ID ${userId} not found`,
+        ),
       );
     }
 
@@ -64,7 +70,10 @@ export class ProfilesService {
 
     if (!profile) {
       throw new NotFoundException(
-        `Profile for user with ID ${userId} not found`,
+        apiError(
+          ErrorCode.PROFILE_NOT_FOUND,
+          `Profile for user with ID ${userId} not found`,
+        ),
       );
     }
 
@@ -81,7 +90,12 @@ export class ProfilesService {
     });
 
     if (!profile) {
-      throw new NotFoundException(`Profile with ID ${id} not found`);
+      throw new NotFoundException(
+        apiError(
+          ErrorCode.PROFILE_NOT_FOUND,
+          `Profile with ID ${id} not found`,
+        ),
+      );
     }
 
     // Handle socialMedia separately
@@ -223,7 +237,12 @@ export class ProfilesService {
   async delete(id: string): Promise<void> {
     const result = await this.profilesRepository.delete(id);
     if (!result.affected) {
-      throw new NotFoundException(`Profile with ID ${id} not found`);
+      throw new NotFoundException(
+        apiError(
+          ErrorCode.PROFILE_NOT_FOUND,
+          `Profile with ID ${id} not found`,
+        ),
+      );
     }
   }
 

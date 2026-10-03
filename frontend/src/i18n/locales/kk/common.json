@@ -1,0 +1,82 @@
+{
+  "language": {
+    "label": "Тіл",
+    "ru": "Русский",
+    "kk": "Қазақша",
+    "en": "English",
+    "short": {
+      "ru": "RU",
+      "kk": "KZ",
+      "en": "EN"
+    }
+  },
+  "actions": {
+    "save": "Сақтау",
+    "cancel": "Бас тарту",
+    "delete": "Жою",
+    "edit": "Өзгерту",
+    "submit": "Жіберу",
+    "back": "Артқа",
+    "retry": "Қайталау",
+    "close": "Жабу",
+    "send": "Жіберу",
+    "search": "Іздеу",
+    "view": "Ашу",
+    "apply": "Өтінім беру",
+    "logout": "Шығу"
+  },
+  "state": {
+    "loading": "Жүктелуде…",
+    "error": "Қате",
+    "success": "Дайын",
+    "unknown": "Белгісіз"
+  },
+  "theme": {
+    "dark": "Қараңғы тақырып",
+    "light": "Жарық тақырып",
+    "switchToDark": "Қараңғы тақырыпқа ауысу",
+    "switchToLight": "Жарық тақырыпқа ауысу"
+  },
+  "nav": {
+    "main": "Негізгі навигация",
+    "openMenu": "Мәзірді ашу",
+    "groups": {
+      "work": "Жұмыс",
+      "discover": "Іздеу",
+      "communication": "Байланыс",
+      "account": "Аккаунт"
+    },
+    "dashboard": "Басты бет",
+    "orders": "Тапсырыстар",
+    "createOrder": "Тапсырыс жасау",
+    "myApplications": "Менің өтінімдерім",
+    "matches": "Сәйкестіктер",
+    "influencers": "Инфлюенсерлер",
+    "brands": "Брендтер",
+    "recommendations": "Ұсыныстар",
+    "messages": "Хабарламалар",
+    "profile": "Профиль",
+    "settings": "Баптаулар"
+  },
+  "status": {
+    "open": "Ашық",
+    "accepted": "Қабылданды",
+    "active": "Белсенді",
+    "completed": "Аяқталды",
+    "pending": "Қаралуда",
+    "in_progress": "Орындалуда",
+    "rejected": "Қабылданбады",
+    "cancelled": "Тоқтатылды",
+    "withdrawn": "Кері қайтарылды",
+    "closed": "Жабық",
+    "expired": "Мерзімі өтті",
+    "draft": "Жоба",
+    "review": "Тексерілуде",
+    "paused": "Тоқтатыла тұрған"
+  },
+  "role": {
+    "brand": "Бренд",
+    "influencer": "Инфлюенсер",
+    "admin": "Әкімші"
+  }
+}

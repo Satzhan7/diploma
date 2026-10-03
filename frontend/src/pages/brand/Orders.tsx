@@ -28,14 +28,19 @@ import {
   Avatar,
 } from '@chakra-ui/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { ordersService, Order } from '../../services/orders';
 import { applicationsService, Application } from '../../services/applications';
 import { IconWrapper } from '../../components/IconWrapper';
 import { FiEye } from 'react-icons/fi';
 import { useAuth } from '../../contexts/AuthContext';
+import { StatusBadge } from '../../components/ui';
+import { formatMoney } from '../../i18n';
+import { getErrorMessage } from '../../i18n/errors';
 
 const BrandOrders: React.FC = () => {
+  const { t } = useTranslation('brand');
   const { user } = useAuth();
   const { isOpen: isApplicantsOpen, onOpen: onApplicantsOpen, onClose: onApplicantsClose } = useDisclosure();
 
@@ -55,18 +60,18 @@ const BrandOrders: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orderApplications', selectedOrder?.id] });
       queryClient.invalidateQueries({ queryKey: ['brandOrders'] });
-      toast({ title: 'Application Accepted', status: 'success' });
+      toast({ title: t('orders.toasts.accepted'), status: 'success' });
     },
-    onError: (err) => toast({ title: 'Error accepting', description: (err as Error).message, status: 'error' }),
+    onError: (err) => toast({ title: t('orders.toasts.acceptError'), description: getErrorMessage(err), status: 'error' }),
   });
 
   const rejectMutation = useMutation({
     mutationFn: (applicationId: string) => applicationsService.update(applicationId, { status: 'rejected' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orderApplications', selectedOrder?.id] });
-      toast({ title: 'Application Rejected', status: 'warning' });
+      toast({ title: t('orders.toasts.rejected'), status: 'warning' });
     },
-    onError: (err) => toast({ title: 'Error rejecting', description: (err as Error).message, status: 'error' }),
+    onError: (err) => toast({ title: t('orders.toasts.rejectError'), description: getErrorMessage(err), status: 'error' }),
   });
 
   const { data: orderApplications, isLoading: isLoadingApplications } = useQuery<Application[]>({
@@ -92,33 +97,15 @@ const BrandOrders: React.FC = () => {
     rejectMutation.mutate(application.id);
   };
 
-  const renderStatusBadge = (status: string) => {
-    let colorScheme = 'gray';
-    if (status === 'active' || status === 'open') colorScheme = 'green';
-    if (status === 'paused') colorScheme = 'yellow';
-    if (status === 'completed') colorScheme = 'blue';
-    if (status === 'cancelled' || status === 'closed') colorScheme = 'red';
-    return <Badge colorScheme={colorScheme}>{status}</Badge>;
-  };
-
-  const renderApplicationStatusBadge = (status: string) => {
-    let colorScheme = 'gray';
-    if (status === 'accepted') colorScheme = 'green';
-    if (status === 'pending') colorScheme = 'yellow';
-    if (status === 'rejected') colorScheme = 'red';
-    if (status === 'withdrawn') colorScheme = 'purple';
-    return <Badge colorScheme={colorScheme}>{status}</Badge>;
-  };
-
-  if (!user) return <Center p={10}><Text>Loading user information...</Text></Center>;
+  if (!user) return <Center p={10}><Text>{t('orders.loadingUser')}</Text></Center>;
   if (isLoading) return <Center p={10}><Spinner /></Center>;
-  if (error) return <Center p={10}><Text color="red.500">Error loading orders: {error.message}</Text></Center>;
+  if (error) return <Center p={10}><Text color="red.500">{t('orders.loadError', { message: getErrorMessage(error) })}</Text></Center>;
 
   return (
     <Box p={4}>
-      <Heading mb={6}>My Brand Orders</Heading>
+      <Heading mb={6}>{t('orders.title')}</Heading>
       <Button as={RouterLink} to="/brand/orders/create" colorScheme="brand" mb={6}>
-        Create New Order
+        {t('orders.createNew')}
       </Button>
 
       {orders && orders.length > 0 ? (
@@ -128,11 +115,11 @@ const BrandOrders: React.FC = () => {
               <CardHeader>
                 <HStack justify="space-between">
                   <Heading size="md" noOfLines={1}>{order.title}</Heading>
-                  {renderStatusBadge(order.status)}
+                  <StatusBadge status={order.status} />
                 </HStack>
                 <HStack mt={2} spacing={2}>
-                  <Badge>{order.category}</Badge>
-                  <Text fontSize="sm">Budget: ${order.budget.toLocaleString()}</Text>
+                  <Badge>{t(`categories.${order.category?.toLowerCase()}`, { defaultValue: order.category })}</Badge>
+                  <Text fontSize="sm">{t('orders.budget', { amount: formatMoney(order.budget) })}</Text>
                 </HStack>
               </CardHeader>
               <CardBody py={2}>
@@ -150,11 +137,11 @@ const BrandOrders: React.FC = () => {
                         onClick={() => handleViewApplicants(order)}
                         rightIcon={pendingCount > 0 ?
                           <Badge colorScheme='yellow' ml='1' borderRadius='full' px='2'>
-                            {pendingCount} new
+                            {t('orders.newApplications', { count: pendingCount })}
                           </Badge> : undefined
                         }
                       >
-                        View Applicants
+                        {t('orders.viewApplicants')}
                       </Button>
                     );
                   })()}
@@ -170,7 +157,7 @@ const BrandOrders: React.FC = () => {
         </SimpleGrid>
       ) : (
         <Center p={10}>
-          <Text>You haven't created any orders yet.</Text>
+          <Text>{t('orders.empty')}</Text>
         </Center>
       )}
 
@@ -178,13 +165,13 @@ const BrandOrders: React.FC = () => {
         <Modal isOpen={isApplicantsOpen} onClose={onApplicantsClose} size="xl">
           <ModalOverlay />
           <ModalContent>
-            <ModalHeader>Applicants for "{selectedOrder.title}"</ModalHeader>
+            <ModalHeader>{t('orders.applicants.title', { title: selectedOrder.title })}</ModalHeader>
             <ModalCloseButton />
             <ModalBody>
               {isLoadingApplications ? (
                 <Center><Spinner /></Center>
               ) : !orderApplications || orderApplications.length === 0 ? (
-                <Text>No applicants yet.</Text>
+                <Text>{t('orders.applicants.empty')}</Text>
               ) : (
                 <List spacing={3}>
                   {orderApplications.map(app => (
@@ -192,27 +179,27 @@ const BrandOrders: React.FC = () => {
                       <HStack justify="space-between">
                         <VStack align="start" spacing={1}>
                           <HStack>
-                            <Avatar size="xs" name={app.applicant?.name || 'Unknown'} src={app.applicant?.avatarUrl}/>
-                            <Text fontWeight="bold">{app.applicant?.name || 'Unknown Applicant'}</Text>
+                            <Avatar size="xs" name={app.applicant?.name || t('orders.applicants.unknown')} src={app.applicant?.avatarUrl}/>
+                            <Text fontWeight="bold">{app.applicant?.name || t('orders.applicants.unknown')}</Text>
                           </HStack>
-                          <Text fontSize="sm">Proposed: ${app.proposedPrice.toLocaleString()}</Text>
-                          <Text fontSize="sm" fontStyle="italic">"{app.message}"</Text>
+                          <Text fontSize="sm">{t('orders.applicants.proposed', { amount: formatMoney(app.proposedPrice) })}</Text>
+                          <Text fontSize="sm" fontStyle="italic">{t('orders.applicants.message', { message: app.message })}</Text>
                         </VStack>
                         <VStack align="end">
-                          {renderApplicationStatusBadge(app.status)}
+                          <StatusBadge status={app.status} />
                           <HStack>
                             {app.status === 'pending' && (
                               <>
                                 <Button size="xs" colorScheme="green" onClick={() => handleAcceptApplication(app)} isLoading={acceptMutation.isPending}>
-                                  Accept
+                                  {t('orders.applicants.accept')}
                                 </Button>
                                 <Button size="xs" colorScheme="red" onClick={() => handleRejectApplication(app)} isLoading={rejectMutation.isPending}>
-                                  Reject
+                                  {t('orders.applicants.reject')}
                                 </Button>
                               </>
                             )}
                           </HStack>
-                          <Button size="xs" variant="link" onClick={() => app.applicant?.id && handleViewInfluencer(app.applicant.id)} isDisabled={!app.applicant?.id}>View Profile</Button>
+                          <Button size="xs" variant="link" onClick={() => app.applicant?.id && handleViewInfluencer(app.applicant.id)} isDisabled={!app.applicant?.id}>{t('orders.applicants.viewProfile')}</Button>
                         </VStack>
                       </HStack>
                     </ListItem>
@@ -221,7 +208,7 @@ const BrandOrders: React.FC = () => {
               )}
             </ModalBody>
             <ModalFooter>
-              <Button onClick={onApplicantsClose}>Close</Button>
+              <Button onClick={onApplicantsClose}>{t('common:actions.close')}</Button>
             </ModalFooter>
           </ModalContent>
         </Modal>

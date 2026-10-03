@@ -15,7 +15,6 @@ import {
   CardHeader,
   CardBody,
   CardFooter,
-  Badge,
   HStack,
   VStack,
   Button,
@@ -35,8 +34,13 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { IconWrapper, IconButtonWithWrapper } from '../../components/IconWrapper';
 import { FiExternalLink, FiTrash2, FiEye } from 'react-icons/fi';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
+import { formatDate } from '../../i18n';
+import { StatusBadge } from '../../components/ui';
+import { getErrorMessage } from '../../i18n/errors';
 
 export const MyApplications: React.FC = () => {
+  const { t } = useTranslation('influencer');
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -55,12 +59,12 @@ export const MyApplications: React.FC = () => {
     mutationFn: (applicationId: string) => applicationsService.withdrawApplication(applicationId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myApplications', user?.id] });
-      toast({ title: 'Application Withdrawn', status: 'info' });
+      toast({ title: t('applications.toast.withdrawn'), status: 'info' });
       onClose();
       setApplicationToWithdraw(null); // Clear selection after withdrawal
     },
     onError: (err) => {
-      toast({ title: 'Error withdrawing application', description: (err as Error).message, status: 'error' });
+      toast({ title: t('applications.toast.withdrawError'), description: getErrorMessage(err), status: 'error' });
       onClose();
     },
   });
@@ -86,15 +90,6 @@ export const MyApplications: React.FC = () => {
     navigate(`/influencer/profile/${brandUserId}`);
   };
 
-  const renderApplicationStatusBadge = (status: string) => {
-    let colorScheme = 'gray';
-    if (status === 'accepted') colorScheme = 'green';
-    if (status === 'pending') colorScheme = 'yellow';
-    if (status === 'rejected') colorScheme = 'red';
-    if (status === 'withdrawn') colorScheme = 'purple';
-    return <Badge colorScheme={colorScheme}>{status}</Badge>;
-  };
-
   const renderApplicationCard = (application: Application) => (
     <Card key={application.id} variant="outline">
       <CardHeader pb={2}>
@@ -104,20 +99,20 @@ export const MyApplications: React.FC = () => {
               {application.order.title}
             </ChakraLink>
           </Heading>
-          {renderApplicationStatusBadge(application.status)}
+          <StatusBadge status={application.status} />
         </HStack>
       </CardHeader>
       <CardBody py={2}>
         <VStack align="start" spacing={1}>
           <Text fontSize="sm">
-            Brand:
+            {t('applications.card.brand')}
             <ChakraLink ml={1} color="brand.500" onClick={() => application.order.brand?.user?.id && handleViewBrand(application.order.brand.user.id)}>
-              {application.order.brand?.displayName || 'Brand Name Missing'} <IconWrapper icon={FiExternalLink} />
+              {application.order.brand?.displayName || t('shared.brandNameMissing')} <IconWrapper icon={FiExternalLink} />
             </ChakraLink>
           </Text>
-          <Text fontSize="sm">Category: {application.order.category}</Text>
-          <Text fontSize="sm">Applied on: {new Date(application.createdAt).toLocaleDateString()}</Text>
-          {application.message && <Text fontSize="sm" mt={2} fontStyle="italic">Your message: "{application.message}"</Text>}
+          <Text fontSize="sm">{t('applications.card.category', { category: application.order.category })}</Text>
+          <Text fontSize="sm">{t('applications.card.appliedOn', { date: formatDate(application.createdAt) })}</Text>
+          {application.message && <Text fontSize="sm" mt={2} fontStyle="italic">{t('shared.yourMessage', { message: application.message })}</Text>}
         </VStack>
       </CardBody>
       <CardFooter pt={2}>
@@ -129,14 +124,14 @@ export const MyApplications: React.FC = () => {
             onClick={() => handleViewOrder(application.order.id)}
             // isDisabled // Enable button
           >
-            View Order
+            {t('applications.card.viewOrder')}
           </Button>
           {application.status === 'pending' && (
             <IconButtonWithWrapper
               icon={FiTrash2}
               size="sm"
               colorScheme="red"
-              aria-label="Withdraw Application"
+              aria-label={t('applications.card.withdraw')}
               onClick={() => handleWithdrawClick(application)}
               isLoading={withdrawMutation.isPending && applicationToWithdraw?.id === application.id}
             />
@@ -147,10 +142,10 @@ export const MyApplications: React.FC = () => {
   );
 
   if (isLoading) return <Center p={10}><Spinner /></Center>;
-  if (error) return <Center p={10}><Text color="red.500">Error loading applications: {error.message}</Text></Center>;
+  if (error) return <Center p={10}><Text color="red.500">{t('applications.loadError', { message: getErrorMessage(error) })}</Text></Center>;
   // Now explicitly check if applications is defined *before* rendering tabs
   // This handles the case where the query finishes but returns undefined/null
-  if (!applications) return <Center p={10}><Text>No applications found.</Text></Center>; 
+  if (!applications) return <Center p={10}><Text>{t('applications.empty.all')}</Text></Center>; 
 
 
   // Filter applications *once* after loading and error checks
@@ -161,15 +156,15 @@ export const MyApplications: React.FC = () => {
 
   return (
     <Box p={4}>
-      <Heading mb={6}>My Applications</Heading>
+      <Heading mb={6}>{t('applications.title')}</Heading>
 
       <Tabs variant="soft-rounded" colorScheme="brand">
         <TabList mb={4} flexWrap="wrap">
-          <Tab>All ({applications.length})</Tab>
-          <Tab>Pending ({pendingApplications.length})</Tab>
-          <Tab>Accepted ({acceptedApplications.length})</Tab>
-          <Tab>Rejected ({rejectedApplications.length})</Tab>
-          <Tab>Withdrawn ({withdrawnApplications.length})</Tab>
+          <Tab>{t('applications.tabs.all', { count: applications.length })}</Tab>
+          <Tab>{t('applications.tabs.pending', { count: pendingApplications.length })}</Tab>
+          <Tab>{t('applications.tabs.accepted', { count: acceptedApplications.length })}</Tab>
+          <Tab>{t('applications.tabs.rejected', { count: rejectedApplications.length })}</Tab>
+          <Tab>{t('applications.tabs.withdrawn', { count: withdrawnApplications.length })}</Tab>
         </TabList>
 
         <TabPanels>
@@ -181,9 +176,9 @@ export const MyApplications: React.FC = () => {
               </SimpleGrid>
             ) : (
               <Box textAlign="center" p={8}>
-                <Text fontSize="xl">No applications found.</Text>
-                <Text color="gray.500">Apply to orders that match your profile!</Text>
-                <Button mt={4} colorScheme="brand" as={RouterLink} to="/influencer/orders">Browse Orders</Button>
+                <Text fontSize="xl">{t('applications.empty.all')}</Text>
+                <Text color="gray.500">{t('applications.empty.allHint')}</Text>
+                <Button mt={4} colorScheme="brand" as={RouterLink} to="/influencer/orders">{t('applications.empty.browseOrders')}</Button>
               </Box>
             )}
           </TabPanel>
@@ -196,8 +191,8 @@ export const MyApplications: React.FC = () => {
               </SimpleGrid>
             ) : (
               <Box textAlign="center" p={8}>
-                <Text fontSize="xl">No pending applications.</Text>
-                <Text color="gray.500">Your active applications will appear here.</Text>
+                <Text fontSize="xl">{t('applications.empty.pending')}</Text>
+                <Text color="gray.500">{t('applications.empty.pendingHint')}</Text>
               </Box>
             )}
           </TabPanel>
@@ -210,8 +205,8 @@ export const MyApplications: React.FC = () => {
               </SimpleGrid>
             ) : (
               <Box textAlign="center" p={8}>
-                <Text fontSize="xl">No accepted applications yet.</Text>
-                <Text color="gray.500">Accepted collaborations will show up here.</Text>
+                <Text fontSize="xl">{t('applications.empty.accepted')}</Text>
+                <Text color="gray.500">{t('applications.empty.acceptedHint')}</Text>
               </Box>
             )}
           </TabPanel>
@@ -224,7 +219,7 @@ export const MyApplications: React.FC = () => {
               </SimpleGrid>
             ) : (
               <Box textAlign="center" p={8}>
-                <Text fontSize="xl">No rejected applications.</Text>
+                <Text fontSize="xl">{t('applications.empty.rejected')}</Text>
               </Box>
             )}
           </TabPanel>
@@ -237,7 +232,7 @@ export const MyApplications: React.FC = () => {
               </SimpleGrid>
             ) : (
               <Box textAlign="center" p={8}>
-                <Text fontSize="xl">No withdrawn applications.</Text>
+                <Text fontSize="xl">{t('applications.empty.withdrawn')}</Text>
               </Box>
             )}
           </TabPanel>
@@ -253,19 +248,19 @@ export const MyApplications: React.FC = () => {
         <AlertDialogOverlay>
           <AlertDialogContent>
             <AlertDialogHeader fontSize="lg" fontWeight="bold">
-              Withdraw Application
+              {t('applications.withdrawDialog.title')}
             </AlertDialogHeader>
 
             <AlertDialogBody>
-              Are you sure you want to withdraw your application for "{applicationToWithdraw?.order?.title}"?
+              {t('applications.withdrawDialog.body', { title: applicationToWithdraw?.order?.title })}
             </AlertDialogBody>
 
             <AlertDialogFooter>
               <Button ref={cancelRef} onClick={onClose}>
-                Cancel
+                {t('common:actions.cancel')}
               </Button>
               <Button colorScheme="red" onClick={confirmWithdraw} ml={3} isLoading={withdrawMutation.isPending}>
-                Withdraw
+                {t('applications.withdrawDialog.confirm')}
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>

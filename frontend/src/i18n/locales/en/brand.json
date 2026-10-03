@@ -1,0 +1,133 @@
+{
+  "notAvailable": "N/A",
+  "categories": {
+    "fashion": "Fashion",
+    "beauty": "Beauty",
+    "lifestyle": "Lifestyle",
+    "technology": "Technology",
+    "tech": "Technology",
+    "fitness": "Fitness",
+    "food": "Food & Beverage",
+    "travel": "Travel",
+    "gaming": "Gaming",
+    "education": "Education",
+    "music": "Music",
+    "business": "Business",
+    "health": "Health"
+  },
+  "dashboard": {
+    "title": "Brand dashboard",
+    "subtitle": "Campaign performance at a glance",
+    "errors": {
+      "loadInfluencers": "Couldn't load influencers",
+      "loadCategories": "Couldn't load categories",
+      "loadStats": "Failed to load statistics"
+    },
+    "filters": {
+      "title": "Filter data",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "influencer": "Influencer",
+      "allInfluencers": "All influencers",
+      "category": "Category",
+      "allCategories": "All categories",
+      "reset": "Reset"
+    },
+    "overview": {
+      "title": "Overview",
+      "ordersCreated": "Orders created",
+      "activeOrders": "Active orders",
+      "activeOrdersHelp": "Open: {{open}} · In progress: {{inProgress}}",
+      "applicationsReceived": "Applications received",
+      "applicationsHelp": "Pending: {{pending}} · Accepted: {{accepted}}",
+      "activeCollaborations": "Active collaborations",
+      "collaborationsHelp": "Completed: {{completed}}"
+    },
+    "performance": {
+      "title": "Performance metrics",
+      "totalClicks": "Total clicks",
+      "totalImpressions": "Total impressions",
+      "avgEngagement": "Avg. engagement rate"
+    },
+    "details": {
+      "title": "Details",
+      "overTime": "Performance over time",
+      "noDailyData": "No daily data available to display the chart.",
+      "byCategory": "Engagement by category",
+      "noCampaignData": "No campaign data available.",
+      "campaigns": "Campaign performance"
+    },
+    "table": {
+      "campaign": "Campaign",
+      "category": "Category",
+      "influencer": "Influencer",
+      "clicks": "Clicks",
+      "impressions": "Impressions",
+      "engagement": "Engagement",
+      "status": "Status",
+      "startDate": "Start date",
+      "endDate": "End date"
+    },
+    "empty": {
+      "title": "No campaign data yet",
+      "description": "Performance will appear here once your collaborations report stats."
+    }
+  },
+  "orders": {
+    "loadingUser": "Loading user information…",
+    "loadError": "Error loading orders: {{message}}",
+    "title": "My orders",
+    "createNew": "Create new order",
+    "budget": "Budget: {{amount}}",
+    "newApplications_one": "{{count}} new",
+    "newApplications_other": "{{count}} new",
+    "viewApplicants": "View applicants",
+    "empty": "You haven't created any orders yet.",
+    "applicants": {
+      "title": "Applicants for “{{title}}”",
+      "empty": "No applicants yet.",
+      "unknown": "Unknown applicant",
+      "proposed": "Proposed: {{amount}}",
+      "message": "“{{message}}”",
+      "accept": "Accept",
+      "reject": "Reject",
+      "viewProfile": "View profile"
+    },
+    "toasts": {
+      "accepted": "Application accepted",
+      "rejected": "Application rejected",
+      "acceptError": "Couldn't accept the application",
+      "rejectError": "Couldn't reject the application"
+    }
+  },
+  "createOrder": {
+    "title": "Create new order",
+    "fields": {
+      "title": "Title",
+      "titlePlaceholder": "Enter the order title",
+      "description": "Description",
+      "descriptionPlaceholder": "Describe your order in detail",
+      "budget": "Budget (₸)",
+      "category": "Category",
+      "categoryPlaceholder": "Select a category",
+      "requirements": "Requirements",
+      "requirementsPlaceholder": "List your specific requirements",
+      "deadline": "Deadline"
+    },
+    "submit": "Create order",
+    "toasts": {
+      "successTitle": "Order created",
+      "successDescription": "Your order has been created successfully",
+      "errorFallback": "Failed to create order"
+    }
+  },
+  "influencerList": {
+    "title": "Influencers",
+    "loading": "Loading influencers…",
+    "loadError": "Failed to load influencers",
+    "searchPlaceholder": "Search influencers…",
+    "categoryPlaceholder": "Filter by category",
+    "followers": "Followers: {{followers}}",
+    "noBio": "No bio available."
+  }
+}

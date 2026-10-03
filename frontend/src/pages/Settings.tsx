@@ -8,25 +8,29 @@ import {
   FormLabel,
   Button,
   Switch,
+  Text,
   useToast,
   Divider,
   Select,
 } from '@chakra-ui/react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import { getErrorMessage } from '../i18n/errors';
 
 const SETTINGS_STORAGE_KEY = 'adpartners.userSettings';
 
+// The UI language is not part of these settings: LanguageSwitcher stores it
+// under its own key (see i18n/index.ts).
 interface LocalSettings {
   emailNotifications: boolean;
   pushNotifications: boolean;
-  language: string;
   timezone: string;
 }
 
 const DEFAULT_SETTINGS: LocalSettings = {
   emailNotifications: true,
   pushNotifications: true,
-  language: 'en',
   timezone: 'UTC',
 };
 
@@ -41,6 +45,7 @@ const loadSettings = (): LocalSettings => {
 };
 
 export const Settings: React.FC = () => {
+  const { t } = useTranslation('settings');
   const { logout, deleteAccount } = useAuth();
   const toast = useToast();
   const [isSaving, setIsSaving] = React.useState(false);
@@ -50,25 +55,24 @@ export const Settings: React.FC = () => {
     e.preventDefault();
     setIsSaving(true);
     const formData = new FormData(e.target as HTMLFormElement);
+    // Chakra's Switch submits an empty value when on, so check presence.
     const data: LocalSettings = {
-      emailNotifications: formData.get('emailNotifications') === 'on',
-      pushNotifications: formData.get('pushNotifications') === 'on',
-      language: String(formData.get('language') ?? 'en'),
+      emailNotifications: formData.has('emailNotifications'),
+      pushNotifications: formData.has('pushNotifications'),
       timezone: String(formData.get('timezone') ?? 'UTC'),
     };
     try {
       localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(data));
       toast({
-        title: 'Preferences saved',
-        description: 'Stored locally on this device.',
+        title: t('toast.saved.title'),
+        description: t('toast.saved.description'),
         status: 'success',
         duration: 3000,
         isClosable: true,
       });
-    } catch (error: any) {
+    } catch {
       toast({
-        title: 'Could not save preferences',
-        description: error?.message,
+        title: t('toast.saveFailed'),
         status: 'error',
         duration: 3000,
         isClosable: true,
@@ -79,20 +83,20 @@ export const Settings: React.FC = () => {
   };
 
   const handleDeleteAccount = async () => {
-    if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+    if (window.confirm(t('deleteConfirm'))) {
       try {
         await deleteAccount();
         toast({
-          title: 'Account deleted',
-          description: 'Your account has been successfully deleted.',
+          title: t('toast.deleted.title'),
+          description: t('toast.deleted.description'),
           status: 'success',
           duration: 5000,
           isClosable: true,
         });
-      } catch (error: any) {
+      } catch (error) {
         toast({
-          title: 'Deletion failed',
-          description: error.message || 'Could not delete your account.',
+          title: t('toast.deleteFailed'),
+          description: getErrorMessage(error),
           status: 'error',
           duration: 5000,
           isClosable: true,
@@ -104,19 +108,19 @@ export const Settings: React.FC = () => {
   return (
     <Container maxW="container.md" py={8}>
       <VStack spacing={6} align="stretch">
-        <Heading size="lg">Settings</Heading>
-        
+        <Heading size="lg">{t('title')}</Heading>
+
         <form onSubmit={handleSubmit}>
           <VStack spacing={6} align="stretch">
             <Box>
-              <Heading size="md" mb={4}>Notifications</Heading>
+              <Heading size="md" mb={4}>{t('notifications.title')}</Heading>
               <VStack spacing={4} align="stretch">
                 <FormControl display="flex" alignItems="center">
-                  <FormLabel mb="0">Email Notifications</FormLabel>
+                  <FormLabel mb="0">{t('notifications.email')}</FormLabel>
                   <Switch name="emailNotifications" defaultChecked={initialSettings.emailNotifications} />
                 </FormControl>
                 <FormControl display="flex" alignItems="center">
-                  <FormLabel mb="0">Push Notifications</FormLabel>
+                  <FormLabel mb="0">{t('notifications.push')}</FormLabel>
                   <Switch name="pushNotifications" defaultChecked={initialSettings.pushNotifications} />
                 </FormControl>
               </VStack>
@@ -125,18 +129,15 @@ export const Settings: React.FC = () => {
             <Divider />
 
             <Box>
-              <Heading size="md" mb={4}>Preferences</Heading>
+              <Heading size="md" mb={4}>{t('preferences.title')}</Heading>
               <VStack spacing={4} align="stretch">
+                {/* Applies immediately; not saved with the form. */}
+                <Box>
+                  <Text fontWeight="medium" mb={2}>{t('common:language.label')}</Text>
+                  <LanguageSwitcher size="sm" />
+                </Box>
                 <FormControl>
-                  <FormLabel>Language</FormLabel>
-                  <Select name="language" defaultValue={initialSettings.language}>
-                    <option value="en">English</option>
-                    <option value="ru">Russian</option>
-                    <option value="kk">Kazakh</option>
-                  </Select>
-                </FormControl>
-                <FormControl>
-                  <FormLabel>Timezone</FormLabel>
+                  <FormLabel>{t('preferences.timezone')}</FormLabel>
                   <Select name="timezone" defaultValue={initialSettings.timezone}>
                     <option value="UTC">UTC</option>
                     <option value="Asia/Almaty">Asia/Almaty</option>
@@ -151,21 +152,21 @@ export const Settings: React.FC = () => {
               type="submit"
               colorScheme="brand"
               isLoading={isSaving}
-              loadingText="Saving..."
+              loadingText={t('saving')}
             >
-              Save Changes
+              {t('save')}
             </Button>
           </VStack>
         </form>
 
         <Button colorScheme="red" onClick={handleDeleteAccount}>
-          Delete Account
+          {t('deleteAccount')}
         </Button>
 
         <Button onClick={logout}>
-          Logout
+          {t('common:actions.logout')}
         </Button>
       </VStack>
     </Container>
   );
-}; 
+};

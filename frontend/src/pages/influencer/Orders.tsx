@@ -33,6 +33,10 @@ import api from '../../services/api';
 import { Order } from '../../services/orders';
 import { Application, applicationsService } from '../../services/applications';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
+import { formatDate, formatMoney } from '../../i18n';
+import { StatusBadge } from '../../components/ui';
+import { getErrorMessage } from '../../i18n/errors';
 
 interface FilterState {
   category: string;
@@ -46,6 +50,7 @@ interface ApplicationFormData {
 }
 
 export const Orders: React.FC = () => {
+  const { t } = useTranslation('influencer');
   const toast = useToast();
   const queryClient = useQueryClient();
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -98,8 +103,8 @@ export const Orders: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myApplications'] });
       toast({
-        title: 'Application submitted',
-        description: 'Your application has been sent to the brand',
+        title: t('orders.toast.submittedTitle'),
+        description: t('orders.toast.submittedDescription'),
         status: 'success',
         duration: 3000,
         isClosable: true,
@@ -107,11 +112,11 @@ export const Orders: React.FC = () => {
       onClose();
       resetForm();
     },
-    onError: (error: any) => {
+    onError: (error) => {
       console.error('Mutation error handler:', error);
       toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Failed to submit application',
+        title: t('common:state.error'),
+        description: getErrorMessage(error, t('orders.toast.submitError')),
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -167,30 +172,30 @@ export const Orders: React.FC = () => {
   return (
     <Box p={8}>
       <VStack spacing={8} align="stretch">
-        <Heading size="lg">Available Orders</Heading>
+        <Heading size="lg">{t('orders.title')}</Heading>
 
         {/* Filters */}
         <Card>
           <CardBody>
             <Stack spacing={4} direction={{ base: 'column', md: 'row' }}>
               <FormControl>
-                <FormLabel>Category</FormLabel>
+                <FormLabel>{t('orders.filters.category')}</FormLabel>
                 <Select
-                  placeholder="All categories"
+                  placeholder={t('orders.filters.allCategories')}
                   value={filters.category}
                   onChange={(e) => setFilters({ ...filters, category: e.target.value })}
                 >
-                  <option value="fashion">Fashion</option>
-                  <option value="beauty">Beauty</option>
-                  <option value="technology">Technology</option>
-                  <option value="food">Food & Beverage</option>
-                  <option value="lifestyle">Lifestyle</option>
-                  <option value="travel">Travel</option>
+                  <option value="fashion">{t('categories.fashion')}</option>
+                  <option value="beauty">{t('categories.beauty')}</option>
+                  <option value="technology">{t('categories.technology')}</option>
+                  <option value="food">{t('categories.foodBeverage')}</option>
+                  <option value="lifestyle">{t('categories.lifestyle')}</option>
+                  <option value="travel">{t('categories.travel')}</option>
                 </Select>
               </FormControl>
 
               <FormControl>
-                <FormLabel>Min Budget</FormLabel>
+                <FormLabel>{t('orders.filters.minBudget')}</FormLabel>
                 <Input
                   type="number"
                   value={filters.minBudget}
@@ -199,7 +204,7 @@ export const Orders: React.FC = () => {
               </FormControl>
 
               <FormControl>
-                <FormLabel>Max Budget</FormLabel>
+                <FormLabel>{t('orders.filters.maxBudget')}</FormLabel>
                 <Input
                   type="number"
                   value={filters.maxBudget}
@@ -212,7 +217,7 @@ export const Orders: React.FC = () => {
 
         {/* Orders Grid */}
         {isLoadingOrders ? (
-          <Text>Loading orders...</Text>
+          <Text>{t('orders.loading')}</Text>
         ) : orders?.length ? (
           <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
             {orders.map((order: Order) => {
@@ -225,9 +230,7 @@ export const Orders: React.FC = () => {
                       <Heading size="md">{order.title}</Heading>
                       <HStack>
                         <Badge colorScheme="brand">{order.category}</Badge>
-                        <Badge colorScheme={order.status === 'open' ? 'green' : 'orange'}>
-                          {order.status}
-                        </Badge>
+                        <StatusBadge status={order.status} />
                       </HStack>
                     </VStack>
                   </CardHeader>
@@ -236,16 +239,16 @@ export const Orders: React.FC = () => {
                     <VStack align="stretch" spacing={4}>
                       <Text noOfLines={3}>{order.description}</Text>
                       <HStack justify="space-between">
-                        <Text fontWeight="bold">Budget:</Text>
-                        <Text>${order.budget.toLocaleString()}</Text>
+                        <Text fontWeight="bold">{t('orders.card.budget')}</Text>
+                        <Text>{formatMoney(order.budget)}</Text>
                       </HStack>
                       <HStack justify="space-between">
-                        <Text fontWeight="bold">Deadline:</Text>
-                        <Text>{order.deadline ? new Date(order.deadline).toLocaleDateString() : 'N/A'}</Text>
+                        <Text fontWeight="bold">{t('orders.card.deadline')}</Text>
+                        <Text>{order.deadline ? formatDate(order.deadline) : t('shared.notAvailable')}</Text>
                       </HStack>
                       <HStack justify="space-between">
-                        <Text>Brand:</Text>
-                        <Text fontWeight="medium">{order.brand?.displayName || 'N/A'}</Text>
+                        <Text>{t('orders.card.brand')}</Text>
+                        <Text fontWeight="medium">{order.brand?.displayName || t('shared.notAvailable')}</Text>
                       </HStack>
                     </VStack>
                   </CardBody>
@@ -260,11 +263,13 @@ export const Orders: React.FC = () => {
                                        'purple'} 
                           textAlign="center"
                         >
-                          Applied ({myApplication.status})
+                          {t('orders.card.applied', {
+                            status: t(`common:status.${myApplication.status}`, { defaultValue: myApplication.status }),
+                          })}
                         </Badge>
                         {myApplication.message && (
                           <Text fontSize="xs" fontStyle="italic" noOfLines={1} title={myApplication.message}>
-                             Your message: "{myApplication.message}"
+                            {t('shared.yourMessage', { message: myApplication.message })}
                           </Text>
                         )}
                       </VStack>
@@ -275,7 +280,7 @@ export const Orders: React.FC = () => {
                         onClick={() => handleOpenApplicationForm(order)}
                         isDisabled={order.status !== 'open'}
                       >
-                        Apply Now
+                        {t('orders.card.applyNow')}
                       </Button>
                     )}
                   </CardFooter>
@@ -284,29 +289,29 @@ export const Orders: React.FC = () => {
             })}
           </SimpleGrid>
         ) : (
-          <Text>No orders available matching your filters.</Text>
+          <Text>{t('orders.empty')}</Text>
         )}
 
         {/* Application Form Modal */}
         <Modal isOpen={isOpen} onClose={onClose}>
           <ModalOverlay />
           <ModalContent>
-            <ModalHeader>Apply for {selectedOrder?.title}</ModalHeader>
+            <ModalHeader>{t('orders.applyModal.title', { title: selectedOrder?.title })}</ModalHeader>
             <ModalCloseButton />
             <ModalBody>
               <VStack spacing={4}>
                 <FormControl isRequired>
-                  <FormLabel>Your Message to the Brand</FormLabel>
+                  <FormLabel>{t('orders.applyModal.messageLabel')}</FormLabel>
                   <Textarea
                     name="message"
                     value={applicationForm.message}
                     onChange={handleInputChange}
-                    placeholder="Explain why you're a good fit for this order and what you can offer..."
+                    placeholder={t('orders.applyModal.messagePlaceholder')}
                     rows={5}
                   />
                 </FormControl>
                 <FormControl isRequired>
-                  <FormLabel>Your Proposed Price ($)</FormLabel>
+                  <FormLabel>{t('orders.applyModal.priceLabel')}</FormLabel>
                   <Input
                     name="proposedPrice"
                     type="number"
@@ -314,14 +319,14 @@ export const Orders: React.FC = () => {
                     onChange={handleInputChange}
                   />
                   <Text fontSize="sm" color="gray.500" mt={1}>
-                    Original budget: ${selectedOrder?.budget.toLocaleString()}
+                    {t('orders.applyModal.originalBudget', { amount: formatMoney(selectedOrder?.budget ?? 0) })}
                   </Text>
                 </FormControl>
               </VStack>
             </ModalBody>
             <ModalFooter>
               <Button variant="ghost" mr={3} onClick={onClose}>
-                Cancel
+                {t('common:actions.cancel')}
               </Button>
               <Button 
                 colorScheme="brand" 
@@ -329,7 +334,7 @@ export const Orders: React.FC = () => {
                 isLoading={submitApplicationMutation.isPending}
                 isDisabled={!applicationForm.message}
               >
-                Submit Application
+                {t('orders.applyModal.submit')}
               </Button>
             </ModalFooter>
           </ModalContent>

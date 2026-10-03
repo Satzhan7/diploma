@@ -5,6 +5,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { HttpErrorFilter } from './common/errors/http-error.filter';
 
 async function bootstrap() {
   const isProduction = process.env.NODE_ENV === 'production';
@@ -52,6 +53,10 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  // Errors leave as { statusCode, code, message }; the frontend translates
+  // `code`. 5xx details stay in the server log.
+  app.useGlobalFilters(new HttpErrorFilter());
 
   // Enable global interceptor for handling circular references
   app.useGlobalInterceptors(new TransformInterceptor());

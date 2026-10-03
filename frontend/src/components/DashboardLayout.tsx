@@ -18,6 +18,7 @@ import {
   useColorMode,
 } from '@chakra-ui/react';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { IconType } from 'react-icons';
 import {
   FiHome,
@@ -38,6 +39,7 @@ import { UserRole } from '../types/user';
 import { useAuth } from '../contexts/AuthContext';
 import { IconWrapper } from './IconWrapper';
 import Logo from './Logo';
+import LanguageSwitcher from './LanguageSwitcher';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -45,6 +47,7 @@ interface DashboardLayoutProps {
 }
 
 interface NavItem {
+  /** Key in the common namespace. */
   label: string;
   icon: IconType;
   pathSuffix: string;
@@ -52,6 +55,7 @@ interface NavItem {
 }
 
 interface NavGroup {
+  /** Key in the common namespace. */
   label?: string;
   items: NavItem[];
 }
@@ -61,34 +65,34 @@ const BOTH = [UserRole.BRAND, UserRole.INFLUENCER];
 // Grouped IA — see docs/PRODUCT_STRUCTURE.md.
 const navGroups: NavGroup[] = [
   {
-    items: [{ label: 'Dashboard', icon: FiHome, pathSuffix: 'dashboard', roles: BOTH }],
+    items: [{ label: 'nav.dashboard', icon: FiHome, pathSuffix: 'dashboard', roles: BOTH }],
   },
   {
-    label: 'Work',
+    label: 'nav.groups.work',
     items: [
-      { label: 'Orders', icon: FiList, pathSuffix: 'orders', roles: BOTH },
-      { label: 'Create Order', icon: FiFilePlus, pathSuffix: 'orders/create', roles: [UserRole.BRAND] },
-      { label: 'My Applications', icon: FiAward, pathSuffix: 'applications', roles: [UserRole.INFLUENCER] },
-      { label: 'Matches', icon: FiAward, pathSuffix: 'matches', roles: BOTH },
+      { label: 'nav.orders', icon: FiList, pathSuffix: 'orders', roles: BOTH },
+      { label: 'nav.createOrder', icon: FiFilePlus, pathSuffix: 'orders/create', roles: [UserRole.BRAND] },
+      { label: 'nav.myApplications', icon: FiAward, pathSuffix: 'applications', roles: [UserRole.INFLUENCER] },
+      { label: 'nav.matches', icon: FiAward, pathSuffix: 'matches', roles: BOTH },
     ],
   },
   {
-    label: 'Discover',
+    label: 'nav.groups.discover',
     items: [
-      { label: 'Influencers', icon: FiUsers, pathSuffix: 'influencers', roles: [UserRole.BRAND] },
-      { label: 'Brands', icon: FiUsers, pathSuffix: 'brands', roles: [UserRole.INFLUENCER] },
-      { label: 'Recommendations', icon: FiZap, pathSuffix: 'recommendations', roles: [UserRole.INFLUENCER] },
+      { label: 'nav.influencers', icon: FiUsers, pathSuffix: 'influencers', roles: [UserRole.BRAND] },
+      { label: 'nav.brands', icon: FiUsers, pathSuffix: 'brands', roles: [UserRole.INFLUENCER] },
+      { label: 'nav.recommendations', icon: FiZap, pathSuffix: 'recommendations', roles: [UserRole.INFLUENCER] },
     ],
   },
   {
-    label: 'Communication',
-    items: [{ label: 'Messages', icon: FiMessageSquare, pathSuffix: 'messages', roles: BOTH }],
+    label: 'nav.groups.communication',
+    items: [{ label: 'nav.messages', icon: FiMessageSquare, pathSuffix: 'messages', roles: BOTH }],
   },
   {
-    label: 'Account',
+    label: 'nav.groups.account',
     items: [
-      { label: 'Profile', icon: FiUser, pathSuffix: 'profile', roles: BOTH },
-      { label: 'Settings', icon: FiSettings, pathSuffix: 'settings', roles: BOTH },
+      { label: 'nav.profile', icon: FiUser, pathSuffix: 'profile', roles: BOTH },
+      { label: 'nav.settings', icon: FiSettings, pathSuffix: 'settings', roles: BOTH },
     ],
   },
 ];
@@ -105,6 +109,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ role, onNavigate }) => 
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { colorMode, toggleColorMode } = useColorMode();
+  const { t } = useTranslation();
 
   const basePath = role === UserRole.BRAND ? '/brand' : role === UserRole.INFLUENCER ? '/influencer' : '/';
 
@@ -128,7 +133,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ role, onNavigate }) => 
         <Logo />
       </Box>
 
-      <VStack as="nav" aria-label="Main navigation" spacing={5} align="stretch" px={3} flex={1} overflowY="auto">
+      <VStack as="nav" aria-label={t('nav.main')} spacing={5} align="stretch" px={3} flex={1} overflowY="auto">
         {navGroups.map((group, groupIndex) => {
           const items = group.items.filter((item) => role && item.roles.includes(role));
           if (items.length === 0) return null;
@@ -145,7 +150,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ role, onNavigate }) => 
                   px={3}
                   mb={2}
                 >
-                  {group.label}
+                  {t(group.label)}
                 </Text>
               )}
               <VStack spacing={1} align="stretch">
@@ -174,7 +179,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ role, onNavigate }) => 
                       aria-current={isActive ? 'page' : undefined}
                     >
                       <IconWrapper icon={item.icon} size="1.25em" />
-                      <Text ml={3}>{item.label}</Text>
+                      <Text ml={3}>{t(item.label)}</Text>
                     </Link>
                   );
                 })}
@@ -186,6 +191,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ role, onNavigate }) => 
 
       <Box px={3} py={4}>
         <Divider mb={4} borderColor="border.default" />
+        <LanguageSwitcher mb={4} />
         <HStack spacing={3}>
           <Avatar size="sm" name={user?.name} />
           <Box flex={1} minW={0}>
@@ -196,9 +202,9 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ role, onNavigate }) => 
               {user?.email}
             </Text>
           </Box>
-          <Tooltip label={colorMode === 'light' ? 'Dark mode' : 'Light mode'}>
+          <Tooltip label={colorMode === 'light' ? t('theme.dark') : t('theme.light')}>
             <IconButton
-              aria-label={colorMode === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+              aria-label={colorMode === 'light' ? t('theme.switchToDark') : t('theme.switchToLight')}
               icon={<IconWrapper icon={colorMode === 'light' ? FiMoon : FiSun} size="1em" />}
               size="sm"
               variant="ghost"
@@ -206,9 +212,9 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ role, onNavigate }) => 
               onClick={toggleColorMode}
             />
           </Tooltip>
-          <Tooltip label="Log out">
+          <Tooltip label={t('actions.logout')}>
             <IconButton
-              aria-label="Log out"
+              aria-label={t('actions.logout')}
               icon={<IconWrapper icon={FiLogOut} size="1em" />}
               size="sm"
               variant="ghost"
@@ -224,6 +230,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ role, onNavigate }) => 
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { t } = useTranslation();
 
   return (
     <Flex minH="100vh" bg="bg.canvas">
@@ -258,7 +265,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => 
         zIndex="sticky"
       >
         <IconButton
-          aria-label="Open navigation menu"
+          aria-label={t('nav.openMenu')}
           icon={<IconWrapper icon={FiMenu} size="1.25em" />}
           variant="ghost"
           colorScheme="gray"

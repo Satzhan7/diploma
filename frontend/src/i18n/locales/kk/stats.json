@@ -1,0 +1,11 @@
+{
+  "metrics": {
+    "clicks": "Басулар",
+    "impressions": "Көрсетілімдер",
+    "engagementRate": "Қатысу деңгейі",
+    "followerGrowth": "Жазылушылар өсімі"
+  },
+  "axis": {
+    "thousands": "{{value}} мың"
+  }
+}

@@ -1,0 +1,176 @@
+{
+  "shared": {
+    "notAvailable": "—",
+    "brandNameMissing": "Бренд атауы көрсетілмеген",
+    "yourMessage": "Сіздің хабарламаңыз: «{{message}}»",
+    "searchBrands": "Брендтерді іздеу..."
+  },
+  "categories": {
+    "fashion": "Сән",
+    "beauty": "Сұлулық",
+    "technology": "Технология",
+    "food": "Тамақ",
+    "foodBeverage": "Тамақ және сусындар",
+    "lifestyle": "Өмір салты",
+    "travel": "Саяхат"
+  },
+  "dashboard": {
+    "title": "Менің статистикам",
+    "subtitle": "Өтінімдеріңіз бен ынтымақтастық нәтижелері",
+    "errors": {
+      "brands": "Брендтерді жүктеу мүмкін болмады",
+      "categories": "Санаттарды жүктеу мүмкін болмады",
+      "stats": "Статистиканы жүктеу мүмкін болмады"
+    },
+    "filters": {
+      "title": "Сүзгілер",
+      "startDate": "Басталу күні",
+      "endDate": "Аяқталу күні",
+      "brand": "Бренд",
+      "allBrands": "Барлық брендтер",
+      "category": "Санат",
+      "allCategories": "Барлық санаттар",
+      "reset": "Тазалау"
+    },
+    "overview": {
+      "title": "Шолу",
+      "applicationsSent": "Жіберілген өтінімдер",
+      "activeApplications": "Белсенді өтінімдер",
+      "acceptedRejected": "Қабылданды / Қабылданбады",
+      "withdrawn": "Кері қайтарылды: {{value}}",
+      "collaborations": "Ынтымақтастықтар",
+      "completed": "Аяқталды: {{value}}"
+    },
+    "metrics": {
+      "title": "Тиімділік көрсеткіштері",
+      "totalClicks": "Жалпы басулар",
+      "totalImpressions": "Жалпы көрсетілімдер",
+      "avgEngagementRate": "Орташа тартылым деңгейі",
+      "followerGrowth": "Жазылушылар өсімі"
+    },
+    "details": {
+      "title": "Толығырақ",
+      "performanceOverTime": "Көрсеткіштер динамикасы",
+      "noDailyData": "Графикті құру үшін күндік деректер жоқ.",
+      "impressionsByCategory": "Санаттар бойынша көрсетілімдер",
+      "noCampaignData": "Науқандар бойынша деректер жоқ.",
+      "collaborationPerformance": "Ынтымақтастық нәтижелері",
+      "emptyTitle": "Ынтымақтастық деректері әзірге жоқ",
+      "emptyDescription": "Ынтымақтастықтарыңыз бойынша статистика түскенде, көрсеткіштер осында көрсетіледі."
+    },
+    "table": {
+      "campaign": "Науқан",
+      "category": "Санат",
+      "brand": "Бренд",
+      "clicks": "Басулар",
+      "impressions": "Көрсетілімдер",
+      "engagement": "Тартылым",
+      "status": "Күйі",
+      "startDate": "Басталу күні",
+      "endDate": "Аяқталу күні"
+    }
+  },
+  "orders": {
+    "title": "Қолжетімді тапсырыстар",
+    "filters": {
+      "category": "Санат",
+      "allCategories": "Барлық санаттар",
+      "minBudget": "Ең аз бюджет",
+      "maxBudget": "Ең көп бюджет"
+    },
+    "loading": "Тапсырыстар жүктелуде...",
+    "empty": "Сүзгілеріңізге сәйкес тапсырыстар жоқ.",
+    "card": {
+      "budget": "Бюджет:",
+      "deadline": "Мерзімі:",
+      "brand": "Бренд:",
+      "applied": "Өтінім берілді ({{status}})",
+      "applyNow": "Өтінім беру"
+    },
+    "applyModal": {
+      "title": "«{{title}}» тапсырысына өтінім",
+      "messageLabel": "Брендке хабарламаңыз",
+      "messagePlaceholder": "Бұл тапсырысқа неліктен сәйкес келетініңізді және не ұсына алатыныңызды жазыңыз...",
+      "priceLabel": "Сіз ұсынатын баға (₸)",
+      "originalBudget": "Бастапқы бюджет: {{amount}}",
+      "submit": "Өтінімді жіберу"
+    },
+    "toast": {
+      "submittedTitle": "Өтінім жіберілді",
+      "submittedDescription": "Өтініміңіз брендке жіберілді",
+      "submitError": "Өтінімді жіберу мүмкін болмады"
+    }
+  },
+  "orderDetail": {
+    "title": "Тапсырыс туралы",
+    "loadErrorTitle": "Тапсырысты жүктеу қатесі",
+    "loadError": "Тапсырыс мәліметтерін жүктеу мүмкін болмады.",
+    "notFound": "Тапсырыс табылмады.",
+    "postedBy": "Жариялаған:",
+    "description": "Сипаттама",
+    "budget": "Бюджет",
+    "category": "Санат",
+    "requirements": "Талаптар",
+    "deadline": "Мерзімі"
+  },
+  "applications": {
+    "title": "Менің өтінімдерім",
+    "loadError": "Өтінімдерді жүктеу қатесі: {{message}}",
+    "tabs": {
+      "all": "Барлығы ({{count}})",
+      "pending": "Қаралуда ({{count}})",
+      "accepted": "Қабылданған ({{count}})",
+      "rejected": "Қабылданбаған ({{count}})",
+      "withdrawn": "Кері қайтарылған ({{count}})"
+    },
+    "card": {
+      "brand": "Бренд:",
+      "category": "Санат: {{category}}",
+      "appliedOn": "Өтінім берілген күн: {{date}}",
+      "viewOrder": "Тапсырысты ашу",
+      "withdraw": "Өтінімді кері қайтару"
+    },
+    "empty": {
+      "all": "Әзірге өтінімдер жоқ.",
+      "allHint": "Профиліңізге сәйкес тапсырыстарға өтінім беріңіз!",
+      "browseOrders": "Тапсырыстарды қарау",
+      "pending": "Қаралудағы өтінімдер жоқ.",
+      "pendingHint": "Белсенді өтінімдеріңіз осында көрсетіледі.",
+      "accepted": "Қабылданған өтінімдер әзірге жоқ.",
+      "acceptedHint": "Қабылданған ынтымақтастықтар осында көрсетіледі.",
+      "rejected": "Қабылданбаған өтінімдер жоқ.",
+      "withdrawn": "Кері қайтарылған өтінімдер жоқ."
+    },
+    "withdrawDialog": {
+      "title": "Өтінімді кері қайтару",
+      "body": "«{{title}}» тапсырысына берген өтініміңізді кері қайтаруға сенімдісіз бе?",
+      "confirm": "Кері қайтару"
+    },
+    "toast": {
+      "withdrawn": "Өтінім кері қайтарылды",
+      "withdrawError": "Өтінімді кері қайтару мүмкін болмады"
+    }
+  },
+  "brandList": {
+    "title": "Брендтер",
+    "loadError": "Брендтерді жүктеу қатесі",
+    "loadErrorDescription": "Брендтерді жүктеу мүмкін болмады",
+    "filterByIndustry": "Сала бойынша сүзу",
+    "location": "Орналасқан жері: {{location}}"
+  },
+  "recommendations": {
+    "title": "Ұсынылатын брендтер",
+    "loadError": "Ұсыныстарды жүктеу қатесі: {{message}}",
+    "filterByCategory": "Санат бойынша сүзу",
+    "loading": "Ұсыныстар жүктелуде...",
+    "noDescription": "Сипаттама жоқ",
+    "categories": "Санаттар",
+    "viewProfile": "Профильді ашу",
+    "expressInterest": "Қызығушылық білдіру",
+    "toast": {
+      "interestTitle": "Қызығушылық жіберілді",
+      "interestDescription": "Бренд сіздің ынтымақтастыққа қызығушылығыңыз туралы хабарлама алады",
+      "interestError": "Ынтымақтастыққа қызығушылықты жіберу мүмкін болмады"
+    }
+  }
+}

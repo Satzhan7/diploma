@@ -4,6 +4,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../../users/users.service';
 import { TokenPayload } from '../types/token-payload';
+import { apiError, ErrorCode } from '../../common/errors/error-codes';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -19,11 +20,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: TokenPayload) {
     if (payload.tokenType !== 'access') {
-      throw new UnauthorizedException('Invalid access token');
+      throw new UnauthorizedException(
+        apiError(ErrorCode.AUTH_INVALID_TOKEN, 'Invalid access token'),
+      );
     }
     const user = await this.usersService.findById(payload.sub);
     if (!user) {
-      throw new UnauthorizedException('Invalid access token');
+      throw new UnauthorizedException(
+        apiError(ErrorCode.AUTH_INVALID_TOKEN, 'Invalid access token'),
+      );
     }
     // Minimal claim object only — never the full entity. Spreading the entity
     // here strips class-transformer metadata, which previously leaked the

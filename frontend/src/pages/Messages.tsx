@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Grid,
@@ -23,6 +24,8 @@ import socketService from '../services/socket';
 import { ChevronLeftIcon } from '@chakra-ui/icons';
 import { Conversation, Message } from '../types/chat';
 import { User } from '../types/user';
+import { formatTime } from '../i18n';
+import { getErrorMessage } from '../i18n/errors';
 
 // Helper function to extract user ID safely
 const getUserId = (user: User | { id: string } | undefined): string => {
@@ -38,6 +41,7 @@ const getChatId = (chat: { id: string } | string | undefined): string => {
 };
 
 export const Messages: React.FC = () => {
+  const { t } = useTranslation('messages');
   const { user } = useAuth();
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -78,8 +82,8 @@ export const Messages: React.FC = () => {
       } catch (error) {
         console.error('Failed to connect to socket:', error);
         toast({
-          title: 'Socket Connection Error',
-          description: 'Could not establish real-time connection. Trying again in 5 seconds...',
+          title: t('socketError.title'),
+          description: t('socketError.description'),
           status: 'error',
           duration: 5000,
           isClosable: true,
@@ -96,7 +100,7 @@ export const Messages: React.FC = () => {
       socketService.disconnect();
       setIsSocketConnected(false);
     };
-  }, [toast]);
+  }, [toast, t]);
 
   // Set up socket listeners
   useEffect(() => {
@@ -214,8 +218,8 @@ export const Messages: React.FC = () => {
     } catch (error) {
       console.error('Failed to send message:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to send message. Please try again.',
+        title: t('common:state.error'),
+        description: getErrorMessage(error, t('sendError')),
         status: 'error',
         duration: 3000,
         isClosable: true,
@@ -244,7 +248,7 @@ export const Messages: React.FC = () => {
     return (
       <Center h="60vh">
         <Spinner size="xl" />
-        <Text ml={4}>Loading chats...</Text>
+        <Text ml={4}>{t('loadingChats')}</Text>
       </Center>
     );
   }
@@ -252,7 +256,7 @@ export const Messages: React.FC = () => {
   if (chatsError) {
     return (
       <Center h="60vh">
-        <Text color="red.500">Error loading chats. Please try again later.</Text>
+        <Text color="red.500">{t('chatsLoadError')}</Text>
       </Center>
     );
   }
@@ -276,7 +280,7 @@ export const Messages: React.FC = () => {
         >
           <VStack spacing={0} align="stretch" height="100%" maxH="100%">
             <Box p={4} borderBottomWidth="1px" bg="bg.surface">
-              <Heading size="md">Conversations</Heading>
+              <Heading size="md">{t('title')}</Heading>
             </Box>
             
             <Box overflowY="auto" height="calc(100% - 60px)">
@@ -286,7 +290,7 @@ export const Messages: React.FC = () => {
                 </Center>
               ) : chatsError ? (
                 <Center py={10}>
-                  <Text color="red.500">Failed to load conversations</Text>
+                  <Text color="red.500">{t('conversationsLoadError')}</Text>
                 </Center>
               ) : chats && chats.length > 0 ? (
                 chats.map((chat) => {
@@ -311,14 +315,14 @@ export const Messages: React.FC = () => {
                       borderBottomWidth="1px"
                     >
                       <HStack spacing={3} align="center">
-                        <Avatar size="sm" name={otherUser.name || 'User'} src={otherUser.avatarUrl} />
+                        <Avatar size="sm" name={otherUser.name || t('unknownUser')} src={otherUser.avatarUrl} />
                         <Box flex="1" overflow="hidden">
                           <HStack justify="space-between">
                             <Text fontWeight="bold" isTruncated>
-                              {otherUser.name || 'User'}
+                              {otherUser.name || t('unknownUser')}
                             </Text>
                             {chat.unreadCount > 0 && (
-                              <Badge colorScheme="brand" borderRadius="full">
+                              <Badge colorScheme="brand" borderRadius="full" aria-label={t('unread', { count: chat.unreadCount })}>
                                 {chat.unreadCount}
                               </Badge>
                             )}
@@ -335,7 +339,7 @@ export const Messages: React.FC = () => {
                 })
               ) : (
                 <Center py={10}>
-                  <Text color="fg.subtle">No conversations yet</Text>
+                  <Text color="fg.subtle">{t('noConversations')}</Text>
                 </Center>
               )}
             </Box>
@@ -352,9 +356,9 @@ export const Messages: React.FC = () => {
           {!selectedChat ? (
             <Center height="100%" bg="bg.surface" borderRadius="lg" boxShadow="sm">
               <VStack spacing={4}>
-                <Text color="fg.subtle">Select a conversation to start chatting</Text>
-                <Text fontSize="sm" color="fg.subtle">or</Text>
-                <Button colorScheme="brand" size="sm">Start a new chat</Button>
+                <Text color="fg.subtle">{t('selectConversation')}</Text>
+                <Text fontSize="sm" color="fg.subtle">{t('or')}</Text>
+                <Button colorScheme="brand" size="sm">{t('startNewChat')}</Button>
               </VStack>
             </Center>
           ) : (
@@ -373,7 +377,7 @@ export const Messages: React.FC = () => {
                   variant="ghost"
                   leftIcon={<ChevronLeftIcon />}
                 >
-                  Back
+                  {t('common:actions.back')}
                 </Button>
                 
                 {chats && (
@@ -384,11 +388,11 @@ export const Messages: React.FC = () => {
                       <>
                         <Avatar
                           size="sm"
-                          name={otherUser?.name || 'User'}
+                          name={otherUser?.name || t('unknownUser')}
                           src={otherUser?.avatarUrl}
                         />
                         <Text fontWeight="bold">
-                          {otherUser?.name || 'User'}
+                          {otherUser?.name || t('unknownUser')}
                         </Text>
                       </>
                     );
@@ -411,7 +415,7 @@ export const Messages: React.FC = () => {
                   </Center>
                 ) : messagesError ? (
                   <Center flex="1">
-                    <Text color="red.500">Failed to load messages</Text>
+                    <Text color="red.500">{t('messagesLoadError')}</Text>
                   </Center>
                 ) : messages && messages.length > 0 ? (
                   messages.map((message) => {
@@ -433,10 +437,7 @@ export const Messages: React.FC = () => {
                           <Text>{message.content}</Text>
                         </Box>
                         <Text fontSize="xs" color="fg.subtle" textAlign={isMyMessage ? 'right' : 'left'}>
-                          {new Date(message.createdAt).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
+                          {formatTime(message.createdAt)}
                           {isMyMessage && (
                             <Text as="span" ml={1}>
                               {message.isRead ? ' ✓✓' : ' ✓'}
@@ -448,7 +449,7 @@ export const Messages: React.FC = () => {
                   })
                 ) : (
                   <Center flex="1">
-                    <Text color="fg.subtle">No messages yet</Text>
+                    <Text color="fg.subtle">{t('noMessages')}</Text>
                   </Center>
                 )}
                 <div ref={messagesEndRef} />
@@ -462,7 +463,7 @@ export const Messages: React.FC = () => {
                 <Input
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type a message..."
+                  placeholder={t('inputPlaceholder')}
                   borderRadius="full"
                   bg="bg.subtle"
                   _focus={{ bg: 'bg.surface', borderColor: 'brand.400' }}
@@ -479,7 +480,7 @@ export const Messages: React.FC = () => {
                   isDisabled={!newMessage.trim()}
                   borderRadius="full"
                 >
-                  Send
+                  {t('common:actions.send')}
                 </Button>
               </HStack>
             </VStack>
