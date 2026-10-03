@@ -1,0 +1,75 @@
+{
+  "language": {
+    "label": "Язык",
+    "ru": "Русский",
+    "kk": "Қазақша",
+    "en": "English",
+    "short": { "ru": "RU", "kk": "KZ", "en": "EN" }
+  },
+  "actions": {
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "edit": "Изменить",
+    "submit": "Отправить",
+    "back": "Назад",
+    "retry": "Повторить",
+    "close": "Закрыть",
+    "send": "Отправить",
+    "search": "Поиск",
+    "view": "Открыть",
+    "apply": "Откликнуться",
+    "logout": "Выйти"
+  },
+  "state": {
+    "loading": "Загрузка…",
+    "error": "Ошибка",
+    "success": "Готово",
+    "unknown": "Неизвестно"
+  },
+  "theme": {
+    "dark": "Тёмная тема",
+    "light": "Светлая тема",
+    "switchToDark": "Включить тёмную тему",
+    "switchToLight": "Включить светлую тему"
+  },
+  "nav": {
+    "main": "Основная навигация",
+    "openMenu": "Открыть меню",
+    "groups": {
+      "work": "Работа",
+      "discover": "Поиск",
+      "communication": "Общение",
+      "account": "Аккаунт"
+    },
+    "dashboard": "Главная",
+    "orders": "Заказы",
+    "createOrder": "Создать заказ",
+    "myApplications": "Мои отклики",
+    "matches": "Совпадения",
+    "influencers": "Инфлюенсеры",
+    "brands": "Бренды",
+    "recommendations": "Рекомендации",
+    "messages": "Сообщения",
+    "profile": "Профиль",
+    "settings": "Настройки"
+  },
+  "status": {
+    "open": "Открыт",
+    "accepted": "Принят",
+    "active": "Активен",
+    "completed": "Завершён",
+    "pending": "На рассмотрении",
+    "in_progress": "В работе",
+    "rejected": "Отклонён",
+    "cancelled": "Отменён",
+    "withdrawn": "Отозван",
+    "closed": "Закрыт",
+    "expired": "Истёк"
+  },
+  "role": {
+    "brand": "Бренд",
+    "influencer": "Инфлюенсер",
+    "admin": "Администратор"
+  }
+}

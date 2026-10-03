@@ -1,0 +1,75 @@
+{
+  "language": {
+    "label": "Language",
+    "ru": "Русский",
+    "kk": "Қазақша",
+    "en": "English",
+    "short": { "ru": "RU", "kk": "KZ", "en": "EN" }
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "submit": "Submit",
+    "back": "Back",
+    "retry": "Try again",
+    "close": "Close",
+    "send": "Send",
+    "search": "Search",
+    "view": "View",
+    "apply": "Apply",
+    "logout": "Log out"
+  },
+  "state": {
+    "loading": "Loading…",
+    "error": "Error",
+    "success": "Success",
+    "unknown": "Unknown"
+  },
+  "theme": {
+    "dark": "Dark mode",
+    "light": "Light mode",
+    "switchToDark": "Switch to dark mode",
+    "switchToLight": "Switch to light mode"
+  },
+  "nav": {
+    "main": "Main navigation",
+    "openMenu": "Open navigation menu",
+    "groups": {
+      "work": "Work",
+      "discover": "Discover",
+      "communication": "Communication",
+      "account": "Account"
+    },
+    "dashboard": "Dashboard",
+    "orders": "Orders",
+    "createOrder": "Create order",
+    "myApplications": "My applications",
+    "matches": "Matches",
+    "influencers": "Influencers",
+    "brands": "Brands",
+    "recommendations": "Recommendations",
+    "messages": "Messages",
+    "profile": "Profile",
+    "settings": "Settings"
+  },
+  "status": {
+    "open": "Open",
+    "accepted": "Accepted",
+    "active": "Active",
+    "completed": "Completed",
+    "pending": "Pending",
+    "in_progress": "In progress",
+    "rejected": "Rejected",
+    "cancelled": "Cancelled",
+    "withdrawn": "Withdrawn",
+    "closed": "Closed",
+    "expired": "Expired"
+  },
+  "role": {
+    "brand": "Brand",
+    "influencer": "Influencer",
+    "admin": "Admin"
+  }
+}
