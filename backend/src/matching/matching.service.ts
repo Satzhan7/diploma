@@ -8,13 +8,13 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Match, MatchStatus, MatchStats } from './entities/match.entity';
+import { Match, MatchStatus } from './entities/match.entity';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
 import { UsersService } from '../users/users.service';
 import { ChatsService } from '../chats/chats.service';
 import { ProfilesService } from '../profiles/profiles.service';
-import { ProfileType, Profile } from '../profiles/entities/profile.entity';
+import { Profile } from '../profiles/entities/profile.entity';
 import { UserRole } from '../users/entities/user.entity';
 import { UpdateMatchStatsDto } from './dto/update-match-stats.dto';
 

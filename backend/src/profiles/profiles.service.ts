@@ -126,8 +126,8 @@ export class ProfilesService {
     brandUserId: string,
     filters: any = {},
   ): Promise<PublicProfile[]> {
-    // Get brand profile to access preferences
-    const brandProfile = await this.findByUserId(brandUserId);
+    // The caller must have a profile (404 otherwise).
+    await this.findByUserId(brandUserId);
 
     // Build query based on brand preferences and provided filters
     const queryBuilder = this.profilesRepository
@@ -183,8 +183,8 @@ export class ProfilesService {
     influencerUserId: string,
     filters: any = {},
   ): Promise<PublicProfile[]> {
-    // Get influencer profile to access preferences
-    const influencerProfile = await this.findByUserId(influencerUserId);
+    // The caller must have a profile (404 otherwise).
+    await this.findByUserId(influencerUserId);
 
     // Build query based on influencer preferences and provided filters
     const queryBuilder = this.profilesRepository

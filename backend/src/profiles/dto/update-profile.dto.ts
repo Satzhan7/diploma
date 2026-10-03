@@ -9,7 +9,6 @@ import {
   IsBoolean,
   ValidateNested,
 } from 'class-validator';
-import { ProfileType } from '../entities/profile.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { SocialMediaType } from '../entities/social-media.entity';

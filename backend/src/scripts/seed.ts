@@ -19,21 +19,13 @@ process.env.DB_NAME = process.env.DB_NAME || 'influencer_platform';
 process.env.JWT_SECRET =
   process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
-// eslint-disable-next-line import/first
 import { AppModule } from '../app.module';
-// eslint-disable-next-line import/first
 import { AuthService } from '../auth/auth.service';
-// eslint-disable-next-line import/first
 import { UsersService } from '../users/users.service';
-// eslint-disable-next-line import/first
 import { ProfilesService } from '../profiles/profiles.service';
-// eslint-disable-next-line import/first
 import { OrdersService } from '../orders/orders.service';
-// eslint-disable-next-line import/first
 import { OrderApplicationsService } from '../orders/order-applications.service';
-// eslint-disable-next-line import/first
 import { UserRole } from '../users/entities/user.entity';
-// eslint-disable-next-line import/first
 import { ApplicationStatus } from '../orders/entities/order-application.entity';
 
 const PASSWORD = 'demo1234';

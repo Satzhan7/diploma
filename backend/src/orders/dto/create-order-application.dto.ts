@@ -1,11 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsString,
-  IsUUID,
-  IsNumber,
-  IsOptional,
-  IsNotEmpty,
-} from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsNotEmpty } from 'class-validator';
 
 export class CreateOrderApplicationDto {
   @ApiProperty({

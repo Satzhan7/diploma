@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Chat } from './entities/chat.entity';
 import { Message } from './entities/message.entity';
-import { User } from '../users/entities/user.entity';
 import { ChatsGateway } from './chats.gateway';
 
 @Injectable()
@@ -50,7 +49,7 @@ export class ChatsService {
 
   async getMessages(chatId: string, userId: string): Promise<Message[]> {
     // First verify the user has access to this chat
-    const chat = await this.findOne(chatId, userId);
+    await this.findOne(chatId, userId);
 
     // Use direct SQL to get messages with all relations
     const connection = this.messagesRepository.manager.connection;
