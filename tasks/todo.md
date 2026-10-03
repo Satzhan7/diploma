@@ -6,7 +6,10 @@ Rule: every phase ends with something deployable and usable. Nothing goes to `ma
 
 ## Decisions still open (resolve before the phase that needs them)
 
-- [ ] **D1 — Matches and collaborations (before Phase 2).** Today there are three overlapping concepts: Match, Order→Application, and Collaboration. Recommendation: **one Deal = an accepted Application.** Remove Match and Collaboration; keep the matching *score* as a ranking function only.
+- [x] **D1 — Matches and collaborations (before Phase 2).** Today there are three overlapping concepts: Match, Order→Application, and Collaboration. Recommendation: **one Deal = an accepted Application.** Remove Match and Collaboration; keep the matching *score* as a ranking function only.
+  - Decided 2026-10-03: **yes, one Deal.** Match and Collaboration are removed in 2.3; the 1.4 baseline still contains their tables and 2.3 drops them with a migration.
+- [x] **D5 — Counterparty email (decided 2026-10-03, applies in Phase 2).** Emails are **never** shown to the other side; contact happens through in-app chat only. Chat creation is limited to pairs that share an application/deal (brand→influencer invites come later).
+- [x] **D6 — Account deletion (decided 2026-10-03).** `DELETE /auth/account` 500s on users with data (FK constraints). Deferred to Phase 8 (legal: anonymise vs cascade, retention).
 - [ ] **D2 — Hosting in Kazakhstan (before Phase 8).** Choose a KZ provider (e.g. PS Cloud, Hoster.kz, Kazakhtelecom cloud) with Postgres and S3-compatible storage, to comply with the personal-data localisation law.
 - [ ] **D3 — Pro price and Free limits (before Phase 5).** Price in ₸, Pro duration, and whether Free has any brief limit.
 - [ ] **D4 — Screenshot storage (before Phase 5).** S3-compatible bucket in KZ vs local disk volume.
@@ -50,11 +53,12 @@ Rule: every phase ends with something deployable and usable. Nothing goes to `ma
 - Cleanup: `frontend/src/services/settings.ts` calls `/users/settings` routes that do not exist (500 via `:id`); `BrandList`/`InfluencerList` read `bio`/`industry`/`followers` off the wrong objects; `findAvailable` budget filters have no query DTO.
 
 ## Phase 1 — Foundation
-- [ ] 1.1 ∥ Upgrade the backend Docker image and CI to Node 20 LTS; fix the old `jsonwebtoken` chain so all four crashing Jest suites run.
+- [ ] 1.1 ∥ Upgrade the backend Docker image and CI to Node 24 LTS (Node 20 is EOL since April 2026; Node 24 confirmed 2026-10-03); fix the old `jsonwebtoken` chain so all four crashing Jest suites run.
 - [ ] 1.2 ∥ Migrate the frontend from CRA to Vite (keep Chakra v2, switch Jest to Vitest). Needs: none.
 - [ ] 1.3 ∥ Add a GitHub Actions CI job: typecheck, lint, and test for both apps, plus the frontend build. Needs: 1.1.
 - [ ] 1.4 Add a baseline TypeORM migration that creates the whole schema; set `migrationsRun` in production; remove the `Order.brandUser` and `User.categories` leftovers first. Needs: Docker Postgres, D1 (so the baseline isn't redone).
 - [ ] 1.5 ∥ i18n setup: `react-i18next`, RU (default), KZ and EN locale files, language switcher, backend error codes instead of English strings. Extract the existing strings.
+- Branching (2026-10-03): PR #1 is unmerged, so Phase 1 is stacked on `audit/fixes`: one branch per step (`phase1/node24` → `phase1/ci` → `phase1/vite` → `phase1/i18n` → `phase1/migrations`), each PR based on the previous branch.
 - **Done when:** CI is green on `main`; a fresh Postgres plus `migration:run` boots production mode; the UI switches RU/KZ/EN.
 
 ## Phase 2 — Domain model: one Deal pipeline (Needs: D1, 1.4)
