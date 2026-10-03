@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { join } from 'path';
 import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -59,6 +60,10 @@ import { Collaboration } from './collaborations/entities/collaboration.entity';
           Collaboration,
         ],
         synchronize: configService.get('database.synchronize'),
+        migrationsRun: configService.get('database.migrationsRun'),
+        migrations: configService.get('database.migrationsRun')
+          ? [join(__dirname, 'database', 'migrations', '*.js')]
+          : [],
       }),
       inject: [ConfigService],
     }),

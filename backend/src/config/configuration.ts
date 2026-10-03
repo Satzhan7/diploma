@@ -11,6 +11,9 @@ export default () => ({
     synchronize:
       process.env.NODE_ENV !== 'production' &&
       process.env.DB_SYNCHRONIZE !== 'false',
+    // Production builds the schema from the reviewed migrations in
+    // src/database/migrations, applied on boot.
+    migrationsRun: process.env.NODE_ENV === 'production',
   },
   jwt: {
     secret: process.env.JWT_SECRET || 'super-secret',
