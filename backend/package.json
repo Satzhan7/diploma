@@ -41,6 +41,7 @@
     "@nestjs/typeorm": "^10.0.1",
     "@nestjs/websockets": "^10.2.10",
     "bcrypt": "^5.1.1",
+    "buffer-equal-constant-time": "file:vendor/buffer-equal-constant-time",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "dotenv": "^16.5.0",
@@ -61,7 +62,7 @@
     "@types/bcrypt": "^5.0.2",
     "@types/express": "^4.17.17",
     "@types/jest": "^29.5.2",
-    "@types/node": "^20.3.1",
+    "@types/node": "^24.0.0",
     "@types/passport-jwt": "^3.0.13",
     "@types/pg": "^8.11.13",
     "@types/supertest": "^2.0.12",
@@ -96,5 +97,11 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  },
+  "overrides": {
+    "buffer-equal-constant-time": "$buffer-equal-constant-time"
+  },
+  "engines": {
+    "node": ">=24"
   }
 }
