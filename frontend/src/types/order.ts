@@ -1,4 +1,3 @@
-import { User } from './user';
 import { Match } from '../services/matching';
 import { Application } from '../services/applications';
 import { Profile } from './user';

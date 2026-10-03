@@ -48,10 +48,5 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
-      - run: npm test -- --watchAll=false
-      - name: npm run build
-        run: npm run build
-        env:
-          # CRA turns lint warnings into build errors when CI=true; the lint
-          # step above already reports them. Goes away with Vite (step 1.2).
-          CI: false
+      - run: npm test
+      - run: npm run build

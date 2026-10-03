@@ -108,7 +108,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
           setTargetUser(user);
         }
 
-      } catch (error) {
+      } catch {
         toast({
           title: 'Error',
           description: 'Failed to load profile data.',
@@ -163,7 +163,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
         isClosable: true,
       });
       navigate('/login');
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: 'Failed to delete your account. Please try again.',

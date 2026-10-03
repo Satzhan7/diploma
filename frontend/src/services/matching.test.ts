@@ -1,18 +1,19 @@
+import type { Mock } from 'vitest';
 import api from './api';
 import { matchingService } from './matching';
 
-jest.mock('./api', () => ({
+vi.mock('./api', () => ({
   __esModule: true,
-  default: { post: jest.fn(), patch: jest.fn() },
+  default: { post: vi.fn(), patch: vi.fn() },
 }));
 
 describe('matchingService core mutations', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('expresses interest through the server-derived identity endpoint', async () => {
-    (api.post as jest.Mock).mockResolvedValue({ data: { id: 'match-1' } });
+    (api.post as Mock).mockResolvedValue({ data: { id: 'match-1' } });
 
     await expect(matchingService.expressInterest('brand-1')).resolves.toEqual({
       id: 'match-1',
@@ -22,7 +23,7 @@ describe('matchingService core mutations', () => {
   });
 
   it('uses the guarded completion endpoint', async () => {
-    (api.patch as jest.Mock).mockResolvedValue({ data: { id: 'match-1' } });
+    (api.patch as Mock).mockResolvedValue({ data: { id: 'match-1' } });
 
     await matchingService.completeMatch('match-1');
 

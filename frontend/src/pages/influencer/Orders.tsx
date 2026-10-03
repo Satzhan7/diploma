@@ -69,7 +69,7 @@ export const Orders: React.FC = () => {
     },
   });
 
-  const { data: myApplications, isLoading: isLoadingApplications } = useQuery<Application[]>({
+  const { data: myApplications } = useQuery<Application[]>({
     queryKey: ['myApplications', user?.id],
     queryFn: () => applicationsService.getMyApplications(),
     enabled: !!user,

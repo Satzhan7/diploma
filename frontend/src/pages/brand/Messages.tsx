@@ -9,7 +9,6 @@ import {
   Avatar,
   Heading,
   Divider,
-  useColorMode,
   useColorModeValue,
 } from '@chakra-ui/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -36,7 +35,6 @@ function Messages() {
   const [messageInput, setMessageInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
-  const { colorMode } = useColorMode();
   
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
