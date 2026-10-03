@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike, ArrayContains } from 'typeorm';
+import { Repository, ILike, Raw } from 'typeorm';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -31,9 +31,15 @@ export class UsersService {
     }
 
     if (category) {
-      // categories is a Postgres text[] column — ILike on it is a runtime
-      // error. ArrayContains generates `categories @> ARRAY[:category]`.
-      where.categories = ArrayContains([category]);
+      // Profile.categories is a simple-array (comma-separated text), so
+      // ArrayContains would be a runtime SQL error; split it first.
+      where.profile = {
+        categories: Raw(
+          (column) =>
+            `:category = ANY(string_to_array(COALESCE(${column}, ''), ','))`,
+          { category },
+        ),
+      };
     }
 
     return await this.usersRepository.find({
