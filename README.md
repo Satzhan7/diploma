@@ -43,10 +43,10 @@ This brings up:
 ```bash
 cd frontend
 npm ci
-npm start
+npm run dev
 ```
 
-The CRA dev server runs on `http://localhost:3000` and talks to the backend at `http://localhost:3005` via `REACT_APP_API_BASE_URL`.
+The Vite dev server runs on `http://localhost:3000` and talks to the backend at `http://localhost:3005` via `VITE_API_BASE_URL`.
 
 ### Quick health check
 
@@ -80,7 +80,7 @@ Frontend env vars are read by [frontend/src/services/api.ts](frontend/src/servic
 
 | Variable | Purpose | Default |
 |---|---|---|
-| `REACT_APP_API_BASE_URL` | Backend HTTP base URL (also used by the WebSocket client) | `http://localhost:3005` |
+| `VITE_API_BASE_URL` | Backend HTTP base URL (also used by the WebSocket client) | `http://localhost:3005` |
 
 > No `.env` files containing real credentials should be committed. The compose file ships only with development defaults.
 
@@ -154,7 +154,7 @@ These items are listed honestly so the defense committee can verify what is impl
 - **Daily-stat aggregation is illustrative.** `StatisticsService` currently returns Match-level totals and a campaign-distribution array; daily-bucket aggregation is a future improvement.
 - **Recommendation listings rank by category only.** `MatchingService.calculateMatchScore` returns a deterministic three-factor score (category Jaccard + audience overlap + engagement); the listing endpoints (`/matching/recommendations/influencers` and `.../brands`) currently rank by `categoryMatch`. Wiring the full score into the listings is a future improvement.
 - **Production migrations are not yet proven.** Production synchronization is disabled and the migration runner/first uniqueness migration exist, but a full schema baseline must be generated and tested against a disposable PostgreSQL instance before any first production deployment.
-- **Frontend dependency risk remains.** Direct Axios and React Router advisories are remediated, but the deprecated CRA 5 toolchain still carries transitive audit findings (including critical ones); plan a tested migration before production.
+- **Frontend dependency risk is small.** The frontend builds with Vite (CRA removed). `npm audit` reports 2 moderate advisories in React Router 6, fixed only in v7.
 - **No verified production hosting.** A production Docker/NGINX deployment configuration exists in [DEPLOY.md](DEPLOY.md), but it has not been deployed or operationally verified in this repository.
 - **Automated coverage is targeted, not comprehensive.** The backend has focused auth, matching, profile-filter, order, and stats-validation unit tests; the frontend has a smoke test. Disposable-PostgreSQL integration and browser E2E coverage remain required before production.
 - **Order edit / delete are not available.** The brand UI does not expose Edit/Delete buttons in the demo build because the backend does not implement `PATCH /orders/:id` or `DELETE /orders/:id`. Order creation, listing, and application acceptance are fully implemented.

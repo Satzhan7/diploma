@@ -47,7 +47,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        REACT_APP_API_BASE_URL: https://${DOMAIN}/api
+        VITE_API_BASE_URL: https://${DOMAIN}/api
     container_name: adpartners_frontend
     restart: always
     networks: [app]

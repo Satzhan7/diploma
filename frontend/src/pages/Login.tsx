@@ -15,7 +15,6 @@ import {
   Flex,
   HStack,
   useColorModeValue,
-  Link as ChakraLink,
 } from '@chakra-ui/react';
 import { useAuth } from '../contexts/AuthContext';
 import Logo from '../components/Logo';

@@ -9,22 +9,18 @@ import {
   HStack,
   Badge,
   useToast,
-  Image,
   Input,
   Select,
   Card,
   CardBody,
   Avatar,
-  SimpleGrid,
   Link as ChakraLink,
 } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { usersService, User } from '../../services/users';
-import { useAuth } from '../../contexts/AuthContext';
 
 export const InfluencerList: React.FC = () => {
-  const { user } = useAuth();
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');

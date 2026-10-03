@@ -1,5 +1,3 @@
-import { Order } from './order';
-
 export interface DailyStat {
   date: string;
   clicks: number;

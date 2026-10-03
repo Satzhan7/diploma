@@ -51,14 +51,14 @@ export const BrandDashboard: React.FC = () => {
       try {
         const influencersData = await usersService.getAllInfluencers();
         setInfluencers(influencersData.map(inf => ({ id: inf.id, name: inf.name })));
-      } catch (err) {
+      } catch {
         toast({ title: 'Error loading influencers', status: 'error' });
       }
 
       try {
         const categoriesResponse = await api.get<string[]>('/categories');
         setCategories(categoriesResponse.data);
-      } catch (err) {
+      } catch {
         toast({ title: 'Error loading categories', status: 'error' });
       }
     };

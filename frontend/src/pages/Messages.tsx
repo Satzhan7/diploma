@@ -137,7 +137,7 @@ export const Messages: React.FC = () => {
     });
     
     // Listen for messages being read
-    socketService.on('messagesRead', ({ chatId, userId }: { chatId: string; userId: string }) => {
+    socketService.on('messagesRead', ({ chatId }: { chatId: string }) => {
       if (selectedChat === chatId) {
         queryClient.invalidateQueries({ queryKey: ['messages', selectedChat] });
       }
@@ -145,12 +145,12 @@ export const Messages: React.FC = () => {
     });
     
     // Listen for new chat
-    socketService.on('newChat', (chat: Conversation) => {
+    socketService.on('newChat', () => {
       queryClient.invalidateQueries({ queryKey: ['chats'] });
     });
     
     // Listen for chat updates (like unread count)
-    socketService.on('chatUpdated', (update: any) => {
+    socketService.on('chatUpdated', () => {
       queryClient.invalidateQueries({ queryKey: ['chats'] });
     });
     

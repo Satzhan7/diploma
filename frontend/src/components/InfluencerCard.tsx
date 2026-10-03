@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Text, Card, CardBody, Heading, Button, Avatar, HStack, VStack, Badge } from '@chakra-ui/react';
+import { Text, Card, CardBody, Heading, Button, Avatar, HStack, VStack, Badge } from '@chakra-ui/react';
 // Removed User import as we only need specific fields
 
 // Define a type for the expected influencer data structure

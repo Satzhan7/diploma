@@ -20,12 +20,12 @@
 | `JWT_REFRESH_EXPIRATION` | no | `configuration.ts`, `auth.service.ts` | ✅ `7d` | ✅ `7d` | `7d` | Consumed by refresh-token signing. |
 | `CORS_ORIGIN` | **yes (prod)** | `main.ts`, `chats.gateway.ts` | ✅ `http://localhost:3000` | ✅ `https://${DOMAIN}` | reflect-all only in development | Production startup fails if missing. |
 
-## Frontend (build-time only — CRA inlines at `npm run build`)
+## Frontend (build-time only — Vite inlines `VITE_*` at `npm run build`)
 
 | Variable | Required | Used in | Defined | Default | Notes |
 |---|---|---|---|---|---|
-| `REACT_APP_API_BASE_URL` | yes (prod) | `services/api.ts:3`, `services/socket.ts:3-28` | ✅ build arg in both compose files + Dockerfile ARG/ENV | `http://localhost:3005` | Socket client derives the origin before joining `/chats`, so the `/api` production path is safe. |
-| `HTTPS` | no | CRA dev server | `frontend/.env` (untracked): `false` | `false` | Dev-only toggle, harmless |
+| `VITE_API_BASE_URL` | yes (prod) | `services/api.ts:3`, `services/socket.ts:3-28` | ✅ build arg in both compose files + Dockerfile ARG/ENV | `http://localhost:3005` | Socket client derives the origin before joining `/chats`, so the `/api` production path is safe. |
+| `HTTPS` | no | nothing (was the CRA dev server) | `frontend/.env` (untracked): `false` | `false` | Ignored by Vite; safe to delete |
 
 ## Compose-level (`.env.prod` consumed by `docker-compose.prod.yml`)
 
