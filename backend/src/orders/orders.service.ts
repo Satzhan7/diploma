@@ -13,6 +13,7 @@ import { ProfilesService } from '../profiles/profiles.service';
 import { ProfileType } from '../profiles/entities/profile.entity';
 import { UserRole } from '../users/entities/user.entity';
 import { PublicUser, toPublicUser } from '../users/public-user';
+import { apiError, ErrorCode } from '../common/errors/error-codes';
 
 export type PublicOrder = Pick<
   Order,
@@ -71,7 +72,9 @@ export class OrdersService {
     const brandProfile = await this.profilesService.findByUserId(userId);
 
     if (brandProfile.type !== ProfileType.BRAND) {
-      throw new BadRequestException('Only brands can create orders');
+      throw new BadRequestException(
+        apiError(ErrorCode.ORDER_BRAND_ONLY, 'Only brands can create orders'),
+      );
     }
 
     const order = this.orderRepository.create({
@@ -119,7 +122,9 @@ export class OrdersService {
     });
 
     if (!order) {
-      throw new NotFoundException(`Order with ID ${id} not found`);
+      throw new NotFoundException(
+        apiError(ErrorCode.ORDER_NOT_FOUND, `Order with ID ${id} not found`),
+      );
     }
 
     const isParticipant =
@@ -130,14 +135,24 @@ export class OrdersService {
 
     if (order.status === OrderStatus.OPEN) return toPublicOrder(order);
 
-    throw new ForbiddenException('You do not have access to this order');
+    throw new ForbiddenException(
+      apiError(
+        ErrorCode.ORDER_ACCESS_DENIED,
+        'You do not have access to this order',
+      ),
+    );
   }
 
   async apply(orderId: string, userId: string): Promise<Order> {
     const influencerProfile = await this.profilesService.findByUserId(userId);
 
     if (influencerProfile.type !== ProfileType.INFLUENCER) {
-      throw new BadRequestException('Only influencers can apply to orders');
+      throw new BadRequestException(
+        apiError(
+          ErrorCode.ORDER_INFLUENCER_ONLY,
+          'Only influencers can apply to orders',
+        ),
+      );
     }
 
     // Transaction + row lock: two influencers claiming the same open order
@@ -149,11 +164,19 @@ export class OrdersService {
       });
 
       if (!order) {
-        throw new NotFoundException(`Order with ID ${orderId} not found`);
+        throw new NotFoundException(
+          apiError(
+            ErrorCode.ORDER_NOT_FOUND,
+            `Order with ID ${orderId} not found`,
+          ),
+        );
       }
       if (order.status !== OrderStatus.OPEN) {
         throw new ConflictException(
-          'This order is no longer open for applications',
+          apiError(
+            ErrorCode.ORDER_NOT_OPEN,
+            'This order is no longer open for applications',
+          ),
         );
       }
 

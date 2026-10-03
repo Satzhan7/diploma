@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Chat } from './entities/chat.entity';
 import { Message } from './entities/message.entity';
 import { ChatsGateway } from './chats.gateway';
+import { apiError, ErrorCode } from '../common/errors/error-codes';
 
 @Injectable()
 export class ChatsService {
@@ -41,7 +42,9 @@ export class ChatsService {
     });
 
     if (!chat) {
-      throw new NotFoundException(`Chat with ID ${id} not found`);
+      throw new NotFoundException(
+        apiError(ErrorCode.CHAT_NOT_FOUND, `Chat with ID ${id} not found`),
+      );
     }
 
     return chat;

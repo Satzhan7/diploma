@@ -20,6 +20,7 @@ import { UserRole } from '../users/entities/user.entity';
 import { toPublicUser } from '../users/public-user';
 import { ChatsService } from '../chats/chats.service';
 import { Match, MatchStatus } from '../matching/entities/match.entity';
+import { apiError, ErrorCode } from '../common/errors/error-codes';
 
 // Allowed application status changes. Every role, admin included, goes
 // through this table; the full Deal state machine replaces it in Phase 2.
@@ -43,7 +44,10 @@ export function assertApplicationTransition(
 ): void {
   if (!APPLICATION_TRANSITIONS[from].includes(to)) {
     throw new BadRequestException(
-      `Application cannot move from ${from} to ${to}`,
+      apiError(
+        ErrorCode.APPLICATION_INVALID_TRANSITION,
+        `Application cannot move from ${from} to ${to}`,
+      ),
     );
   }
 }
@@ -87,11 +91,19 @@ export class OrderApplicationsService {
         });
 
         if (!order) {
-          throw new NotFoundException(`Order with ID ${orderId} not found`);
+          throw new NotFoundException(
+            apiError(
+              ErrorCode.ORDER_NOT_FOUND,
+              `Order with ID ${orderId} not found`,
+            ),
+          );
         }
         if (order.status !== OrderStatus.OPEN) {
           throw new BadRequestException(
-            'This order is not open for applications',
+            apiError(
+              ErrorCode.ORDER_NOT_OPEN,
+              'This order is not open for applications',
+            ),
           );
         }
 
@@ -102,7 +114,12 @@ export class OrderApplicationsService {
           },
         });
         if (existingApplication) {
-          throw new ConflictException('You have already applied to this order');
+          throw new ConflictException(
+            apiError(
+              ErrorCode.APPLICATION_ALREADY_EXISTS,
+              'You have already applied to this order',
+            ),
+          );
         }
 
         const application = manager.create(OrderApplication, {
@@ -117,7 +134,12 @@ export class OrderApplicationsService {
       // PostgreSQL unique_violation closes the race between two concurrent
       // transactions after they both performed their read checks.
       if ((error as { code?: string }).code === '23505') {
-        throw new ConflictException('You have already applied to this order');
+        throw new ConflictException(
+          apiError(
+            ErrorCode.APPLICATION_ALREADY_EXISTS,
+            'You have already applied to this order',
+          ),
+        );
       }
       throw error;
     }
@@ -152,7 +174,12 @@ export class OrderApplicationsService {
     });
 
     if (!application) {
-      throw new NotFoundException(`Application with ID ${id} not found`);
+      throw new NotFoundException(
+        apiError(
+          ErrorCode.APPLICATION_NOT_FOUND,
+          `Application with ID ${id} not found`,
+        ),
+      );
     }
 
     // Read ownership (SECURITY_AUDIT H3): only the applicant, the brand that
@@ -164,7 +191,10 @@ export class OrderApplicationsService {
       application.order?.brand?.user?.id !== requester.id
     ) {
       throw new ForbiddenException(
-        'You do not have access to this application',
+        apiError(
+          ErrorCode.APPLICATION_ACCESS_DENIED,
+          'You do not have access to this application',
+        ),
       );
     }
 
@@ -183,19 +213,28 @@ export class OrderApplicationsService {
     if (userRole === UserRole.INFLUENCER) {
       if (application.applicant.id !== userId) {
         throw new ForbiddenException(
-          'You can only update your own applications',
+          apiError(
+            ErrorCode.APPLICATION_ACCESS_DENIED,
+            'You can only update your own applications',
+          ),
         );
       }
 
       if (updateOrderApplicationDto.status) {
         throw new ForbiddenException(
-          'Influencers cannot update application status',
+          apiError(
+            ErrorCode.APPLICATION_ACTION_FORBIDDEN,
+            'Influencers cannot update application status',
+          ),
         );
       }
 
       if (application.status !== ApplicationStatus.PENDING) {
         throw new BadRequestException(
-          'You can only update pending applications',
+          apiError(
+            ErrorCode.APPLICATION_NOT_PENDING,
+            'You can only update pending applications',
+          ),
         );
       }
     }
@@ -203,7 +242,10 @@ export class OrderApplicationsService {
     else if (userRole === UserRole.BRAND) {
       if (application.order.brand.user.id !== userId) {
         throw new ForbiddenException(
-          'You can only update applications for your own orders',
+          apiError(
+            ErrorCode.APPLICATION_ACCESS_DENIED,
+            'You can only update applications for your own orders',
+          ),
         );
       }
 
@@ -212,7 +254,10 @@ export class OrderApplicationsService {
         updateOrderApplicationDto.proposedPrice
       ) {
         throw new ForbiddenException(
-          'Brands can only update application status',
+          apiError(
+            ErrorCode.APPLICATION_ACTION_FORBIDDEN,
+            'Brands can only update application status',
+          ),
         );
       }
 
@@ -222,7 +267,10 @@ export class OrderApplicationsService {
         updateOrderApplicationDto.status !== ApplicationStatus.REJECTED
       ) {
         throw new ForbiddenException(
-          'Brands can only accept or reject applications',
+          apiError(
+            ErrorCode.APPLICATION_ACTION_FORBIDDEN,
+            'Brands can only accept or reject applications',
+          ),
         );
       }
     }
@@ -244,7 +292,10 @@ export class OrderApplicationsService {
       );
       if (!applicantProfile) {
         throw new NotFoundException(
-          `Profile for applicant with ID ${application.applicant.id} not found`,
+          apiError(
+            ErrorCode.PROFILE_NOT_FOUND,
+            `Profile for applicant with ID ${application.applicant.id} not found`,
+          ),
         );
       }
 
@@ -257,12 +308,18 @@ export class OrderApplicationsService {
 
           if (!order) {
             throw new NotFoundException(
-              `Order with ID ${application.order.id} not found`,
+              apiError(
+                ErrorCode.ORDER_NOT_FOUND,
+                `Order with ID ${application.order.id} not found`,
+              ),
             );
           }
           if (order.status !== OrderStatus.OPEN) {
             throw new BadRequestException(
-              'This order is not open for applications',
+              apiError(
+                ErrorCode.ORDER_NOT_OPEN,
+                'This order is not open for applications',
+              ),
             );
           }
 
@@ -275,7 +332,10 @@ export class OrderApplicationsService {
           });
           if (!current) {
             throw new NotFoundException(
-              `Application with ID ${application.id} not found`,
+              apiError(
+                ErrorCode.APPLICATION_NOT_FOUND,
+                `Application with ID ${application.id} not found`,
+              ),
             );
           }
           assertApplicationTransition(
@@ -376,7 +436,10 @@ export class OrderApplicationsService {
     );
     if (!result.affected) {
       throw new ConflictException(
-        'Application status changed; reload and try again',
+        apiError(
+          ErrorCode.APPLICATION_STALE,
+          'Application status changed; reload and try again',
+        ),
       );
     }
   }
@@ -386,7 +449,10 @@ export class OrderApplicationsService {
 
     if (application.applicant.id !== userId) {
       throw new ForbiddenException(
-        'You can only withdraw your own applications',
+        apiError(
+          ErrorCode.APPLICATION_ACCESS_DENIED,
+          'You can only withdraw your own applications',
+        ),
       );
     }
 
@@ -410,12 +476,20 @@ export class OrderApplicationsService {
     });
 
     if (!order) {
-      throw new NotFoundException(`Order with ID ${orderId} not found`);
+      throw new NotFoundException(
+        apiError(
+          ErrorCode.ORDER_NOT_FOUND,
+          `Order with ID ${orderId} not found`,
+        ),
+      );
     }
 
     if (order.brand.user.id !== userId) {
       throw new ForbiddenException(
-        'You can only view applications for your own orders',
+        apiError(
+          ErrorCode.ORDER_ACCESS_DENIED,
+          'You can only view applications for your own orders',
+        ),
       );
     }
 

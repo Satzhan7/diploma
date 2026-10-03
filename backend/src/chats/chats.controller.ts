@@ -41,6 +41,7 @@ type CurrentUser = {
   name: string;
 };
 import { v4 as uuidv4 } from 'uuid';
+import { apiError, ErrorCode } from '../common/errors/error-codes';
 
 @ApiTags('chats')
 @ApiBearerAuth()
@@ -307,7 +308,9 @@ SELECT COUNT(*) FROM message WHERE "chatId" IS NULL;
     @GetCurrentUser() user: CurrentUser,
   ): Promise<MessageEvent> {
     if (!content || content.trim() === '') {
-      throw new BadRequestException('Message content cannot be empty');
+      throw new BadRequestException(
+        apiError(ErrorCode.MESSAGE_EMPTY, 'Message content cannot be empty'),
+      );
     }
     const message = await this.chatsService.addMessage(id, user.id, content);
     return toMessageEvent(message, id);

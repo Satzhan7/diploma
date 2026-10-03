@@ -17,6 +17,7 @@ import { ProfilesService } from '../profiles/profiles.service';
 import { ProfileType } from '../profiles/entities/profile.entity';
 import { UserRole } from '../users/entities/user.entity';
 import { TokenPayload } from './types/token-payload';
+import { apiError, ErrorCode } from '../common/errors/error-codes';
 
 @Injectable()
 export class AuthService {
@@ -32,7 +33,12 @@ export class AuthService {
   async register(registerDto: RegisterDto) {
     const existingUser = await this.usersService.findByEmail(registerDto.email);
     if (existingUser) {
-      throw new ConflictException('User with this email already exists');
+      throw new ConflictException(
+        apiError(
+          ErrorCode.AUTH_EMAIL_TAKEN,
+          'User with this email already exists',
+        ),
+      );
     }
 
     const user = await this.usersService.create(registerDto);
@@ -56,7 +62,9 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const user = await this.usersService.findByEmail(loginDto.email);
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException(
+        apiError(ErrorCode.AUTH_INVALID_CREDENTIALS, 'Invalid credentials'),
+      );
     }
 
     const isPasswordValid = await bcrypt.compare(
@@ -64,7 +72,9 @@ export class AuthService {
       user.password,
     );
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException(
+        apiError(ErrorCode.AUTH_INVALID_CREDENTIALS, 'Invalid credentials'),
+      );
     }
 
     const tokens = await this.generateTokens(user.id, user.email);
@@ -85,12 +95,16 @@ export class AuthService {
         },
       );
       if (decoded.tokenType !== 'refresh') {
-        throw new UnauthorizedException('Invalid refresh token');
+        throw new UnauthorizedException(
+          apiError(ErrorCode.AUTH_INVALID_TOKEN, 'Invalid refresh token'),
+        );
       }
       const user = await this.usersService.findById(decoded.sub);
 
       if (!user || !user.refreshToken) {
-        throw new UnauthorizedException('Invalid refresh token');
+        throw new UnauthorizedException(
+          apiError(ErrorCode.AUTH_INVALID_TOKEN, 'Invalid refresh token'),
+        );
       }
 
       const isRefreshTokenValid = refreshTokenMatches(
@@ -99,7 +113,9 @@ export class AuthService {
       );
 
       if (!isRefreshTokenValid) {
-        throw new UnauthorizedException('Invalid refresh token');
+        throw new UnauthorizedException(
+          apiError(ErrorCode.AUTH_INVALID_TOKEN, 'Invalid refresh token'),
+        );
       }
 
       const tokens = await this.generateTokens(user.id, user.email);
@@ -107,7 +123,9 @@ export class AuthService {
 
       return tokens;
     } catch (error) {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new UnauthorizedException(
+        apiError(ErrorCode.AUTH_INVALID_TOKEN, 'Invalid refresh token'),
+      );
     }
   }
 
@@ -149,7 +167,9 @@ export class AuthService {
     // First check if the user exists
     const user = await this.usersService.findById(userId);
     if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
+      throw new NotFoundException(
+        apiError(ErrorCode.USER_NOT_FOUND, `User with ID ${userId} not found`),
+      );
     }
 
     try {

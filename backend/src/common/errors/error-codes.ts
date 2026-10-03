@@ -1,0 +1,54 @@
+/**
+ * Stable, machine-readable error codes. The frontend translates them
+ * (frontend/src/i18n/locales/<lang>/errors.json); the English `message`
+ * stays for logs and API consumers. Add a code here and in errors.json
+ * together. Never rename a code: clients depend on it.
+ */
+export enum ErrorCode {
+  // Generic, derived from the HTTP status when a throw site gives no code.
+  BAD_REQUEST = 'BAD_REQUEST',
+  VALIDATION_FAILED = 'VALIDATION_FAILED',
+  UNAUTHORIZED = 'UNAUTHORIZED',
+  FORBIDDEN = 'FORBIDDEN',
+  NOT_FOUND = 'NOT_FOUND',
+  CONFLICT = 'CONFLICT',
+  GONE = 'GONE',
+  TOO_MANY_REQUESTS = 'TOO_MANY_REQUESTS',
+  INTERNAL_ERROR = 'INTERNAL_ERROR',
+
+  // Auth and users
+  AUTH_EMAIL_TAKEN = 'AUTH_EMAIL_TAKEN',
+  AUTH_INVALID_CREDENTIALS = 'AUTH_INVALID_CREDENTIALS',
+  AUTH_INVALID_TOKEN = 'AUTH_INVALID_TOKEN',
+  USER_NOT_FOUND = 'USER_NOT_FOUND',
+  USER_NOT_SELF = 'USER_NOT_SELF',
+
+  // Profiles
+  PROFILE_NOT_FOUND = 'PROFILE_NOT_FOUND',
+
+  // Orders
+  ORDER_NOT_FOUND = 'ORDER_NOT_FOUND',
+  ORDER_NOT_OPEN = 'ORDER_NOT_OPEN',
+  ORDER_ACCESS_DENIED = 'ORDER_ACCESS_DENIED',
+  ORDER_BRAND_ONLY = 'ORDER_BRAND_ONLY',
+  ORDER_INFLUENCER_ONLY = 'ORDER_INFLUENCER_ONLY',
+
+  // Applications
+  APPLICATION_NOT_FOUND = 'APPLICATION_NOT_FOUND',
+  APPLICATION_ALREADY_EXISTS = 'APPLICATION_ALREADY_EXISTS',
+  APPLICATION_ACCESS_DENIED = 'APPLICATION_ACCESS_DENIED',
+  APPLICATION_ACTION_FORBIDDEN = 'APPLICATION_ACTION_FORBIDDEN',
+  APPLICATION_NOT_PENDING = 'APPLICATION_NOT_PENDING',
+  APPLICATION_INVALID_TRANSITION = 'APPLICATION_INVALID_TRANSITION',
+  APPLICATION_STALE = 'APPLICATION_STALE',
+
+  // Chats
+  CHAT_NOT_FOUND = 'CHAT_NOT_FOUND',
+  MESSAGE_EMPTY = 'MESSAGE_EMPTY',
+}
+
+/** Exception body for a coded error: `throw new NotFoundException(apiError(...))`. */
+export const apiError = (code: ErrorCode, message: string) => ({
+  code,
+  message,
+});
