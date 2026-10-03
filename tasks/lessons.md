@@ -21,3 +21,7 @@
 - **A class-level `@Throttle` covers every route in the controller.** `GET /auth/profile` (called on each page load) inherited the 10/min login limit. Put strict limits on the brute-force routes only.
 - **A CSP `connect-src` must match every build's API origin.** Prod is same-origin https, dev calls `http://localhost:3005`; a static header broke dev login. Unit tests and builds pass anyway — only a real browser run catches it, so do browser QA before calling a frontend step done.
 
+
+## 2026-10-03 — Phase 1
+
+- **npm `overrides` with a relative `file:` spec resolves against the dependent package**, not the project root (`node_modules/jwa/vendor/...`, an empty entry). Declare the local package as a root dependency (`"x": "file:vendor/x"`) and override with `"x": "$x"`; check the lockfile has one `"link": true` entry before building.
