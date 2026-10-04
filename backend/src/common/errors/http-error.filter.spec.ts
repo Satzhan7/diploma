@@ -69,6 +69,31 @@ describe('toErrorBody', () => {
     });
   });
 
+  it('keeps the 4xx status of exposed http-errors (body-parser)', () => {
+    const tooLarge = Object.assign(new Error('request entity too large'), {
+      status: 413,
+      statusCode: 413,
+      expose: true,
+      type: 'entity.too.large',
+    });
+    expect(toErrorBody(tooLarge)).toEqual({
+      statusCode: 413,
+      code: 'BAD_REQUEST',
+      message: 'request entity too large',
+    });
+    // Not exposed, or not a client error: still a hidden 500.
+    const hidden = Object.assign(new Error('secret'), { status: 400 });
+    expect(toErrorBody(hidden).statusCode).toBe(500);
+    const server = Object.assign(new Error('secret'), {
+      status: 503,
+      expose: true,
+    });
+    expect(toErrorBody(server)).toMatchObject({
+      statusCode: 500,
+      message: 'Internal server error',
+    });
+  });
+
   it('keeps a plain string HttpException message', () => {
     expect(
       toErrorBody(new HttpException('Custom', HttpStatus.PAYMENT_REQUIRED)),
