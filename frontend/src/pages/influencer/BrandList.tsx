@@ -96,7 +96,7 @@ const BrandList: React.FC = () => {
                   <Text>{brand.bio}</Text>
                   <HStack>
                     {brand.industry && (
-                      <Badge colorScheme="purple">
+                      <Badge colorScheme="brand">
                         {brand.industry}
                       </Badge>
                     )}

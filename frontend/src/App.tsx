@@ -1,32 +1,40 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ChakraProvider, Center, Spinner, VStack, Text } from '@chakra-ui/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import DashboardLayout from './components/DashboardLayout';
-import { Login } from './pages/Login';
-import { Register } from './pages/Register';
-import Landing from './pages/Landing';
-import { BrandDashboard } from './pages/brand/Dashboard';
-import { InfluencerDashboard } from './pages/influencer/Dashboard';
-import { Orders as InfluencerOrders } from './pages/influencer/Orders';
-import { CreateOrder } from './pages/brand/CreateOrder';
-import BrandOrders from './pages/brand/Orders';
-import { MyApplications } from './pages/influencer/MyApplications';
-import { Profile } from './pages/Profile';
-import { EditProfile } from './pages/EditProfile';
-import { InfluencerList } from './pages/brand/InfluencerList';
-import BrandList from './pages/influencer/BrandList';
-import BrandRecommendations from './pages/influencer/BrandRecommendations';
-import { Messages } from './pages/Messages';
-import { Settings } from './pages/Settings';
-import { Matches } from './pages/Matches';
+import AppShell from './components/AppShell';
 import theme from './theme';
 import { UserRole } from './types/user';
-import { OrderDetail } from './pages/influencer/OrderDetail';
-import { MatchDetail } from './pages/MatchDetail';
-import { NotFound } from './pages/NotFound';
+
+// One chunk per page; the shell and the auth flow stay in the main bundle.
+const page = <K extends string>(load: () => Promise<Record<K, React.ComponentType<any>>>, name: K) =>
+  lazy(() => load().then((m) => ({ default: m[name] })));
+
+const Landing = page(() => import('./pages/Landing'), 'default');
+const Auth = page(() => import('./pages/Auth'), 'Auth');
+const BrandDashboard = page(() => import('./pages/brand/Dashboard'), 'BrandDashboard');
+const InfluencerDashboard = page(() => import('./pages/influencer/Dashboard'), 'InfluencerDashboard');
+const InfluencerOrders = page(() => import('./pages/influencer/Orders'), 'Orders');
+const CreateOrder = page(() => import('./pages/brand/CreateOrder'), 'CreateOrder');
+const BrandOrders = page(() => import('./pages/brand/Orders'), 'default');
+const MyApplications = page(() => import('./pages/influencer/MyApplications'), 'MyApplications');
+const Profile = page(() => import('./pages/Profile'), 'Profile');
+const EditProfile = page(() => import('./pages/EditProfile'), 'EditProfile');
+const InfluencerList = page(() => import('./pages/brand/InfluencerList'), 'InfluencerList');
+const BrandList = page(() => import('./pages/influencer/BrandList'), 'default');
+const BrandRecommendations = page(() => import('./pages/influencer/BrandRecommendations'), 'default');
+const Messages = page(() => import('./pages/Messages'), 'Messages');
+const Settings = page(() => import('./pages/Settings'), 'Settings');
+const Matches = page(() => import('./pages/Matches'), 'Matches');
+const OrderDetail = page(() => import('./pages/influencer/OrderDetail'), 'OrderDetail');
+const MatchDetail = page(() => import('./pages/MatchDetail'), 'MatchDetail');
+const NotFound = page(() => import('./pages/NotFound'), 'NotFound');
+
+/** Where each role lands after login. */
+const homeFor = (role?: UserRole) =>
+  role === UserRole.BRAND ? '/brand/dashboard' : '/influencer/orders';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,12 +44,12 @@ const queryClient = new QueryClient({
   },
 });
 
-const FullScreenLoader: React.FC = () => {
+const FullScreenLoader: React.FC<{ minH?: string }> = ({ minH = '100vh' }) => {
   const { t } = useTranslation();
   return (
-    <Center minH="100vh" bg="bg.canvas">
+    <Center minH={minH}>
       <VStack spacing={4}>
-        <Spinner size="lg" color="brand.500" thickness="3px" />
+        <Spinner size="lg" color="primary" thickness="3px" />
         <Text color="fg.muted" fontSize="sm">
           {t('common:state.loading')}
         </Text>
@@ -67,7 +75,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles }) => {
   }
 
   if (roles && user && !roles.includes(user.role)) {
-    return <Navigate to={user.role === UserRole.BRAND ? "/brand/dashboard" : "/influencer/dashboard"} replace />;
+    return <Navigate to={homeFor(user.role)} replace />;
   }
 
   return children;
@@ -79,7 +87,9 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <Router>
-            <AppRoutes />
+            <Suspense fallback={<FullScreenLoader />}>
+              <AppRoutes />
+            </Suspense>
           </Router>
         </AuthProvider>
       </QueryClientProvider>
@@ -94,75 +104,72 @@ function AppRoutes() {
     return <FullScreenLoader />;
   }
 
+  const shell = (role: UserRole, routes: React.ReactNode) => (
+    <ProtectedRoute roles={[role]}>
+      <AppShell role={user?.role}>
+        <Suspense fallback={<FullScreenLoader minH="60vh" />}>
+          <Routes>
+            {routes}
+            <Route path="messages" element={<Messages />} />
+            <Route path="matches" element={<Matches />} />
+            <Route path="matches/:matchId" element={<MatchDetail />} />
+            <Route path="profile/:userId" element={<Profile isViewMode={true} />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="profile/edit" element={<EditProfile />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </AppShell>
+    </ProtectedRoute>
+  );
+
   return (
     <Routes>
-      <Route 
-        path="/" 
-        element={!isAuthenticated ? <Landing /> : <Navigate to={user?.role === UserRole.BRAND ? '/brand/dashboard' : '/influencer/dashboard'} replace />} 
+      <Route
+        path="/"
+        element={!isAuthenticated ? <Landing /> : <Navigate to={homeFor(user?.role)} replace />}
       />
-      <Route 
-        path="/login" 
-        element={!isAuthenticated ? <Login /> : <Navigate to="/" replace />} 
+      <Route
+        path="/login"
+        element={!isAuthenticated ? <Auth mode="login" /> : <Navigate to="/" replace />}
       />
-      <Route 
-        path="/register" 
-        element={!isAuthenticated ? <Register /> : <Navigate to="/" replace />} 
+      <Route
+        path="/register"
+        element={!isAuthenticated ? <Auth mode="register" /> : <Navigate to="/" replace />}
       />
 
       <Route
         path="/brand/*"
-        element={
-          <ProtectedRoute roles={[UserRole.BRAND]}>
-            <DashboardLayout role={user?.role}>
-              <Routes>
-                <Route path="dashboard" element={<BrandDashboard />} />
-                <Route path="orders" element={<BrandOrders />} />
-                <Route path="orders/create" element={<CreateOrder />} />
-                <Route path="influencers" element={<InfluencerList />} />
-                <Route path="messages" element={<Messages />} />
-                <Route path="matches" element={<Matches />} />
-                <Route path="matches/:matchId" element={<MatchDetail />} />
-                <Route path="profile/:userId" element={<Profile isViewMode={true} />} />
-                <Route path="profile" element={<Profile />} />
-                <Route path="profile/edit" element={<EditProfile />} />
-                <Route path="settings" element={<Settings />} />
-                <Route path="/" element={<Navigate to="dashboard" replace />} /> 
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </DashboardLayout>
-          </ProtectedRoute>
-        }
+        element={shell(
+          UserRole.BRAND,
+          <>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<BrandDashboard />} />
+            <Route path="orders" element={<BrandOrders />} />
+            <Route path="orders/create" element={<CreateOrder />} />
+            <Route path="influencers" element={<InfluencerList />} />
+          </>,
+        )}
       />
 
       <Route
         path="/influencer/*"
-        element={
-          <ProtectedRoute roles={[UserRole.INFLUENCER]}>
-            <DashboardLayout role={user?.role}>
-              <Routes>
-                <Route path="dashboard" element={<InfluencerDashboard />} />
-                <Route path="orders" element={<InfluencerOrders />} />
-                <Route path="orders/:orderId" element={<OrderDetail />} />
-                <Route path="applications" element={<MyApplications />} />
-                <Route path="brands" element={<BrandList />} />
-                <Route path="recommendations" element={<BrandRecommendations />} />
-                <Route path="messages" element={<Messages />} />
-                <Route path="matches" element={<Matches />} />
-                <Route path="matches/:matchId" element={<MatchDetail />} />
-                <Route path="profile/:userId" element={<Profile isViewMode={true} />} />
-                <Route path="profile" element={<Profile />} />
-                <Route path="profile/edit" element={<EditProfile />} />
-                <Route path="settings" element={<Settings />} />
-                <Route path="/" element={<Navigate to="dashboard" replace />} /> 
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </DashboardLayout>
-          </ProtectedRoute>
-        }
+        element={shell(
+          UserRole.INFLUENCER,
+          <>
+            <Route index element={<Navigate to="orders" replace />} />
+            <Route path="dashboard" element={<InfluencerDashboard />} />
+            <Route path="orders" element={<InfluencerOrders />} />
+            <Route path="orders/:orderId" element={<OrderDetail />} />
+            <Route path="applications" element={<MyApplications />} />
+            <Route path="brands" element={<BrandList />} />
+            <Route path="recommendations" element={<BrandRecommendations />} />
+          </>,
+        )}
       />
-      
-      <Route path="*" element={<NotFound />} />
 
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

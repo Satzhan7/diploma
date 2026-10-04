@@ -53,16 +53,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Both /auth/login and /auth/register answer with { user, accessToken, refreshToken }.
+  const startSession = (data: { user: User; accessToken: string; refreshToken: string }) => {
+    localStorage.setItem('accessToken', data.accessToken);
+    localStorage.setItem('refreshToken', data.refreshToken);
+    setUser(data.user);
+    return { user: data.user };
+  };
+
   const login = async (email: string, password: string) => {
     try {
       setError(null);
       const response = await api.post('/auth/login', { email, password });
-      
-      localStorage.setItem('accessToken', response.data.accessToken);
-      localStorage.setItem('refreshToken', response.data.refreshToken);
-      
-      setUser(response.data.user);
-      return { user: response.data.user };
+      return startSession(response.data);
     } catch (err) {
       setError(getErrorMessage(err));
       throw err;
@@ -72,7 +75,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = async (data: RegisterData) => {
     try {
       setError(null);
-      await api.post('/auth/register', data);
+      const response = await api.post('/auth/register', data);
+      startSession(response.data);
     } catch (err) {
       setError(getErrorMessage(err));
       throw err;

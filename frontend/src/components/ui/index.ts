@@ -1,4 +1,10 @@
 export { StatusBadge } from './StatusBadge';
+export { StatusPill } from './StatusPill';
+export type { PillTone } from './StatusPill';
+export { ScoreRing } from './ScoreRing';
+export { VerifiedBadge } from './VerifiedBadge';
+export { SegmentedControl } from './SegmentedControl';
+export type { Segment } from './SegmentedControl';
 export { StatCard } from './StatCard';
 export { PageHeader } from './PageHeader';
 export { EmptyState } from './EmptyState';

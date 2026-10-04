@@ -114,7 +114,7 @@ export const InfluencerList: React.FC = () => {
                         ))}
                       </HStack>
                     )}
-                    <Text fontSize="sm" color="gray.500">
+                    <Text fontSize="sm" color="fg.muted">
                       {t('influencerList.followers', {
                         followers:
                           influencer.profile?.followers != null

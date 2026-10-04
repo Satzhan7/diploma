@@ -167,7 +167,7 @@ const BrandRecommendations: React.FC = () => {
                         </Text>
                         <HStack flexWrap="wrap" spacing={2}>
                           {brand.user.categories.slice(0, 3).map((category) => (
-                            <Badge key={category} colorScheme="purple" borderRadius="full" px={2}>
+                            <Badge key={category} colorScheme="brand" borderRadius="full" px={2}>
                               {category}
                             </Badge>
                           ))}
@@ -188,14 +188,14 @@ const BrandRecommendations: React.FC = () => {
                       <Button
                         as={RouterLink}
                         to={`/influencer/profile/${brand.user.id}`}
-                        colorScheme="purple"
+                        colorScheme="brand"
                         variant="ghost"
                         size="sm"
                       >
                         {t('recommendations.viewProfile')}
                       </Button>
                       <Button
-                        colorScheme="purple"
+                        colorScheme="brand"
                         size="sm"
                         isLoading={selectedBrand === brand.user.id && createMatchMutation.isPending}
                         isDisabled={createMatchMutation.isPending}

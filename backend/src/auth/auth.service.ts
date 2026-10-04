@@ -87,46 +87,37 @@ export class AuthService {
   }
 
   async refreshTokens(refreshToken: string) {
-    try {
-      const decoded = await this.jwtService.verifyAsync<TokenPayload>(
-        refreshToken,
-        {
-          secret: this.configService.get('jwt.refreshSecret'),
-        },
-      );
-      if (decoded.tokenType !== 'refresh') {
-        throw new UnauthorizedException(
-          apiError(ErrorCode.AUTH_INVALID_TOKEN, 'Invalid refresh token'),
-        );
-      }
-      const user = await this.usersService.findById(decoded.sub);
-
-      if (!user || !user.refreshToken) {
-        throw new UnauthorizedException(
-          apiError(ErrorCode.AUTH_INVALID_TOKEN, 'Invalid refresh token'),
-        );
-      }
-
-      const isRefreshTokenValid = refreshTokenMatches(
-        refreshToken,
-        user.refreshToken,
-      );
-
-      if (!isRefreshTokenValid) {
-        throw new UnauthorizedException(
-          apiError(ErrorCode.AUTH_INVALID_TOKEN, 'Invalid refresh token'),
-        );
-      }
-
-      const tokens = await this.generateTokens(user.id, user.email);
-      await this.usersService.updateRefreshToken(user.id, tokens.refreshToken);
-
-      return tokens;
-    } catch (error) {
-      throw new UnauthorizedException(
+    // Only a bad token is a 401; database errors propagate as 500.
+    const invalid = () =>
+      new UnauthorizedException(
         apiError(ErrorCode.AUTH_INVALID_TOKEN, 'Invalid refresh token'),
       );
+
+    let decoded: TokenPayload;
+    try {
+      decoded = await this.jwtService.verifyAsync<TokenPayload>(refreshToken, {
+        secret: this.configService.get('jwt.refreshSecret'),
+      });
+    } catch {
+      throw invalid();
     }
+    if (decoded.tokenType !== 'refresh') {
+      throw invalid();
+    }
+
+    const user = await this.usersService.findById(decoded.sub);
+    if (
+      !user ||
+      !user.refreshToken ||
+      !refreshTokenMatches(refreshToken, user.refreshToken)
+    ) {
+      throw invalid();
+    }
+
+    const tokens = await this.generateTokens(user.id, user.email);
+    await this.usersService.updateRefreshToken(user.id, tokens.refreshToken);
+
+    return tokens;
   }
 
   private async generateTokens(userId: string, email: string) {

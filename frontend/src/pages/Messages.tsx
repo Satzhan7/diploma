@@ -256,7 +256,7 @@ export const Messages: React.FC = () => {
   if (chatsError) {
     return (
       <Center h="60vh">
-        <Text color="red.500">{t('chatsLoadError')}</Text>
+        <Text color="danger">{t('chatsLoadError')}</Text>
       </Center>
     );
   }
@@ -290,7 +290,7 @@ export const Messages: React.FC = () => {
                 </Center>
               ) : chatsError ? (
                 <Center py={10}>
-                  <Text color="red.500">{t('conversationsLoadError')}</Text>
+                  <Text color="danger">{t('conversationsLoadError')}</Text>
                 </Center>
               ) : chats && chats.length > 0 ? (
                 chats.map((chat) => {
@@ -415,7 +415,7 @@ export const Messages: React.FC = () => {
                   </Center>
                 ) : messagesError ? (
                   <Center flex="1">
-                    <Text color="red.500">{t('messagesLoadError')}</Text>
+                    <Text color="danger">{t('messagesLoadError')}</Text>
                   </Center>
                 ) : messages && messages.length > 0 ? (
                   messages.map((message) => {
@@ -428,8 +428,8 @@ export const Messages: React.FC = () => {
                         mb={3}
                       >
                         <Box
-                          bg={isMyMessage ? 'brand.500' : 'bg.subtle'}
-                          color={isMyMessage ? 'white' : 'fg.default'}
+                          bg={isMyMessage ? 'primary' : 'bg.surface'}
+                          color={isMyMessage ? 'primary.fg' : 'fg.default'}
                           p={3}
                           borderRadius="lg"
                           boxShadow="sm"
@@ -466,7 +466,7 @@ export const Messages: React.FC = () => {
                   placeholder={t('inputPlaceholder')}
                   borderRadius="full"
                   bg="bg.subtle"
-                  _focus={{ bg: 'bg.surface', borderColor: 'brand.400' }}
+                  _focus={{ bg: 'bg.surface', borderColor: 'primary' }}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();

@@ -6,6 +6,7 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { HttpErrorFilter } from './common/errors/http-error.filter';
+import { validationExceptionFactory } from './common/errors/validation';
 
 async function bootstrap() {
   const isProduction = process.env.NODE_ENV === 'production';
@@ -51,6 +52,7 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      exceptionFactory: validationExceptionFactory,
     }),
   );
 
