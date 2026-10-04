@@ -33,6 +33,15 @@ const CODE_BY_STATUS: Record<number, ErrorCode> = {
  * status. 5xx messages are replaced so internals never reach the client.
  */
 export function toErrorBody(exception: unknown): ErrorBody {
+  const client = exposedClientError(exception);
+  if (client) {
+    return {
+      statusCode: client.status,
+      code: CODE_BY_STATUS[client.status] ?? ErrorCode.BAD_REQUEST,
+      message: client.message,
+    };
+  }
+
   if (!(exception instanceof HttpException)) {
     return {
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -77,6 +86,36 @@ export function toErrorBody(exception: unknown): ErrorBody {
   };
 }
 
+/**
+ * body-parser and other `http-errors` (e.g. 413 entity too large) are not
+ * HttpExceptions. Like Nest's default filter, keep their 4xx status; they set
+ * `expose` only for messages that are safe to show the client.
+ */
+function exposedClientError(
+  exception: unknown,
+): { status: number; message: string } | null {
+  if (exception instanceof HttpException || typeof exception !== 'object') {
+    return null;
+  }
+  const err = exception as {
+    status?: unknown;
+    expose?: unknown;
+    message?: unknown;
+  } | null;
+  if (
+    err?.expose === true &&
+    typeof err.status === 'number' &&
+    err.status >= 400 &&
+    err.status < 500
+  ) {
+    return {
+      status: err.status,
+      message: typeof err.message === 'string' ? err.message : 'Bad request',
+    };
+  }
+  return null;
+}
+
 @Catch()
 export class HttpErrorFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpErrorFilter.name);
@@ -88,10 +127,8 @@ export class HttpErrorFilter implements ExceptionFilter {
         exception instanceof Error ? exception.stack : String(exception),
       );
     }
-    host
-      .switchToHttp()
-      .getResponse<Response>()
-      .status(body.statusCode)
-      .json(body);
+    const res = host.switchToHttp().getResponse<Response>();
+    if (res.headersSent) return;
+    res.status(body.statusCode).json(body);
   }
 }

@@ -41,7 +41,6 @@ export interface User {
   bio?: string;
   followers?: number;
   engagementRate?: number;
-  categories?: string[];
   languages?: string[];
   description?: string;
   industry?: string;

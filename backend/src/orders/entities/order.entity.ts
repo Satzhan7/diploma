@@ -10,7 +10,6 @@ import {
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Profile } from '../../profiles/entities/profile.entity';
-import { User } from '../../users/entities/user.entity';
 import { OrderApplication } from './order-application.entity';
 
 export enum OrderStatus {
@@ -112,9 +111,6 @@ export class Order {
   })
   @UpdateDateColumn()
   updatedAt: Date;
-
-  @ManyToOne(() => User, (user) => user.orders)
-  brandUser: User;
 
   @ApiProperty({ type: () => [OrderApplication] })
   @OneToMany(() => OrderApplication, (application) => application.order, {

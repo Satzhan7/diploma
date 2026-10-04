@@ -68,7 +68,19 @@ Rule: every phase ends with something deployable and usable. Nothing goes to `ma
   - `.github/workflows/ci.yml`: `backend` (npm ci, typecheck, `lint:check`, Jest, `nest build`) and `frontend` (npm ci, typecheck, eslint, Jest, build) on Node 24. Runs on every pull request (PRs to `v1`, and the stacked Phase 1 PRs whose base is not `v1`) and on pushes to `v1`/`main`.
   - Backend lint 27 errors → 0: unused imports removed; `no-unused-vars` gets `ignoreRestSiblings` (the `{ field: _x, ...rest }` stripping pattern); seed.ts lost 8 `eslint-disable import/first` comments for a rule that is not installed; `getMessages`/`find*For*` keep the access/profile check call without the unused binding.
   - Frontend: `App.test.tsx` import order fixed (jest.mock is hoisted) → 0 errors, 10 warnings remain (CRA). CRA build runs with `CI=false` in CI so warnings are not build errors; this goes away in 1.2.
-- [ ] 1.4 Add a baseline TypeORM migration that creates the whole schema; set `migrationsRun` in production; remove the `Order.brandUser` and `User.categories` leftovers first. Needs: Docker Postgres, D1 (so the baseline isn't redone).
+- [x] 1.4 Add a baseline TypeORM migration that creates the whole schema; set `migrationsRun` in production; remove the `Order.brandUser` and `User.categories` leftovers first. Needs: Docker Postgres, D1 (so the baseline isn't redone).
+  - Leftovers removed: `Order.brandUser` (implicit `brandUserId` column) and its inverse `User.orders` (pointed at `order.brand`, a Profile); `User.categories` (`text[]`). `GET /users/influencers?category=` now filters on `Profile.categories`. That column is a `simple-array` (comma text), so `ArrayContains` would be a SQL error; the code uses `Raw` with `string_to_array`. seed.ts already wrote profile categories. Frontend `User.categories` type removed.
+  - `1720971600000-AddOrderApplicationUniqueness.ts` deleted (its unique INDEX shared a name with the entity's `@Unique` CONSTRAINT; never deployed).
+  - `migration:generate` / `migration:create` scripts. `1791039402679-Baseline.ts` was generated from the 9 entities against an empty `postgres:14-alpine` and reviewed by hand: 9 tables, 7 enums, 19 FKs, `UQ_order_application_order_applicant` is a constraint, no `brandUserId`, no `users.categories`. Added `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`.
+  - Production: `configuration.ts` `database.migrationsRun = NODE_ENV === 'production'`; AppModule loads `dist/database/migrations/*.js`. The CLI data-source glob was `*{.ts,.js}`, which also matched the emitted `.d.ts` in dist. It now loads `.ts` under ts-node and `.js` from dist.
+  - Proof (disposable containers, removed afterwards):
+    - Fresh DB, `migration:run` (ts-node): Baseline executed. Re-running `migration:generate --dr` printed "No changes in database schema were found", so there is no drift.
+    - Production image, fresh DB A: `npm run migration:run:prod` executed Baseline, then the app booted with `NODE_ENV=production`.
+    - Production image, fresh DB B: the app applied Baseline on boot.
+    - Both: `/health` 200, `migrations` = `Baseline1791039402679`, 10 tables.
+    - API smoke on A: register ×3, login, `PATCH /profiles/me`, create order, apply 201, duplicate apply 409, accept 200 (match row, order `in-progress`), chat and message, `?category=Fashion` → 1, `?category=Gaming` → 0, no filter → 2.
+  - Checks: backend `tsc --noEmit` ok · `eslint` 0 problems · Jest `Test Suites: 14 passed` / `Tests: 61 passed` · `nest build` ok. Dev stack (synchronize) dropped the two leftover columns on reload; `/health` 200.
+  - Follow-ups: there are no indexes on FK columns (`orders.brand_id`, `order_application.orderId`, `message.chatId`, …); add them with the list pagination work (2.5). In the redesign, EditProfile should load `/profiles/me`. Today it prefills from the `/auth/profile` JWT claims, so the profile fields start empty and a save sends empty categories and bio.
 - [x] 1.5 ∥ i18n setup: `react-i18next`, RU (default), KZ and EN locale files, language switcher, backend error codes instead of English strings. Extract the existing strings.
   - `src/i18n`: namespaces in `locales/<lang>/<ns>.json` (loaded with `import.meta.glob`), RU default, Kazakh = `kk` (labelled KZ), choice in localStorage `lang` and `<html lang>`; `formatDate`/`formatTime`/`formatNumber`/`formatMoney` (₸). `LanguageSwitcher` on Login, Register, the dashboard sidebar and Settings (replaces the old language dropdown; `language` dropped from the locally saved settings).
   - Backend: `ErrorCode` enum + `apiError()`; `HttpErrorFilter` returns `{statusCode, code, message, details?}`. Frontend `getErrorMessage(err, fallback?)`: known code → translated text, no response → NETWORK, else the page fallback or UNKNOWN. Every `err.response?.data?.message` / `error.message` toast in pages and AuthContext now goes through it (services had none).
@@ -78,6 +90,25 @@ Rule: every phase ends with something deployable and usable. Nothing goes to `ma
   - Found in QA: Settings saved both notification switches as off on every save (Chakra's Switch submits an empty value, the code compared with `'on'`). Fixed with `formData.has()`.
 - Branching (2026-10-03): PR #1 is unmerged, so Phase 1 is stacked on `audit/fixes`: one branch per step (`phase1/node24` → `phase1/ci` → `phase1/vite` → `phase1/i18n` → `phase1/migrations`), each PR based on the previous branch.
 - **Done when:** CI is green on `main`; a fresh Postgres plus `migration:run` boots production mode; the UI switches RU/KZ/EN.
+
+### Phase 1 review (2026-10-04, stack `phase1/node24` … `phase1/migrations`)
+
+**Done-when status:** CI green on every PR that has the workflow (below; `main` itself waits for the stack to merge into `v1`) ✅ · fresh Postgres + `migration:run` boots production mode ✅ (1.4 proof, 2026-10-03) · UI switches RU/KZ/EN ✅ (1.5 browser QA 25/25).
+
+**CI per PR** (GitHub Actions `CI`, `pull_request` runs on the PR head):
+- #1 `audit/fixes` → `v1` (`a9e1d4d`) and #2 `phase1/node24` → `audit/fixes` (`20f908c`): no run, the workflow arrives in #3.
+- #3 `phase1/ci` (`43d34d0`) success · #4 `phase1/vite` (`16155b6`) success · #5 `phase1/i18n` (`d867868`) success · #6 `phase1/migrations`: `d5d0deb` success; final head recorded below.
+
+**Final checks (host Node v25, `phase1/migrations` after the review fixes):**
+- Backend: `tsc --noEmit` ok · `npx eslint "{src,apps,libs,test}/**/*.ts"` 0 problems · Jest `Test Suites: 14 passed, 14 total` / `Tests: 62 passed, 62 total` · `nest build` ok.
+- Frontend: `tsc --noEmit` ok · `eslint src` `✖ 1 problem (0 errors, 1 warning)` (react-refresh, AuthContext) · Vitest `Test Files 4 passed (4)` / `Tests 11 passed (11)` · `vite build` ok (1.25 MB chunk warning).
+
+**Review** (code reviewer on the Phase 1 diff): "approve with comments", no high items. Fixed:
+- `b569efc` regression from 1.5: the catch-all `HttpErrorFilter` turned body-parser errors into 500. Exposed 4xx `http-errors` keep their status now (live on the dev stack: body > 100 kB → 413, malformed JSON → 400, no token → 401); no write after headers are sent. New spec case.
+- `32f20f7` `?category=` Raw param renamed `:profileCategory` (unique name in the query) and the input trimmed.
+- README: runbook for a database created by `synchronize` (mark the Baseline applied by hand) and for the `uuid-ossp` extension on managed Postgres.
+
+**Follow-ups (placed in the redesign plan below):** EditProfile loads `/profiles/me`; field-level ValidationPipe `details` in forms; FK indexes with pagination; auth refresh `catch` turns DB errors into 401; optional `DB_MIGRATIONS_RUN` kill switch; `PAYLOAD_TOO_LARGE` error code with uploads; OrderDetail `toast()` during render; nginx `client_max_body_size` for uploads; route code-splitting; react-router 7 and NestJS 11 audit items; `landing`/`stats` locale files unused until the redesign.
 
 ## Phase 2 — Domain model: one Deal pipeline (Needs: D1, 1.4)
 - [ ] 2.1 Design doc and ADR (ECC `architecture-decision-records`): the Brief → Application → Deal lifecycle and Mermaid state diagrams.
