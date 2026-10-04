@@ -85,6 +85,7 @@ export class DealsService {
         uid: viewer.id,
       })
       .orderBy('deal.createdAt', 'DESC')
+      .addOrderBy('deal.id', 'DESC')
       .take(take)
       .skip(skip);
     if (status) qb.andWhere('deal.status = :status', { status });

@@ -5,11 +5,10 @@ import {
   Body,
   Param,
   UseGuards,
-  Query,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
 import { GetCurrentUser } from '../auth/decorators/get-current-user.decorator';
 import { ProfilesService } from './profiles.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -53,35 +52,12 @@ export class ProfilesController {
     return this.profilesService.updateProfile(userId, updateProfileDto);
   }
 
-  @Get('influencers/search')
-  @Roles('brand')
-  @ApiOperation({ summary: 'Search influencers (brands only)' })
-  findInfluencers(
-    @GetCurrentUser('sub') brandUserId: string,
-    @Query() filters: any,
-  ) {
-    return this.profilesService.findInfluencersForBrand(brandUserId, filters);
-  }
-
-  @Get('brands/search')
-  @Roles('influencer')
-  @ApiOperation({ summary: 'Search brands (influencers only)' })
-  findBrands(
-    @GetCurrentUser('sub') influencerUserId: string,
-    @Query() filters: any,
-  ) {
-    return this.profilesService.findBrandsForInfluencer(
-      influencerUserId,
-      filters,
-    );
-  }
-
   // Read-only public-within-the-app lookup of any user's profile by their userId
   // (used by the role-aware "view profile" link in the dashboards).
   @Get(':userId')
   @ApiOperation({ summary: 'Get a profile by its owning user id' })
   @ApiResponse({ status: 200, type: Profile })
-  getProfileByUserId(@Param('userId') userId: string) {
+  getProfileByUserId(@Param('userId', ParseUUIDPipe) userId: string) {
     return this.profilesService.findPublicByUserId(userId);
   }
 }

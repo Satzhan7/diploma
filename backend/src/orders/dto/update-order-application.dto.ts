@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsEnum, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsEnum, IsInt, IsOptional, Min } from 'class-validator';
 import { ApplicationStatus } from '../entities/order-application.entity';
 
 export class UpdateOrderApplicationDto {
@@ -18,7 +18,8 @@ export class UpdateOrderApplicationDto {
     example: 1000,
     required: false,
   })
-  @IsNumber()
+  @IsInt()
+  @Min(1)
   @IsOptional()
   proposedPrice?: number;
 

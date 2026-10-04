@@ -106,27 +106,5 @@
       "withdrawn": "Отклик отозван",
       "withdrawError": "Не удалось отозвать отклик"
     }
-  },
-  "brandList": {
-    "title": "Бренды",
-    "loadError": "Ошибка загрузки брендов",
-    "loadErrorDescription": "Не удалось загрузить бренды",
-    "filterByIndustry": "Фильтр по отрасли",
-    "location": "Местоположение: {{location}}"
-  },
-  "recommendations": {
-    "title": "Рекомендуемые бренды",
-    "loadError": "Ошибка загрузки рекомендаций: {{message}}",
-    "filterByCategory": "Фильтр по категории",
-    "loading": "Загружаем рекомендации...",
-    "noDescription": "Описание отсутствует",
-    "categories": "Категории",
-    "viewProfile": "Открыть профиль",
-    "expressInterest": "Проявить интерес",
-    "toast": {
-      "interestTitle": "Интерес отправлен",
-      "interestDescription": "Бренд получит уведомление о вашем интересе к сотрудничеству",
-      "interestError": "Не удалось отправить интерес к сотрудничеству"
-    }
   }
 }

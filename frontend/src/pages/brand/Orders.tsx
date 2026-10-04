@@ -60,6 +60,8 @@ const BrandOrders: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orderApplications', selectedOrder?.id] });
       queryClient.invalidateQueries({ queryKey: ['brandOrders'] });
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
+      queryClient.invalidateQueries({ queryKey: ['chats'] });
       toast({ title: t('orders.toasts.accepted'), status: 'success' });
     },
     onError: (err) => toast({ title: t('orders.toasts.acceptError'), description: getErrorMessage(err), status: 'error' }),

@@ -1,12 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike, Raw } from 'typeorm';
+import { Repository, Raw } from 'typeorm';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
 import { hashRefreshToken } from '../auth/refresh-token-hash';
-import { UserRole } from './enums/user-role.enum';
 import { apiError, ErrorCode } from '../common/errors/error-codes';
 
 @Injectable()
@@ -18,47 +17,6 @@ export class UsersService {
 
   async findAll(): Promise<User[]> {
     return await this.usersRepository.find();
-  }
-
-  async findInfluencers(
-    searchQuery?: string,
-    category?: string,
-  ): Promise<User[]> {
-    const where: any = { role: UserRole.INFLUENCER };
-
-    if (searchQuery) {
-      where.name = ILike(`%${searchQuery}%`);
-    }
-
-    if (category) {
-      // Profile.categories is a simple-array (comma-separated text), so
-      // ArrayContains would be a runtime SQL error; split it first.
-      where.profile = {
-        categories: Raw(
-          (column) =>
-            `:profileCategory = ANY(string_to_array(COALESCE(${column}, ''), ','))`,
-          { profileCategory: category.trim() },
-        ),
-      };
-    }
-
-    return await this.usersRepository.find({
-      where,
-      relations: ['profile'],
-    });
-  }
-
-  async findBrands(searchQuery?: string): Promise<User[]> {
-    const where: any = { role: UserRole.BRAND };
-
-    if (searchQuery) {
-      where.name = ILike(`%${searchQuery}%`);
-    }
-
-    return await this.usersRepository.find({
-      where,
-      relations: ['profile'],
-    });
   }
 
   async findById(id: string): Promise<User> {

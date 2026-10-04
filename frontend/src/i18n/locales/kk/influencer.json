@@ -106,27 +106,5 @@
       "withdrawn": "Өтінім кері қайтарылды",
       "withdrawError": "Өтінімді кері қайтару мүмкін болмады"
     }
-  },
-  "brandList": {
-    "title": "Брендтер",
-    "loadError": "Брендтерді жүктеу қатесі",
-    "loadErrorDescription": "Брендтерді жүктеу мүмкін болмады",
-    "filterByIndustry": "Сала бойынша сүзу",
-    "location": "Орналасқан жері: {{location}}"
-  },
-  "recommendations": {
-    "title": "Ұсынылатын брендтер",
-    "loadError": "Ұсыныстарды жүктеу қатесі: {{message}}",
-    "filterByCategory": "Санат бойынша сүзу",
-    "loading": "Ұсыныстар жүктелуде...",
-    "noDescription": "Сипаттама жоқ",
-    "categories": "Санаттар",
-    "viewProfile": "Профильді ашу",
-    "expressInterest": "Қызығушылық білдіру",
-    "toast": {
-      "interestTitle": "Қызығушылық жіберілді",
-      "interestDescription": "Бренд сіздің ынтымақтастыққа қызығушылығыңыз туралы хабарлама алады",
-      "interestError": "Ынтымақтастыққа қызығушылықты жіберу мүмкін болмады"
-    }
   }
 }

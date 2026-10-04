@@ -152,6 +152,7 @@ describe('DealsService.findForUser', () => {
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
       take: jest.fn().mockReturnThis(),
       skip: jest.fn().mockReturnThis(),
       getManyAndCount: jest.fn().mockResolvedValue([[storedDeal()], 21]),
@@ -172,6 +173,8 @@ describe('DealsService.findForUser', () => {
     expect(qb.andWhere).toHaveBeenCalledWith('deal.status = :status', {
       status: DealStatus.ACTIVE,
     });
+    // id breaks createdAt ties so pages do not overlap or skip rows.
+    expect(qb.addOrderBy).toHaveBeenCalledWith('deal.id', 'DESC');
     expect(qb.take).toHaveBeenCalledWith(20);
     expect(qb.skip).toHaveBeenCalledWith(20);
     expect(page).toMatchObject({ total: 21, take: 20, skip: 20 });

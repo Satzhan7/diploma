@@ -106,27 +106,5 @@
       "withdrawn": "Application Withdrawn",
       "withdrawError": "Error withdrawing application"
     }
-  },
-  "brandList": {
-    "title": "Brands",
-    "loadError": "Error loading brands",
-    "loadErrorDescription": "Failed to load brands",
-    "filterByIndustry": "Filter by industry",
-    "location": "Location: {{location}}"
-  },
-  "recommendations": {
-    "title": "Recommended Brands",
-    "loadError": "Error loading recommendations: {{message}}",
-    "filterByCategory": "Filter by category",
-    "loading": "Loading recommendations...",
-    "noDescription": "No description available",
-    "categories": "Categories",
-    "viewProfile": "View Profile",
-    "expressInterest": "Express Interest",
-    "toast": {
-      "interestTitle": "Interest indicated",
-      "interestDescription": "The brand will be notified of your interest in collaboration",
-      "interestError": "Failed to send collaboration interest"
-    }
   }
 }
