@@ -42,3 +42,12 @@
 - **Vite 8 (Rolldown) can merge an eagerly-preloaded shared chunk into the entry.** A bigger `index-*.js` is not a regression by itself; compare the total first-load JS (entry + `modulepreload` list in `build/index.html`) before and after.
 - **Use one-pass substitution for email templates** (`/\{(name|code)\}/g`). Replacing `{code}` after inserting a user-controlled name expands placeholders inside the name.
 - **Email verification with a password chosen at sign-up invites pre-registration hijack.** An attacker registers the victim's address; the victim later "signs up", gets the code, verifies — and the attacker's password still works. The person who proves the inbox must set the password (verify takes it), and verify errors must not distinguish pending accounts.
+
+## 2026-10-04 — Redesign R2
+
+- **`git rm` staged deletions slipped into an unrelated commit again.** Prefer plain `rm` and stage with `git add -A <paths>`, or commit with explicit paths (`git commit <paths>`); run `git status --short` right before each commit.
+- **zsh does not word-split `$VAR`.** `E="A=1 B=2"; env $E cmd` passes one argument. Use `export A=1 B=2` (or an array) instead.
+- **Never run `sed`/`cat`/`grep` on a possibly empty `$F`.** With no file argument they read stdin and the call hangs. Guard with `[ -n "$F" ]` or iterate `${(f)F}`.
+- **The TypeORM generator does not drop tables of removed entities.** Add the `DROP TABLE` / `DROP TYPE` statements by hand, with a `down` that recreates them from the Baseline migration, and prove the round trip.
+- **`@Column({ unique: true })` on a OneToOne join column duplicates the `REL_` unique constraint** TypeORM already creates. Leave `unique` off the join column of a OneToOne.
+- **Removing a static route can expose a dynamic sibling.** After `GET /users/influencers` was deleted, the path fell through to `GET /users/:id` and Postgres answered the non-UUID with a 500. Every `:id` param that maps to a uuid column gets `ParseUUIDPipe`; probe removed paths after deleting routes.

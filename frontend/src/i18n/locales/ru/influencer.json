@@ -15,59 +15,15 @@
     "travel": "Путешествия"
   },
   "dashboard": {
-    "title": "Моя статистика",
-    "subtitle": "Ваши отклики и результаты сотрудничества",
-    "errors": {
-      "brands": "Не удалось загрузить бренды",
-      "categories": "Не удалось загрузить категории",
-      "stats": "Не удалось загрузить статистику"
-    },
-    "filters": {
-      "title": "Фильтры",
-      "startDate": "Дата начала",
-      "endDate": "Дата окончания",
-      "brand": "Бренд",
-      "allBrands": "Все бренды",
-      "category": "Категория",
-      "allCategories": "Все категории",
-      "reset": "Сбросить"
-    },
+    "title": "Обзор",
+    "subtitle": "Ваши отклики и сделки",
+    "loadError": "Не удалось загрузить отклики. Попробуйте позже.",
     "overview": {
       "title": "Обзор",
       "applicationsSent": "Отправлено откликов",
-      "activeApplications": "Активные отклики",
-      "acceptedRejected": "Принято / Отклонено",
-      "withdrawn": "Отозвано: {{value}}",
-      "collaborations": "Сотрудничества",
-      "completed": "Завершено: {{value}}"
-    },
-    "metrics": {
-      "title": "Показатели эффективности",
-      "totalClicks": "Всего кликов",
-      "totalImpressions": "Всего показов",
-      "avgEngagementRate": "Средняя вовлечённость",
-      "followerGrowth": "Прирост подписчиков"
-    },
-    "details": {
-      "title": "Подробности",
-      "performanceOverTime": "Динамика показателей",
-      "noDailyData": "Нет данных по дням для построения графика.",
-      "impressionsByCategory": "Показы по категориям",
-      "noCampaignData": "Нет данных по кампаниям.",
-      "collaborationPerformance": "Результаты сотрудничества",
-      "emptyTitle": "Данных о сотрудничестве пока нет",
-      "emptyDescription": "Показатели появятся здесь, когда по вашим сотрудничествам поступит статистика."
-    },
-    "table": {
-      "campaign": "Кампания",
-      "category": "Категория",
-      "brand": "Бренд",
-      "clicks": "Клики",
-      "impressions": "Показы",
-      "engagement": "Вовлечённость",
-      "status": "Статус",
-      "startDate": "Дата начала",
-      "endDate": "Дата окончания"
+      "pending": "Ждут ответа",
+      "accepted": "Приняты",
+      "activeDeals": "Сделки в работе"
     }
   },
   "orders": {
@@ -149,28 +105,6 @@
     "toast": {
       "withdrawn": "Отклик отозван",
       "withdrawError": "Не удалось отозвать отклик"
-    }
-  },
-  "brandList": {
-    "title": "Бренды",
-    "loadError": "Ошибка загрузки брендов",
-    "loadErrorDescription": "Не удалось загрузить бренды",
-    "filterByIndustry": "Фильтр по отрасли",
-    "location": "Местоположение: {{location}}"
-  },
-  "recommendations": {
-    "title": "Рекомендуемые бренды",
-    "loadError": "Ошибка загрузки рекомендаций: {{message}}",
-    "filterByCategory": "Фильтр по категории",
-    "loading": "Загружаем рекомендации...",
-    "noDescription": "Описание отсутствует",
-    "categories": "Категории",
-    "viewProfile": "Открыть профиль",
-    "expressInterest": "Проявить интерес",
-    "toast": {
-      "interestTitle": "Интерес отправлен",
-      "interestDescription": "Бренд получит уведомление о вашем интересе к сотрудничеству",
-      "interestError": "Не удалось отправить интерес к сотрудничеству"
     }
   }
 }

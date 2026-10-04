@@ -5,10 +5,9 @@ import { Profile } from '../profiles/entities/profile.entity';
 import { SocialMedia } from '../profiles/entities/social-media.entity';
 import { Order } from '../orders/entities/order.entity';
 import { OrderApplication } from '../orders/entities/order-application.entity';
-import { Match } from '../matching/entities/match.entity';
+import { Deal } from '../deals/entities/deal.entity';
 import { Chat } from '../chats/entities/chat.entity';
 import { Message } from '../chats/entities/message.entity';
-import { Collaboration } from '../collaborations/entities/collaboration.entity';
 import { EmailVerification } from '../auth/entities/email-verification.entity';
 
 // CLI-only datasource for reviewed migrations. Runtime configuration remains in
@@ -26,10 +25,9 @@ export default new DataSource({
     SocialMedia,
     Order,
     OrderApplication,
-    Match,
     Chat,
     Message,
-    Collaboration,
+    Deal,
     EmailVerification,
   ],
   // ts-node runs the .ts sources; dist only loads .js (not the emitted .d.ts).

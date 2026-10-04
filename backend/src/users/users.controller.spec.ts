@@ -38,16 +38,10 @@ describe('UsersController access control', () => {
 
   const controller = new UsersController({
     findById: jest.fn().mockResolvedValue(storedUser),
-    findInfluencers: jest.fn().mockResolvedValue([storedUser]),
-    findBrands: jest.fn().mockResolvedValue([storedUser]),
   } as any);
 
-  it.each([
-    ['GET /users/:id', () => controller.findById('u1')],
-    ['GET /users/influencers', () => controller.findInfluencers()],
-    ['GET /users/brands', () => controller.findBrands()],
-  ])('%s returns a public projection only', async (_route, call) => {
-    const body = JSON.stringify(await call());
+  it('GET /users/:id returns a public projection only', async () => {
+    const body = JSON.stringify(await controller.findById('u1'));
     expect(body).toContain('"id":"u1"');
     expect(body).toContain('"displayName":"Aida"');
     for (const secret of ['email', 'password', 'refreshToken', '$2b$']) {

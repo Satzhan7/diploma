@@ -9,6 +9,7 @@ import {
   Req,
   InternalServerErrorException,
   BadRequestException,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -289,13 +290,19 @@ SELECT COUNT(*) FROM message WHERE "chatId" IS NULL;
   }
 
   @Post(':recipientId')
-  @ApiOperation({ summary: 'Create a new chat or return existing one' })
+  @ApiOperation({
+    summary:
+      'Create a new chat or return the existing one (only with someone you share an application with)',
+  })
   @ApiResponse({ status: 201, description: 'Chat created successfully.' })
+  @ApiResponse({ status: 403, description: 'No shared application.' })
   async create(
-    @Param('recipientId') recipientId: string,
+    @Param('recipientId', ParseUUIDPipe) recipientId: string,
     @GetCurrentUser() user: CurrentUser,
   ): Promise<PublicChat> {
-    return toPublicChat(await this.chatsService.create(user.id, recipientId));
+    return toPublicChat(
+      await this.chatsService.startForUser(user.id, recipientId),
+    );
   }
 
   @Post(':id/messages')

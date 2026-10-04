@@ -16,61 +16,18 @@
     "health": "Денсаулық"
   },
   "dashboard": {
-    "title": "Бренд тақтасы",
-    "subtitle": "Науқандардың нәтижелері бір жерде",
-    "errors": {
-      "loadInfluencers": "Инфлюенсерлерді жүктеу мүмкін болмады",
-      "loadCategories": "Санаттарды жүктеу мүмкін болмады",
-      "loadStats": "Статистиканы жүктеу мүмкін болмады"
-    },
-    "filters": {
-      "title": "Сүзгілер",
-      "startDate": "Басталу күні",
-      "endDate": "Аяқталу күні",
-      "influencer": "Инфлюенсер",
-      "allInfluencers": "Барлық инфлюенсерлер",
-      "category": "Санат",
-      "allCategories": "Барлық санаттар",
-      "reset": "Тазарту"
-    },
+    "title": "Басты бет",
+    "subtitle": "Брифтеріңіз бен мәмілелеріңіз",
+    "newBrief": "Жаңа бриф",
+    "loadError": "Брифтер жүктелмеді. Кейінірек қайталаңыз.",
     "overview": {
       "title": "Шолу",
-      "ordersCreated": "Құрылған тапсырыстар",
-      "activeOrders": "Белсенді тапсырыстар",
-      "activeOrdersHelp": "Ашық: {{open}} · Орындалуда: {{inProgress}}",
-      "applicationsReceived": "Келген өтінімдер",
-      "applicationsHelp": "Қаралуда: {{pending}} · Қабылданды: {{accepted}}",
-      "activeCollaborations": "Белсенді ынтымақтастықтар",
-      "collaborationsHelp": "Аяқталды: {{completed}}"
-    },
-    "performance": {
-      "title": "Тиімділік көрсеткіштері",
-      "totalClicks": "Барлық басулар",
-      "totalImpressions": "Барлық көрсетілімдер",
-      "avgEngagement": "Орташа қызығушылық деңгейі"
-    },
-    "details": {
-      "title": "Толығырақ",
-      "overTime": "Көрсеткіштер динамикасы",
-      "noDailyData": "Графикті құруға күндік деректер жоқ.",
-      "byCategory": "Санаттар бойынша қызығушылық",
-      "noCampaignData": "Науқандар бойынша деректер жоқ.",
-      "campaigns": "Науқандардың тиімділігі"
-    },
-    "table": {
-      "campaign": "Науқан",
-      "category": "Санат",
-      "influencer": "Инфлюенсер",
-      "clicks": "Басулар",
-      "impressions": "Көрсетілімдер",
-      "engagement": "Қызығушылық",
-      "status": "Күйі",
-      "startDate": "Басталу күні",
-      "endDate": "Аяқталу күні"
-    },
-    "empty": {
-      "title": "Науқандар бойынша деректер әлі жоқ",
-      "description": "Ынтымақтастықтарыңыз бойынша статистика түскенде, көрсеткіштер осында пайда болады."
+      "briefs": "Жарияланған брифтер",
+      "openBriefs": "Ашық брифтер",
+      "applications": "Келген өтінімдер",
+      "pending_one": "{{count}} жауап күтуде",
+      "pending_other": "{{count}} жауап күтуде",
+      "activeDeals": "Орындалып жатқан мәмілелер"
     }
   },
   "orders": {

@@ -46,7 +46,14 @@ export enum ErrorCode {
 
   // Chats
   CHAT_NOT_FOUND = 'CHAT_NOT_FOUND',
+  CHAT_NOT_ALLOWED = 'CHAT_NOT_ALLOWED',
+  CHAT_SELF = 'CHAT_SELF',
   MESSAGE_EMPTY = 'MESSAGE_EMPTY',
+
+  // Deals
+  DEAL_NOT_FOUND = 'DEAL_NOT_FOUND',
+  DEAL_INVALID_TRANSITION = 'DEAL_INVALID_TRANSITION',
+  DEAL_STALE = 'DEAL_STALE',
 }
 
 /** Exception body for a coded error: `throw new NotFoundException(apiError(...))`. */

@@ -53,11 +53,15 @@ describe('OrdersService.findOne access control', () => {
         ? null
         : { id: 'influencer-profile', user: influencerUser },
   });
-  const serviceFor = (status: OrderStatus) =>
+  const serviceFor = (status: OrderStatus, applied = false) =>
     new OrdersService(
       { findOne: jest.fn().mockResolvedValue(order(status)) } as any,
       {} as any,
-      {} as any,
+      {
+        getRepository: () => ({
+          exists: jest.fn().mockResolvedValue(applied),
+        }),
+      } as any,
     );
   const stranger = { id: 'other-user', role: UserRole.INFLUENCER };
 
@@ -68,12 +72,35 @@ describe('OrdersService.findOne access control', () => {
       { id: 'influencer-user', role: UserRole.INFLUENCER },
     ],
     ['admin', { id: 'admin-user', role: UserRole.ADMIN }],
-  ])('returns the full order to the %s', async (_label, viewer) => {
-    const result = await serviceFor(OrderStatus.IN_PROGRESS).findOne(
-      'order-1',
-      viewer,
-    );
-    expect(result).toEqual(order(OrderStatus.IN_PROGRESS));
+  ])(
+    'returns the full order without emails to the %s',
+    async (_label, viewer) => {
+      const result = (await serviceFor(OrderStatus.IN_PROGRESS).findOne(
+        'order-1',
+        viewer,
+      )) as any;
+      expect(result.influencer.user).toEqual(
+        expect.objectContaining({ id: 'influencer-user', name: 'Influencer' }),
+      );
+      expect(result.brand.user.id).toBe('brand-user');
+      expect(JSON.stringify(result)).not.toContain('@example.test');
+    },
+  );
+
+  it('keeps the brief visible to an applicant after it leaves OPEN', async () => {
+    for (const status of [
+      OrderStatus.IN_PROGRESS,
+      OrderStatus.COMPLETED,
+      OrderStatus.CANCELLED,
+    ]) {
+      const result = await serviceFor(status, true).findOne(
+        'order-1',
+        stranger,
+      );
+      expect(result.id).toBe('order-1');
+      expect(result).not.toHaveProperty('influencer');
+      expect(JSON.stringify(result)).not.toContain('@example.test');
+    }
   });
 
   it('returns 403 to another user when the order is not open', async () => {
@@ -103,5 +130,43 @@ describe('OrdersService.findOne access control', () => {
     );
     expect(JSON.stringify(result)).not.toContain('@example.test');
     expect(result).not.toHaveProperty('influencer');
+  });
+});
+
+describe('OrdersService participant lists', () => {
+  const withEmail = (id: string) => ({
+    id,
+    name: id,
+    email: `${id}@example.test`,
+    password: '$2b$10$hash',
+  });
+  const orders = () => [
+    {
+      id: 'order-1',
+      brand: { id: 'brand-profile', user: withEmail('brand-user') },
+      influencer: { id: 'creator-profile', user: withEmail('creator-user') },
+      applications: [
+        { id: 'application-1', applicant: withEmail('creator-user') },
+        { id: 'application-2', applicant: withEmail('other-creator') },
+      ],
+    },
+  ];
+  const service = () =>
+    new OrdersService(
+      { find: jest.fn().mockResolvedValue(orders()) } as any,
+      { findByUserId: jest.fn().mockResolvedValue({ id: 'profile' }) } as any,
+      {} as any,
+    );
+
+  it.each([
+    ['GET /orders/brand', (s: OrdersService) => s.findByBrand('brand-user')],
+    [
+      'GET /orders/influencer',
+      (s: OrdersService) => s.findByInfluencer('creator-user'),
+    ],
+  ])('%s returns no email', async (_route, call) => {
+    const body = JSON.stringify(await call(service()));
+    expect(body).toContain('other-creator');
+    expect(body).not.toMatch(/email|password|\$2b\$/);
   });
 });

@@ -17,60 +17,17 @@
   },
   "dashboard": {
     "title": "Brand dashboard",
-    "subtitle": "Campaign performance at a glance",
-    "errors": {
-      "loadInfluencers": "Couldn't load influencers",
-      "loadCategories": "Couldn't load categories",
-      "loadStats": "Failed to load statistics"
-    },
-    "filters": {
-      "title": "Filter data",
-      "startDate": "Start date",
-      "endDate": "End date",
-      "influencer": "Influencer",
-      "allInfluencers": "All influencers",
-      "category": "Category",
-      "allCategories": "All categories",
-      "reset": "Reset"
-    },
+    "subtitle": "Your briefs and deals at a glance",
+    "newBrief": "New brief",
+    "loadError": "Couldn't load your briefs. Try again later.",
     "overview": {
       "title": "Overview",
-      "ordersCreated": "Orders created",
-      "activeOrders": "Active orders",
-      "activeOrdersHelp": "Open: {{open}} · In progress: {{inProgress}}",
-      "applicationsReceived": "Applications received",
-      "applicationsHelp": "Pending: {{pending}} · Accepted: {{accepted}}",
-      "activeCollaborations": "Active collaborations",
-      "collaborationsHelp": "Completed: {{completed}}"
-    },
-    "performance": {
-      "title": "Performance metrics",
-      "totalClicks": "Total clicks",
-      "totalImpressions": "Total impressions",
-      "avgEngagement": "Avg. engagement rate"
-    },
-    "details": {
-      "title": "Details",
-      "overTime": "Performance over time",
-      "noDailyData": "No daily data available to display the chart.",
-      "byCategory": "Engagement by category",
-      "noCampaignData": "No campaign data available.",
-      "campaigns": "Campaign performance"
-    },
-    "table": {
-      "campaign": "Campaign",
-      "category": "Category",
-      "influencer": "Influencer",
-      "clicks": "Clicks",
-      "impressions": "Impressions",
-      "engagement": "Engagement",
-      "status": "Status",
-      "startDate": "Start date",
-      "endDate": "End date"
-    },
-    "empty": {
-      "title": "No campaign data yet",
-      "description": "Performance will appear here once your collaborations report stats."
+      "briefs": "Briefs posted",
+      "openBriefs": "Open briefs",
+      "applications": "Applications received",
+      "pending_one": "{{count}} waiting for you",
+      "pending_other": "{{count}} waiting for you",
+      "activeDeals": "Active deals"
     }
   },
   "orders": {

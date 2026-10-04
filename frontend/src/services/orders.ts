@@ -1,6 +1,5 @@
 import api from './api';
 import { Application } from './applications';
-import { Match } from './matching';
 import { Profile } from '../types/user';
 
 export type OrderStatus = 'open' | 'closed' | 'in_progress' | 'completed' | 'cancelled';
@@ -19,7 +18,6 @@ export interface Order {
   updatedAt: string;
   brand?: Profile;
   applications?: Application[];
-  match?: Match;
 }
 
 export const ordersService = {

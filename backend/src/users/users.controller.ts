@@ -5,9 +5,9 @@ import {
   Patch,
   Param,
   Delete,
-  Query,
   UseGuards,
   ForbiddenException,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
@@ -34,32 +34,14 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
-  @Get('influencers')
-  async findInfluencers(
-    @Query('search') searchQuery?: string,
-    @Query('category') category?: string,
-  ) {
-    const users = await this.usersService.findInfluencers(
-      searchQuery,
-      category,
-    );
-    return users.map(toPublicUser);
-  }
-
-  @Get('brands')
-  async findBrands(@Query('search') searchQuery?: string) {
-    const users = await this.usersService.findBrands(searchQuery);
-    return users.map(toPublicUser);
-  }
-
   @Get(':id')
-  async findById(@Param('id') id: string) {
+  async findById(@Param('id', ParseUUIDPipe) id: string) {
     return toPublicUser(await this.usersService.findById(id));
   }
 
   @Patch(':id')
   update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUserDto: UpdateUserDto,
     @GetCurrentUser('sub') currentUserId: string,
   ) {
@@ -84,7 +66,7 @@ export class UsersController {
 
   @Delete(':id')
   remove(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @GetCurrentUser() currentUser: { id: string; role: UserRole },
   ) {
     // Ownership: same rule as PATCH — only the account owner (or an admin)

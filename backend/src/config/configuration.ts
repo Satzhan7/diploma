@@ -1,3 +1,18 @@
+export function parseMigrationsRun(
+  value: string | undefined,
+  fallback: boolean,
+): boolean {
+  const normalised = value?.trim().toLowerCase();
+  if (normalised === 'true') return true;
+  if (normalised === 'false') return false;
+  if (normalised) {
+    throw new Error(
+      `DB_MIGRATIONS_RUN must be "true" or "false", got "${value}"`,
+    );
+  }
+  return fallback;
+}
+
 export default () => ({
   port: parseInt(process.env.PORT, 10) || 3000,
   database: {
@@ -12,8 +27,13 @@ export default () => ({
       process.env.NODE_ENV !== 'production' &&
       process.env.DB_SYNCHRONIZE !== 'false',
     // Production builds the schema from the reviewed migrations in
-    // src/database/migrations, applied on boot.
-    migrationsRun: process.env.NODE_ENV === 'production',
+    // src/database/migrations, applied on boot. DB_MIGRATIONS_RUN=false turns
+    // that off (e.g. to apply them by hand with migration:run:prod first);
+    // =true turns it on elsewhere. Unset keeps the default.
+    migrationsRun: parseMigrationsRun(
+      process.env.DB_MIGRATIONS_RUN,
+      process.env.NODE_ENV === 'production',
+    ),
   },
   jwt: {
     secret: process.env.JWT_SECRET || 'super-secret',

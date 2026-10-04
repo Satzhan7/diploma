@@ -60,6 +60,8 @@ const BrandOrders: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orderApplications', selectedOrder?.id] });
       queryClient.invalidateQueries({ queryKey: ['brandOrders'] });
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
+      queryClient.invalidateQueries({ queryKey: ['chats'] });
       toast({ title: t('orders.toasts.accepted'), status: 'success' });
     },
     onError: (err) => toast({ title: t('orders.toasts.acceptError'), description: getErrorMessage(err), status: 'error' }),
@@ -145,11 +147,7 @@ const BrandOrders: React.FC = () => {
                       </Button>
                     );
                   })()}
-                  {/*
-                    Order edit/delete and per-order stats updates are intentionally not
-                    surfaced in the demo build — see PATCH /matching/:id/stats which is
-                    invoked from the Match details flow once a match is accepted.
-                  */}
+                  {/* Order edit/delete arrive with the brief model in R3. */}
                 </HStack>
               </CardFooter>
             </Card>

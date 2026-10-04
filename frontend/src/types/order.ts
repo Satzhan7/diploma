@@ -1,4 +1,3 @@
-import { Match } from '../services/matching';
 import { Application } from '../services/applications';
 import { Profile } from './user';
 
@@ -19,5 +18,4 @@ export interface Order {
   createdAt: string;
   updatedAt: string;
   applications?: Application[];
-  match?: Match;
 } 

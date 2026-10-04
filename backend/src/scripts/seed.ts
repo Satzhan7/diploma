@@ -5,7 +5,7 @@
  *   docker-compose up -d postgres && npm run seed
  *
  * Boots the real AppModule in a standalone context and drives the same
- * services the API uses, so every side effect (profile creation, match +
+ * services the API uses, so every side effect (profile creation, deal +
  * chat seeding on acceptance, application auto-rejection) follows the
  * production code path. Safe to re-run: existing users are reused, but each
  * run creates a fresh set of orders/applications.
@@ -171,12 +171,12 @@ async function main() {
   summary.application1 = app1.id;
 
   // 4. Accept influencer1's application — triggers the full chain:
-  //    order -> in-progress, match accepted, other applications rejected,
+  //    order -> in-progress, deal created, other applications rejected,
   //    chat created and seeded with a welcome message.
   await applications.update(app1.id, brandIds[0], UserRole.BRAND, {
     status: ApplicationStatus.ACCEPTED,
   });
-  console.log(`accepted application ${app1.id} (match + chat auto-created)`);
+  console.log(`accepted application ${app1.id} (deal + chat auto-created)`);
 
   console.log('\n=== Seed summary ===');
   console.log(`login password for all demo users: ${PASSWORD}`);

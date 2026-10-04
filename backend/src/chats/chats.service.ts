@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Chat } from './entities/chat.entity';
@@ -88,6 +93,41 @@ export class ChatsService {
     return messages;
   }
 
+  // Users may only open a chat with someone they share an application with
+  // (either side of it); every deal comes from an accepted application, so
+  // this covers deals too. Emails stay hidden, so chat is the only channel.
+  async startForUser(userId: string, recipientId: string): Promise<Chat> {
+    if (userId === recipientId) {
+      throw new BadRequestException(
+        apiError(ErrorCode.CHAT_SELF, 'You cannot start a chat with yourself'),
+      );
+    }
+    if (!(await this.shareApplication(userId, recipientId))) {
+      throw new ForbiddenException(
+        apiError(
+          ErrorCode.CHAT_NOT_ALLOWED,
+          'Chats open once one of you applies to the other’s brief',
+        ),
+      );
+    }
+    return this.create(userId, recipientId);
+  }
+
+  async shareApplication(a: string, b: string): Promise<boolean> {
+    const rows: unknown[] = await this.chatsRepository.manager.query(
+      `SELECT 1
+         FROM order_application app
+         JOIN orders o ON o.id = app."orderId"
+         JOIN profiles brand ON brand.id = o.brand_id
+        WHERE (app."applicantId" = $1 AND brand.user_id = $2)
+           OR (app."applicantId" = $2 AND brand.user_id = $1)
+        LIMIT 1`,
+      [a, b],
+    );
+    return rows.length > 0;
+  }
+
+  // Internal: callers have already established that the pair may talk.
   async create(senderId: string, recipientId: string): Promise<Chat> {
     // Check if chat already exists
     const existingChat = await this.chatsRepository.findOne({
