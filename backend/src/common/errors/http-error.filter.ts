@@ -8,13 +8,14 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ErrorCode } from './error-codes';
+import { FieldError } from './validation';
 
 export interface ErrorBody {
   statusCode: number;
   code: string;
   message: string;
-  /** Field messages from ValidationPipe. */
-  details?: string[];
+  /** Failed fields from ValidationPipe (`validationExceptionFactory`). */
+  details?: FieldError[] | string[];
 }
 
 const CODE_BY_STATUS: Record<number, ErrorCode> = {
@@ -63,9 +64,22 @@ export function toErrorBody(exception: unknown): ErrorBody {
   const body = (typeof response === 'object' ? response : {}) as {
     code?: unknown;
     message?: unknown;
+    details?: unknown;
   };
 
-  // ValidationPipe throws BadRequest with message: string[].
+  if (
+    body.code === ErrorCode.VALIDATION_FAILED &&
+    Array.isArray(body.details)
+  ) {
+    return {
+      statusCode,
+      code: ErrorCode.VALIDATION_FAILED,
+      message: 'Validation failed',
+      details: body.details as FieldError[],
+    };
+  }
+
+  // A ValidationPipe without the factory throws BadRequest with message: string[].
   if (Array.isArray(body.message)) {
     return {
       statusCode,
