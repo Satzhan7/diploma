@@ -19,6 +19,8 @@ async function bootstrap() {
       'JWT_SECRET',
       'JWT_REFRESH_SECRET',
       'CORS_ORIGIN',
+      'SMTP_HOST',
+      'MAIL_FROM',
     ];
     const missing = required.filter((name) => !process.env[name]?.trim());
     if (missing.length > 0) {

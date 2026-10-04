@@ -31,7 +31,7 @@ describe('UsersController access control', () => {
     password: '$2b$10$hash',
     refreshToken: '$2b$10$refresh',
     role: UserRole.INFLUENCER,
-    isEmailVerified: true,
+    emailVerifiedAt: new Date('2024-01-01T00:00:00Z'),
     createdAt: new Date(),
     profile: { id: 'p1', displayName: 'Aida' },
   };

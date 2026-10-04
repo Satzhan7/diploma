@@ -112,11 +112,7 @@ export class UsersService {
     await this.usersRepository.save(user);
   }
 
-  async verifyEmail(userId: string): Promise<User> {
-    const user = await this.findById(userId);
-
-    user.isEmailVerified = true;
-
-    return this.usersRepository.save(user);
+  async markEmailVerified(userId: string): Promise<void> {
+    await this.usersRepository.update(userId, { emailVerifiedAt: new Date() });
   }
 }

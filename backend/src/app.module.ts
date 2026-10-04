@@ -24,6 +24,7 @@ import { Match } from './matching/entities/match.entity';
 import configuration from './config/configuration';
 import { CollaborationsModule } from './collaborations/collaborations.module';
 import { Collaboration } from './collaborations/entities/collaboration.entity';
+import { EmailVerification } from './auth/entities/email-verification.entity';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { Collaboration } from './collaborations/entities/collaboration.entity';
           OrderApplication,
           Match,
           Collaboration,
+          EmailVerification,
         ],
         synchronize: configService.get('database.synchronize'),
         migrationsRun: configService.get('database.migrationsRun'),

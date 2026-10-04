@@ -27,4 +27,15 @@ export default () => ({
     accessTokenExpiration: process.env.JWT_ACCESS_EXPIRATION || '15m',
     refreshTokenExpiration: process.env.JWT_REFRESH_EXPIRATION || '7d',
   },
+  mail: {
+    from: process.env.MAIL_FROM || 'AdPartners <no-reply@adpartners.kz>',
+    smtp: {
+      host: process.env.SMTP_HOST || 'localhost',
+      port: parseInt(process.env.SMTP_PORT, 10) || 1025,
+      // true = TLS from the start (port 465); false = STARTTLS when offered.
+      secure: process.env.SMTP_SECURE === 'true',
+      user: process.env.SMTP_USER || undefined,
+      pass: process.env.SMTP_PASS || undefined,
+    },
+  },
 });

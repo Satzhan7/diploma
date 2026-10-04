@@ -2,7 +2,7 @@ import {
   Injectable,
   InternalServerErrorException,
   UnauthorizedException,
-  ConflictException,
+  ForbiddenException,
   NotFoundException,
   Logger,
 } from '@nestjs/common';
@@ -15,9 +15,18 @@ import * as bcrypt from 'bcrypt';
 import { refreshTokenMatches } from './refresh-token-hash';
 import { ProfilesService } from '../profiles/profiles.service';
 import { ProfileType } from '../profiles/entities/profile.entity';
-import { UserRole } from '../users/entities/user.entity';
+import { User, UserRole } from '../users/entities/user.entity';
 import { TokenPayload } from './types/token-payload';
 import { apiError, ErrorCode } from '../common/errors/error-codes';
+import { EmailVerificationService } from './email-verification.service';
+import { VerifyEmailDto } from './dto/verify-email.dto';
+import { ResendCodeDto } from './dto/resend-code.dto';
+
+/**
+ * Register and resend always answer with this, whether or not the email
+ * belongs to an account, so the API never reveals registered emails.
+ */
+export const VERIFICATION_REQUIRED = { verificationRequired: true } as const;
 
 @Injectable()
 export class AuthService {
@@ -28,35 +37,56 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly profilesService: ProfilesService,
     private readonly configService: ConfigService,
+    private readonly emailVerification: EmailVerificationService,
   ) {}
 
+  /** Creates the account and emails a code. No tokens until the code is entered. */
   async register(registerDto: RegisterDto) {
-    const existingUser = await this.usersService.findByEmail(registerDto.email);
+    const { name, email, password, role, language = 'ru' } = registerDto;
+    const existingUser = await this.usersService.findByEmail(email);
     if (existingUser) {
-      throw new ConflictException(
-        apiError(
-          ErrorCode.AUTH_EMAIL_TAKEN,
-          'User with this email already exists',
-        ),
-      );
+      // An unverified owner gets a fresh code (cooldown applies); a verified
+      // one gets nothing. The response is the same either way.
+      if (!existingUser.emailVerifiedAt) {
+        await this.emailVerification.send(existingUser, language);
+      }
+      return VERIFICATION_REQUIRED;
     }
 
-    const user = await this.usersService.create(registerDto);
+    const user = await this.usersService.create({
+      name,
+      email,
+      password,
+      role,
+    });
 
     // Create a profile for the user based on their role
     const profileType =
-      registerDto.role === UserRole.BRAND
-        ? ProfileType.BRAND
-        : ProfileType.INFLUENCER;
+      role === UserRole.BRAND ? ProfileType.BRAND : ProfileType.INFLUENCER;
     await this.profilesService.createProfile(user.id, profileType);
 
-    const tokens = await this.generateTokens(user.id, user.email);
-    await this.usersService.updateRefreshToken(user.id, tokens.refreshToken);
+    await this.emailVerification.send(user, language);
+    return VERIFICATION_REQUIRED;
+  }
 
-    return {
-      user,
-      ...tokens,
-    };
+  /** Checks the emailed code, marks the email verified and signs the user in. */
+  async verifyEmail({ email, code }: VerifyEmailDto) {
+    const user = await this.usersService.findByEmail(email);
+    // Unknown and already-verified emails look like a wrong code.
+    if (!user || user.emailVerifiedAt) {
+      throw this.emailVerification.invalid();
+    }
+    await this.emailVerification.verify(user.id, code);
+    await this.usersService.markEmailVerified(user.id);
+    return this.startSession(await this.usersService.findById(user.id));
+  }
+
+  async resendCode({ email, language = 'ru' }: ResendCodeDto) {
+    const user = await this.usersService.findByEmail(email);
+    if (user && !user.emailVerifiedAt) {
+      await this.emailVerification.send(user, language);
+    }
+    return VERIFICATION_REQUIRED;
   }
 
   async login(loginDto: LoginDto) {
@@ -77,13 +107,20 @@ export class AuthService {
       );
     }
 
+    // Checked after the password, so it reveals nothing to a stranger.
+    if (!user.emailVerifiedAt) {
+      throw new ForbiddenException(
+        apiError(ErrorCode.AUTH_EMAIL_NOT_VERIFIED, 'Email is not verified'),
+      );
+    }
+
+    return this.startSession(user);
+  }
+
+  private async startSession(user: User) {
     const tokens = await this.generateTokens(user.id, user.email);
     await this.usersService.updateRefreshToken(user.id, tokens.refreshToken);
-
-    return {
-      user,
-      ...tokens,
-    };
+    return { user, ...tokens };
   }
 
   async refreshTokens(refreshToken: string) {

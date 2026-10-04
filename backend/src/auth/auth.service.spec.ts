@@ -12,6 +12,7 @@ describe('AuthService token boundaries', () => {
     email: 'user@example.test',
     password: '',
     refreshToken: null as string | null,
+    emailVerifiedAt: new Date('2024-01-01T00:00:00Z') as Date | null,
   };
 
   const usersService = {
@@ -52,6 +53,7 @@ describe('AuthService token boundaries', () => {
       jwtService,
       profilesService as any,
       configService as any,
+      {} as any,
     );
   });
 

@@ -86,17 +86,14 @@ async function main() {
   ): Promise<string> => {
     let user = await users.findByEmail(email);
     if (!user) {
-      const result = await auth.register({
-        name,
-        email,
-        password: PASSWORD,
-        role,
-      });
-      user = result.user;
+      await auth.register({ name, email, password: PASSWORD, role });
+      user = await users.findByEmail(email);
       console.log(`created ${role}: ${email}`);
     } else {
       console.log(`exists  ${role}: ${email}`);
     }
+    // Demo accounts skip the emailed code so they can log in at once.
+    if (!user.emailVerifiedAt) await users.markEmailVerified(user.id);
     await profiles.updateProfile(user.id, { categories });
     return user.id;
   };

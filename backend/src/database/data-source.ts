@@ -9,6 +9,7 @@ import { Match } from '../matching/entities/match.entity';
 import { Chat } from '../chats/entities/chat.entity';
 import { Message } from '../chats/entities/message.entity';
 import { Collaboration } from '../collaborations/entities/collaboration.entity';
+import { EmailVerification } from '../auth/entities/email-verification.entity';
 
 // CLI-only datasource for reviewed migrations. Runtime configuration remains in
 // AppModule; neither path enables synchronize in production.
@@ -29,6 +30,7 @@ export default new DataSource({
     Chat,
     Message,
     Collaboration,
+    EmailVerification,
   ],
   // ts-node runs the .ts sources; dist only loads .js (not the emitted .d.ts).
   migrations: [

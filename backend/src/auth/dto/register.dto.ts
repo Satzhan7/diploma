@@ -2,12 +2,14 @@ import {
   IsEmail,
   IsIn,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MaxLength,
   MinLength,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserRole } from '../../users/entities/user.entity';
+import { MAIL_LANGUAGES, MailLanguage } from '../../mail/templates';
 
 export class RegisterDto {
   @ApiProperty({ example: 'John Doe', description: 'User full name' })
@@ -31,4 +33,13 @@ export class RegisterDto {
   })
   @IsIn([UserRole.BRAND, UserRole.INFLUENCER])
   role: UserRole;
+
+  @ApiProperty({
+    enum: MAIL_LANGUAGES,
+    required: false,
+    description: 'Email language (default ru)',
+  })
+  @IsOptional()
+  @IsIn(MAIL_LANGUAGES)
+  language?: MailLanguage;
 }
