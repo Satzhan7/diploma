@@ -5,6 +5,12 @@ interface ApiErrorLike {
   request?: unknown;
 }
 
+/** The backend's error `code` (e.g. `AUTH_EMAIL_NOT_VERIFIED`), if any. */
+export function getErrorCode(error: unknown): string | undefined {
+  const code = ((error ?? {}) as ApiErrorLike).response?.data?.code;
+  return typeof code === 'string' ? code : undefined;
+}
+
 /**
  * Translated message for a failed API call. The backend sends a stable
  * `code` (backend/src/common/errors/error-codes.ts); a request with no
