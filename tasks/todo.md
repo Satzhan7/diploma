@@ -11,8 +11,8 @@ Rule: every phase ends with something deployable and usable. Nothing goes to `ma
 - [x] **D5 — Counterparty email (decided 2026-10-03, applies in Phase 2).** Emails are **never** shown to the other side; contact happens through in-app chat only. Chat creation is limited to pairs that share an application/deal (brand→influencer invites come later).
 - [x] **D6 — Account deletion (decided 2026-10-03).** `DELETE /auth/account` 500s on users with data (FK constraints). Deferred to Phase 8 (legal: anonymise vs cascade, retention).
 - [ ] **D2 — Hosting in Kazakhstan (before Phase 8).** Choose a KZ provider (e.g. PS Cloud, Hoster.kz, Kazakhtelecom cloud) with Postgres and S3-compatible storage, to comply with the personal-data localisation law.
-- [ ] **D3 — Pro price and Free limits (before Phase 5).** Price in ₸, Pro duration, and whether Free has any brief limit.
-- [ ] **D4 — Screenshot storage (before Phase 5).** S3-compatible bucket in KZ vs local disk volume.
+- [x] **D3 — Pro price and Free limits (decided 2026-10-04).** The platform runs as a **free test version**: nobody is charged. The Plan model, Plan page and the Pro price (₸19 900/month, Free = unlimited briefs) stay as designed; a test-period switch gives every brand Pro features at no cost (R4).
+- [x] **D4 — Screenshot storage (decided 2026-10-04).** Local private disk volume behind a storage interface now; S3-compatible KZ storage later with D2.
 
 ## Phase 0 — Stabilise (audit P0/P1). Must be first.
 - [ ] 0.1 Commit or split the current `audit/fixes` working tree (98 changed files) into reviewable commits; merge to `main`.
@@ -97,7 +97,7 @@ Rule: every phase ends with something deployable and usable. Nothing goes to `ma
 
 **CI per PR** (GitHub Actions `CI`, `pull_request` runs on the PR head):
 - #1 `audit/fixes` → `v1` (`a9e1d4d`) and #2 `phase1/node24` → `audit/fixes` (`20f908c`): no run, the workflow arrives in #3.
-- #3 `phase1/ci` (`43d34d0`) success · #4 `phase1/vite` (`16155b6`) success · #5 `phase1/i18n` (`d867868`) success · #6 `phase1/migrations`: `d5d0deb` success; final head recorded below.
+- #3 `phase1/ci` (`43d34d0`) success · #4 `phase1/vite` (`16155b6`) success · #5 `phase1/i18n` (`d867868`) success · #6 `phase1/migrations` (`d5d0deb`, then `debcabc` with the review fixes) success.
 
 **Final checks (host Node v25, `phase1/migrations` after the review fixes):**
 - Backend: `tsc --noEmit` ok · `npx eslint "{src,apps,libs,test}/**/*.ts"` 0 problems · Jest `Test Suites: 14 passed, 14 total` / `Tests: 62 passed, 62 total` · `nest build` ok.
@@ -110,47 +110,95 @@ Rule: every phase ends with something deployable and usable. Nothing goes to `ma
 
 **Follow-ups (placed in the redesign plan below):** EditProfile loads `/profiles/me`; field-level ValidationPipe `details` in forms; FK indexes with pagination; auth refresh `catch` turns DB errors into 401; optional `DB_MIGRATIONS_RUN` kill switch; `PAYLOAD_TOO_LARGE` error code with uploads; OrderDetail `toast()` during render; nginx `client_max_body_size` for uploads; route code-splitting; react-router 7 and NestJS 11 audit items; `landing`/`stats` locale files unused until the redesign.
 
-## Phase 2 — Domain model: one Deal pipeline (Needs: D1, 1.4)
-- [ ] 2.1 Design doc and ADR (ECC `architecture-decision-records`): the Brief → Application → Deal lifecycle and Mermaid state diagrams.
-- [ ] 2.2 Deal state machine in one service with a transition table. Application: PENDING → ACCEPTED / REJECTED / WITHDRAWN. Deal: ACTIVE → PROOF_SUBMITTED → COMPLETED or DISPUTED, plus CANCELLED. Unit tests for every allowed and forbidden transition.
-- [ ] 2.3 Remove the Match and Collaboration modules, endpoints and pages; keep `matchScore()` as a pure ranking function (with tests).
-- [ ] 2.4 Admin role: `ADMIN` guard, `/admin` route shell, audit log table (who changed what).
-- [ ] 2.5 Pagination (`take`/`skip`, default 20) on every list endpoint; typed query DTOs.
-- **Done when:** the old Match and Collaboration code is gone; every status change goes through the state machine; the lists are paginated.
+## Redesign — Phases 2–6 merged into one PR stack (approved 2026-10-04)
 
-## Phase 3 — Design system 2.0, "creator-energetic" (∥ with Phase 2; Needs: 1.2)
-- [ ] 3.1 Design direction study: an artifact with 2–3 palette and type options (no purple default). The team picks one. Uses ECC `frontend-design-direction`.
-- [ ] 3.2 Tokens: colour (primary, accent, success/warning/danger, verified), type scale (a display font for creator surfaces, Inter for the UI), spacing, radius, shadow, motion. Written into `theme.ts` semantic tokens with light/dark; the ECC `design-system` skill generates `DESIGN.md` and a preview.
-- [ ] 3.3 Core components: CreatorCard (avatar, content strip, match score, Verified), BriefCard, StatusPill (from the state machine), DealTimeline, EmptyState, PlanBadge, LanguageSwitcher.
-- [ ] 3.4 Two layout modes: `creator` (spacious, visual) and `workspace` (dense, tables, sticky actions).
-- [ ] 3.5 ECC `design-system audit` plus an accessibility pass (AA contrast in both themes, labels, keyboard use, RU/KZ text length).
-- **Done when:** no hard-coded colours remain (lint rule); the components are documented; the audit score is recorded.
+Source: full UI redesign decided 2026-10-03; mockups in `~/Downloads/Diploma project UI mockups/` (`AdPartners Redesign.dc.html`), direction "Liquid Glass" / Apple HIG (tokens recorded in the 2026-10-03 redesign brief). This section replaces the old Phases 2–6; their steps are mapped below (old step → PR).
+Branching: stacked after `phase1/migrations`, one branch per PR (`redesign/1-shell` → `redesign/2-deals` → …), each PR based on the previous branch, CI green before the next starts.
+Rules for every PR:
+- Ships something usable on its own: pages not yet redesigned keep working inside the new shell.
+- Every schema change is a migration generated against a database at the previous migration; `migration:generate --dr` shows no drift afterwards. Production has never been deployed, so no data migrations.
+- Every new string in RU, KZ and EN (key parity test). Every new list endpoint paginated (`take`/`skip`, default 20, typed query DTO). Every new form shows field-level errors.
+- Checks: both apps' typecheck, lint, tests, builds; browser QA (playwright-core, headless Chrome) of the PR's screens in RU/KZ/EN, light and dark, desktop and mobile width; one reviewer agent; results recorded here.
 
-## Phase 4 — Core loop UX (Needs: 2.2, 3.3)
-- [ ] 4.1 Information architecture: new navigation per role. Brand: Briefs · Applicants · Deals · Messages · Plan. Influencer: Find briefs · My applications · Deals · Messages · Profile. Admin: Verification · Brands/Plans · Moderation.
-- [ ] 4.2 Brief wizard (under 3 minutes): goal, platform, budget in ₸, city, niche, deadline, deliverables; save drafts; preview.
-- [ ] 4.3 Influencer brief feed: filters (city, niche, budget), one-tap apply with a pitch and price, mobile-first.
-- [ ] 4.4 **Brand applicant feed** (the memorable detail): CreatorCards ranked by `matchScore`, compare view, accept/reject, shortlist.
-- [ ] 4.5 Influencer onboarding: profile, niches, city, socials, self-reported stats and a screenshot upload; a progress meter.
-- [ ] 4.6 Landing page in RU/KZ/EN, aimed at the brand owner, with the call to action "Post your first brief".
-- **Done when:** a new brand signs up and posts a brief in under 3 minutes (timed run); an influencer applies from a phone.
+### PR R1 — Design system and app shell, Landing, Auth (old 3.1–3.4, 4.1, 4.6)
+- [ ] Tokens in `theme.ts` as Chakra semantic tokens (light/dark from the brief): bg/surface/subtle/line/fg/muted, primary/accent/verified/warn with soft and ink variants, canvas gradient, chrome. Radii 22/12/999, glass chrome `blur(28px) saturate(180%)`. `brand.*` purple and every explicit `colorScheme="purple"`/`"teal"` removed.
+- [ ] System font stack (`-apple-system, BlinkMacSystemFont, 'SF Pro Display'/'SF Pro Text', system-ui`), display 700 / -0.022em. Google Fonts link removed (fixes the CSP console error).
+- [ ] `prefers-reduced-transparency` (solid chrome, no blur, canvas = bg) and `prefers-contrast: more` (stronger line/muted) as global styles.
+- [ ] Lint guard: no hex colours in `src/pages` and `src/components` outside `theme.ts` (old 3.x "Done when").
+- [ ] App shell: desktop floating glass sidebar (inset 12, radius 26); mobile glass top bar + floating bottom tab bar (radius 32). Nav per role from the mockup `NAV`: Creator — Find briefs · My applications · Deals · Messages · Profile; Brand — per mockup (Home · Briefs · Deals · Messages · Plan); Admin — Verification. Light/Dark toggle and language switcher in the shell.
+- [ ] Core components: GlassCard, StatusPill (green / warn / blue verified / gray / red), ScoreRing, VerifiedBadge, CreatorCard, BriefCard, Stepper, KpiTile, EmptyState, PageHeader, SegmentedControl.
+- [ ] Landing (hero "Local creators pitch your brief within 48 hours", 3 steps) using the `landing` locale files; Sign up / Log in with role cards.
+- [ ] Route code-splitting (`React.lazy` per route group) → removes the 1.25 MB single chunk.
+- [ ] `getErrorMessage` companion `getFieldErrors(err)` reading ValidationPipe `details`; used by Sign up / Log in.
+- [ ] Backend: auth refresh `catch` rethrows non-auth errors (DB errors are no longer 401 `AUTH_INVALID_TOKEN`), with a test.
+- [ ] `App.test.tsx` updated for the new hero.
+- **Done when:** Landing, Auth and the shell match the mockup in both themes on desktop and mobile; no Google Fonts request; main chunk below the 500 kB warning.
 
-## Phase 5 — Verification and paywall (Needs: 2.4, 4.5, D3, D4)
-- [ ] 5.1 Screenshot upload endpoint: type and size limits, private storage, signed URLs.
-- [ ] 5.2 Admin verification queue: approve or reject with a reason; approval locks the stats and sets `verifiedAt`; resubmitting clears the badge.
-- [ ] 5.3 Plan model: `plan` (FREE/PRO) and `proExpiresAt` on the brand; admin screen to set the plan; a nightly job downgrades expired plans.
-- [ ] 5.4 Paywall: the "Verified only" filter is enforced server-side for Pro; Free users see an upgrade prompt with Kaspi payment instructions.
-- **Done when:** a Free brand cannot get verified-only results through the API; an admin upgrade takes effect immediately.
+### PR R1b — Email verification code on Sign up (old 7.2 part; moved forward 2026-10-04)
+- [ ] Mail service behind an interface: SMTP via `nodemailer` (env `SMTP_*`, `MAIL_FROM`); dev compose adds a Mailpit container (UI on localhost) so codes are visible locally; tests use an in-memory fake. Production provider chosen with D2.
+- [ ] `users.emailVerifiedAt`; `email_verification` table: SHA-256 hash of a 6-digit code, expires in 10 min, max 5 attempts, one active code per user. Migration marks existing users verified.
+- [ ] Register creates the user and sends the code, and returns no tokens. `POST /auth/verify-email` (email + code) issues the tokens. `POST /auth/resend-code` (60 s cooldown, throttled per IP). Login of an unverified user → 403 `AUTH_EMAIL_NOT_VERIFIED`; the UI opens the code step and resends. Generic responses so registered emails are not revealed.
+- [ ] Code email in RU/KZ/EN (user's chosen language); new error codes translated.
+- [ ] Sign up flow: role card → details → 6-digit code input (paste, auto-advance, resend timer).
+- [ ] Tests: code expiry, attempt limit, wrong code, resend cooldown, no tokens before verification.
+- **Done when:** a new account receives the code in Mailpit and cannot log in until it enters it.
 
-## Phase 6 — Deal completion and reputation (Needs: 2.2)
-- [ ] 6.1 Influencer submits a proof link and an optional screenshot → PROOF_SUBMITTED.
-- [ ] 6.2 Brand confirms (→ COMPLETED) or disputes (→ DISPUTED, goes to the admin moderation queue).
-- [ ] 6.3 Two-way ratings with a comment; rating averages on profiles; one rating per deal per side.
-- **Done when:** a whole deal can be run start to finish in an e2e test.
+### PR R2 — One Deal pipeline; Match and Collaboration removed; admin account (old 2.1–2.4)
+- [ ] ADR `docs/adr/0001-deal-pipeline.md`: Brief → Application → Deal lifecycle, Mermaid state diagrams.
+- [ ] `Deal` entity (one per accepted application): order, brand profile, creator profile, agreed price, deliverables, post-by date, status. Transition table in one service: ACTIVE → PROOF_SUBMITTED → COMPLETED | DISPUTED; ACTIVE → CANCELLED. The mockup stepper Accepted → Creating → Proof sent → Completed maps onto it. Unit tests for every allowed and forbidden transition.
+- [ ] Accept transaction creates the Deal instead of upserting a Match.
+- [ ] Remove the Match, Collaboration, matching-recommendation and Statistics modules and their pages/components (Matches, MatchDetail, UpdateStatsModal, InfluencerList, BrandList, BrandRecommendations, statistics charts, `recharts`). Migration drops their tables. `matchScore()` stays as a pure function reading `Profile.metrics` / `followersCount`, with tests.
+- [ ] D5 on every participant path: no counterparty email in `/order-applications*`, `/orders/brand`, `/orders/influencer`, participant `GET /orders/:id`, deals. `POST /chats/:recipientId` only for pairs that share an application or deal. Admin `PATCH /order-applications/:id` can no longer edit message/price. Applicants keep access to their order detail after it leaves OPEN.
+- [ ] Admin account: CLI script (`npm run admin:create -- <email>`, also runnable from `dist` in the production image).
+- [ ] Optional `DB_MIGRATIONS_RUN` env kill switch (defaults to on in production).
+- [ ] Frontend: Deals list and Deal page (stepper, side panel: price, "payment off-platform", deliverables, post-by date); proof actions arrive in R5.
+- **Done when:** no Match/Collaboration code or tables remain; every deal status change goes through the transition table; accept → deal visible to both sides.
 
-## Phase 7 — Notifications (Needs: 2.2)
+### PR R3 — Brief model, wizard, creator feed and apply, Applicants (old 2.5, 4.2–4.4)
+- [ ] Order (brief) fields: goal, platform, format, city, `budgetMin`/`budgetMax` (₸, int), deliverables, post-by date (`date`, replaces the `deadline` varchar), `publishedAt`. DRAFT used. Endpoints: `PATCH /orders/:id` (owner, DRAFT/OPEN), publish, cancel.
+- [ ] Application: `shortlisted` flag + endpoint; applicants ranked by `matchScore` server-side.
+- [ ] Pagination with typed query DTOs on every list endpoint; migration adds indexes on FK columns (`orders.brand_id`, `order_application.orderId` / applicant, `message.chatId`, chat participants, deals).
+- [ ] Brand: Briefs list, Brief wizard (Goal · Content · Budget · Creators · Review, live preview card, Save Draft, field-level errors), Applicants (Feed / Compare (shortlisted) / One by One; score ring, Verified badge, content strip, pitch, price, Shortlist / Accept; "Verified only" shown as a Pro control, enforced in R4).
+- [ ] Creator: Brief feed (niche chips, time left, applied count), Apply (pitch + price), My applications.
+- [ ] Old CreateOrder, brand/influencer Orders and OrderDetail removed (also removes the `toast()` call during render). Dead files removed: brand/Messages, ChatWindow, InfluencerCard, FilterSection, RangeFilter, LoadingSpinner, services brands/influencers/collaborations/settings.
+- **Done when:** a new brand posts a brief in under 3 minutes (timed run); a creator applies from a phone-width browser; the brand shortlists and accepts from the Applicants views.
+
+### PR R4 — Uploads, creator stats and verification queue, Plan and paywall (old 4.5, 5.1–5.4)
+- [ ] Storage interface with a local private disk volume implementation (D4; S3-compatible KZ storage later with D2). Multer with type (jpeg/png/webp, magic-byte check) and size limits; files served only through an auth-checked endpoint (owner, admin; portfolio images public). nginx `client_max_body_size` raised for the upload route. `PAYLOAD_TOO_LARGE` error code (+ ru/kk/en).
+- [ ] Creator stats: claimed followers/engagement + insights screenshot → review queue. Admin queue: claimed stats next to the screenshot, approve ("Approve and Lock Stats", sets `verifiedAt`) or reject with a reason; resubmitting clears the badge. Audit log table for admin actions (who changed what).
+- [ ] Portfolio images for the content strip: up to 6 per creator (decided 2026-10-04).
+- [ ] Plan: `plan` (FREE/PRO) + `proExpiresAt` on the brand; admin sets the plan; the effective plan is computed on read (expired Pro = Free, no cron needed). Plan page: Free vs Pro (₸19 900/month), Kaspi transfer instructions.
+- [ ] "Verified only" enforced server-side for Pro; Free gets an upgrade prompt.
+- [ ] Test period (D3): env `FREE_TEST_PERIOD=true` (default during the test) makes every brand's effective plan Pro; the Plan page shows the price with "free during the test period" and no payment step. Turning it off restores the paywall with no code change (test both ways).
+- **Done when:** a Free brand cannot get verified-only results through the API (test); an admin upgrade takes effect immediately; a rejected screenshot shows its reason to the creator.
+
+### PR R5 — Deal proof, confirm or dispute, two-way ratings (old 6.1–6.3)
+- [ ] Creator submits a proof link + optional screenshot (R4 storage) → PROOF_SUBMITTED. Brand: Confirm Completion → COMPLETED, Report a Problem → DISPUTED (admin moderation list).
+- [ ] Ratings (1–5 + comment), one per deal per side after COMPLETED; averages on profiles.
+- [ ] Backend e2e test of a whole deal (register → brief → apply → accept → proof → confirm → ratings) against Postgres; CI gets a Postgres service container for it.
+- **Done when:** the e2e test passes in CI.
+
+### PR R6 — Brand Home, Creator profile, Messages, Settings/EditProfile, dark mode, a11y and mobile QA
+- [ ] Brand Home: KPIs (live briefs, new applicants, active deals, waiting on you), briefs with the 48 h goal bar (≥ 3 applicants within 48 h of `publishedAt`, the north-star metric), "Needs you" list. One summary endpoint. Old dashboards removed.
+- [ ] Creator profile: verified stats, rating + reviews, portfolio grid.
+- [ ] Messages redesigned.
+- [ ] Settings / EditProfile load `/profiles/me` (not the `/auth/profile` JWT claims), field-level errors.
+- [ ] Full pass: AA contrast in both themes, reduced transparency / more contrast, keyboard use, RU/KZ text length, every screen at mobile width.
+- **Done when:** browser QA of every screen in RU/KZ/EN, light and dark, desktop and mobile passes; no page from the old UI remains.
+
+### After the redesign (not in R1–R6)
+- Dependency majors: react-router 7 (2 moderate advisories), NestJS 11 / swagger 11 / typeorm 11 / bcrypt 6 (backend audit 17). One PR each, before Phase 8.
+- Phase 7: the mobile notification bell from the mockups (the email code moved to R1b).
+
+### Decisions for this plan (2026-10-04)
+- [x] D3: free test version, nobody is charged; price kept as designed (see D3 above).
+- [x] D4: local private volume behind a storage interface.
+- [x] Content strip: creator-uploaded portfolio images, up to 6.
+- [x] Plan approved, with the 6-digit email code moved into R1b.
+
+## Phase 7 — Notifications (Needs: R2)
 - [ ] 7.1 Notification table plus an in-app bell (WebSocket push; unread count fixed per recipient).
-- [ ] 7.2 Email: verification email, password reset (also an auth gap), new applicant, deal updates. Provider: Resend or SES. Templates in RU/KZ/EN.
+- [ ] 7.2 Email (on the R1b mail service): password reset (also an auth gap), new applicant, deal updates. Templates in RU/KZ/EN.
 - [ ] 7.3 Telegram bot: users link their account with a deep-link code; notifications as in 7.2; per-channel on/off in Settings.
 - **Done when:** a brand gets a Telegram message within 1 minute of a new applicant.
 
@@ -163,16 +211,12 @@ Rule: every phase ends with something deployable and usable. Nothing goes to `ma
 
 ## Dependency graph (short)
 ```
-P0 → P1 ─┬→ P2 ─┬→ P4 → P5
-         │      ├→ P6
-         │      └→ P7
-         └→ P3 ─┘(3.3 → 4.x)
-P8 needs P4–P7 + D2
+P0 → P1 → R1 → R1b → R2 → R3 → R4 → R5 → R6 → P7 → P8 (D2)
 ```
 
 ## Review gate (blueprint adversarial check)
 - Before starting each phase: re-read PRODUCT-BRIEF anti-goals; cut any step that serves agencies, in-app payments, or social APIs.
-- After each phase: run `code-review` on the diff; `security-review` on P0, P5 and P7; record the result here.
+- After each phase or redesign PR: run `code-review` on the diff; `security-review` on P0, R2 (D5 email paths), R4 (uploads, paywall) and P7; record the result here.
 
 ---
 
