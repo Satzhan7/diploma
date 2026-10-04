@@ -28,8 +28,6 @@ describe('ProfilesService simple-array filters', () => {
       platforms: ['instagram'],
       contentTypes: ['reel'],
     });
-    await service.findInfluencersByCategories(['fashion']);
-    await service.findBrandsByCategories(['beauty']);
 
     const conditions = queryBuilder.andWhere.mock.calls.map(
       ([condition]) => condition,

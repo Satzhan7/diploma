@@ -8,12 +8,13 @@ import { OrderApplicationsController } from './order-applications.controller';
 import { OrderApplicationsService } from './order-applications.service';
 import { ProfilesModule } from '../profiles/profiles.module';
 import { ChatsModule } from '../chats/chats.module';
-import { Match } from '../matching/entities/match.entity';
+import { DealsModule } from '../deals/deals.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, OrderApplication, Match]),
+    TypeOrmModule.forFeature([Order, OrderApplication]),
     ProfilesModule,
+    DealsModule,
     ChatsModule,
   ],
   controllers: [OrdersController, OrderApplicationsController],

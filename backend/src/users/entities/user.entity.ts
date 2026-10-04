@@ -11,7 +11,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Profile } from '../../profiles/entities/profile.entity';
 import { Message } from '../../chats/entities/message.entity';
 import { Exclude } from 'class-transformer';
-import { Match } from '../../matching/entities/match.entity';
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -90,14 +89,6 @@ export class User {
   @ApiProperty({ type: () => [Message] })
   @OneToMany(() => Message, (message) => message.recipient)
   receivedMessages: Message[];
-
-  @ApiProperty({ type: () => [Match] })
-  @OneToMany(() => Match, (match) => match.brand)
-  brandMatches: Match[];
-
-  @ApiProperty({ type: () => [Match] })
-  @OneToMany(() => Match, (match) => match.influencer)
-  influencerMatches: Match[];
 
   @ApiProperty({
     example: '2024-04-19T09:00:00.000Z',

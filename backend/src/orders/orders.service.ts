@@ -8,6 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Order, OrderStatus } from './entities/order.entity';
+import { OrderApplication } from './entities/order-application.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { ProfilesService } from '../profiles/profiles.service';
 import { ProfileType } from '../profiles/entities/profile.entity';
@@ -57,6 +58,25 @@ export function toPublicOrder(order: Order): PublicOrder {
     updatedAt: order.updatedAt,
     brand: { ...brandProfile, user: user ? toPublicUser(user) : undefined },
   };
+}
+
+// What the two sides of an order see: the full order, but every user on it
+// (brand owner, assigned creator, applicants) as a public user without an
+// email (decision D5). Admins get the same shape.
+export function toParticipantOrder(order: Order): Order {
+  for (const profile of [order.brand, order.influencer]) {
+    if (profile?.user) {
+      Object.assign(profile, { user: toPublicUser(profile.user) });
+    }
+  }
+  for (const application of order.applications ?? []) {
+    if (application.applicant) {
+      Object.assign(application, {
+        applicant: toPublicUser(application.applicant),
+      });
+    }
+  }
+  return order;
 }
 
 @Injectable()
@@ -131,9 +151,16 @@ export class OrdersService {
       viewer.role === UserRole.ADMIN ||
       order.brand?.user?.id === viewer.id ||
       order.influencer?.user?.id === viewer.id;
-    if (isParticipant) return order;
+    if (isParticipant) return toParticipantOrder(order);
 
-    if (order.status === OrderStatus.OPEN) return toPublicOrder(order);
+    // Applicants keep the brief after it leaves OPEN (accepted elsewhere,
+    // cancelled, completed) so their application keeps its context.
+    if (
+      order.status === OrderStatus.OPEN ||
+      (await this.hasApplied(order.id, viewer.id))
+    ) {
+      return toPublicOrder(order);
+    }
 
     throw new ForbiddenException(
       apiError(
@@ -141,6 +168,12 @@ export class OrdersService {
         'You do not have access to this order',
       ),
     );
+  }
+
+  private hasApplied(orderId: string, userId: string): Promise<boolean> {
+    return this.dataSource.getRepository(OrderApplication).exists({
+      where: { order: { id: orderId }, applicant: { id: userId } },
+    });
   }
 
   async apply(orderId: string, userId: string): Promise<Order> {
@@ -190,7 +223,7 @@ export class OrdersService {
   async findByBrand(userId: string): Promise<Order[]> {
     const brandProfile = await this.profilesService.findByUserId(userId);
 
-    return this.orderRepository.find({
+    const orders = await this.orderRepository.find({
       where: { brandId: brandProfile.id },
       relations: [
         'brand',
@@ -202,6 +235,7 @@ export class OrdersService {
       ],
       order: { createdAt: 'DESC' },
     });
+    return orders.map(toParticipantOrder);
   }
 
   // Order foreign keys reference Profile IDs. Public service methods receive
@@ -210,10 +244,11 @@ export class OrdersService {
   async findByInfluencer(userId: string): Promise<Order[]> {
     const influencerProfile = await this.profilesService.findByUserId(userId);
 
-    return this.orderRepository.find({
+    const orders = await this.orderRepository.find({
       where: { influencerId: influencerProfile.id },
       relations: ['brand', 'brand.user', 'influencer', 'influencer.user'],
       order: { createdAt: 'DESC' },
     });
+    return orders.map(toParticipantOrder);
   }
 }

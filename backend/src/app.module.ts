@@ -7,9 +7,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { StatisticsModule } from './statistics/statistics.module';
 import { ProfilesModule } from './profiles/profiles.module';
-import { MatchingModule } from './matching/matching.module';
 import { OrdersModule } from './orders/orders.module';
 import { ChatsModule } from './chats/chats.module';
 import { CategoriesModule } from './categories/categories.module';
@@ -20,10 +18,9 @@ import { Profile } from './profiles/entities/profile.entity';
 import { SocialMedia } from './profiles/entities/social-media.entity';
 import { Order } from './orders/entities/order.entity';
 import { OrderApplication } from './orders/entities/order-application.entity';
-import { Match } from './matching/entities/match.entity';
+import { Deal } from './deals/entities/deal.entity';
+import { DealsModule } from './deals/deals.module';
 import configuration from './config/configuration';
-import { CollaborationsModule } from './collaborations/collaborations.module';
-import { Collaboration } from './collaborations/entities/collaboration.entity';
 import { EmailVerification } from './auth/entities/email-verification.entity';
 
 @Module({
@@ -57,8 +54,7 @@ import { EmailVerification } from './auth/entities/email-verification.entity';
           SocialMedia,
           Order,
           OrderApplication,
-          Match,
-          Collaboration,
+          Deal,
           EmailVerification,
         ],
         synchronize: configService.get('database.synchronize'),
@@ -71,12 +67,10 @@ import { EmailVerification } from './auth/entities/email-verification.entity';
     }),
     UsersModule,
     AuthModule,
-    StatisticsModule,
     ProfilesModule,
-    MatchingModule,
     OrdersModule,
     ChatsModule,
-    CollaborationsModule,
+    DealsModule,
     CategoriesModule,
   ],
   controllers: [AppController],

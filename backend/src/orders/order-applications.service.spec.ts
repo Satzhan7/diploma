@@ -114,6 +114,42 @@ describe('OrderApplicationsService.findAllByUser', () => {
     expect(application.order.brand.user.id).toBe('brand-user');
     expect(JSON.stringify(application)).not.toMatch(/email|password|\$2b\$/);
   });
+  it('GET /order-applications/order/:orderId returns applicants without their email', async () => {
+    const repository = {
+      find: jest.fn().mockResolvedValue([
+        {
+          id: 'application-1',
+          applicant: {
+            id: 'creator-user',
+            name: 'Creator',
+            email: 'creator@example.test',
+            password: '$2b$10$hash',
+          },
+          order: { id: 'order-1' },
+        },
+      ]),
+    };
+    const orderRepository = {
+      findOne: jest.fn().mockResolvedValue({
+        id: 'order-1',
+        brand: { user: { id: 'brand-user', email: 'brand@example.test' } },
+      }),
+    };
+    const service = new OrderApplicationsService(
+      repository as any,
+      orderRepository as any,
+      {} as any,
+      {} as any,
+      {} as any,
+      {} as any,
+    );
+
+    const body = JSON.stringify(
+      await service.findByOrder('order-1', 'brand-user'),
+    );
+    expect(body).toContain('creator-user');
+    expect(body).not.toMatch(/email|password|\$2b\$/);
+  });
 });
 
 describe('Application status transitions', () => {
@@ -139,11 +175,11 @@ describe('Application status transitions', () => {
   const application = (status: ApplicationStatus) => ({
     id: 'application-1',
     status,
-    applicant: { id: 'influencer-user' },
+    applicant: { id: 'influencer-user', email: 'creator@example.test' },
     order: {
       id: 'order-1',
       title: 'Brief',
-      brand: { user: { id: 'brand-user' } },
+      brand: { user: { id: 'brand-user', email: 'brand@example.test' } },
     },
   });
 
@@ -163,10 +199,15 @@ describe('Application status transitions', () => {
       update: jest.fn().mockResolvedValue({ affected: 1 }),
       save: jest.fn((entity) => entity),
     };
+    const dealsService = {
+      createForAcceptedApplication: jest.fn().mockResolvedValue({
+        id: 'deal-1',
+      }),
+    };
     const service = new OrderApplicationsService(
       repository as any,
       {} as any,
-      {} as any,
+      dealsService as any,
       {
         findByUserId: jest.fn().mockResolvedValue({ id: 'influencer-profile' }),
       } as any,
@@ -176,11 +217,11 @@ describe('Application status transitions', () => {
       } as any,
       { transaction: jest.fn((work) => work(manager)) } as any,
     );
-    return { service, manager, repository };
+    return { service, manager, repository, dealsService };
   };
 
   it('accept locks and re-reads the application, then rejects only pending others', async () => {
-    const { service, manager } = setup(ApplicationStatus.PENDING);
+    const { service, manager, dealsService } = setup(ApplicationStatus.PENDING);
 
     const result = await service.update(
       'application-1',
@@ -203,10 +244,22 @@ describe('Application status transitions', () => {
       expect.objectContaining({ status: ApplicationStatus.PENDING }),
       { status: ApplicationStatus.REJECTED },
     );
+    expect(dealsService.createForAcceptedApplication).toHaveBeenCalledWith(
+      manager,
+      expect.objectContaining({
+        id: 'order-1',
+        status: OrderStatus.IN_PROGRESS,
+      }),
+      expect.objectContaining({
+        id: 'application-1',
+        status: ApplicationStatus.ACCEPTED,
+      }),
+      'influencer-profile',
+    );
   });
 
   it('accept fails if the locked row was withdrawn concurrently', async () => {
-    const { service, manager } = setup(
+    const { service, manager, dealsService } = setup(
       ApplicationStatus.PENDING,
       ApplicationStatus.WITHDRAWN,
     );
@@ -218,6 +271,57 @@ describe('Application status transitions', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(manager.save).not.toHaveBeenCalled();
     expect(manager.update).not.toHaveBeenCalled();
+    expect(dealsService.createForAcceptedApplication).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['message', { message: 'Rewritten by admin' }],
+    ['proposed price', { proposedPrice: 1 }],
+    ['zero price', { proposedPrice: 0 }],
+  ])('admin cannot edit the %s', async (_label, dto) => {
+    const { service, repository } = setup(ApplicationStatus.PENDING);
+
+    await expect(
+      service.update('application-1', 'admin-user', UserRole.ADMIN, dto),
+    ).rejects.toMatchObject({
+      response: { code: 'APPLICATION_ACTION_FORBIDDEN' },
+    });
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      'PATCH accept',
+      (s: OrderApplicationsService) =>
+        s.update('application-1', 'brand-user', UserRole.BRAND, {
+          status: ApplicationStatus.ACCEPTED,
+        }),
+    ],
+    [
+      'PATCH reject',
+      (s: OrderApplicationsService) =>
+        s.update('application-1', 'brand-user', UserRole.BRAND, {
+          status: ApplicationStatus.REJECTED,
+        }),
+    ],
+    [
+      'DELETE (withdraw)',
+      (s: OrderApplicationsService) =>
+        s.withdraw('application-1', 'influencer-user'),
+    ],
+    [
+      'GET /:id',
+      (s: OrderApplicationsService) =>
+        s.findOne('application-1', {
+          id: 'brand-user',
+          role: UserRole.BRAND,
+        }),
+    ],
+  ])('%s returns no email', async (_route, call) => {
+    const { service } = setup(ApplicationStatus.PENDING);
+    const body = JSON.stringify(await call(service));
+    expect(body).toContain('influencer-user');
+    expect(body).not.toContain('@example.test');
   });
 
   it.each([

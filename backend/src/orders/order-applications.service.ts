@@ -19,11 +19,12 @@ import { ProfilesService } from '../profiles/profiles.service';
 import { UserRole } from '../users/entities/user.entity';
 import { toPublicUser } from '../users/public-user';
 import { ChatsService } from '../chats/chats.service';
-import { Match, MatchStatus } from '../matching/entities/match.entity';
+import { DealsService } from '../deals/deals.service';
 import { apiError, ErrorCode } from '../common/errors/error-codes';
 
 // Allowed application status changes. Every role, admin included, goes
-// through this table; the full Deal state machine replaces it in Phase 2.
+// through this table. An accepted application becomes a Deal, which has its
+// own transition table (src/deals/deal-transitions.ts).
 export const APPLICATION_TRANSITIONS: Record<
   ApplicationStatus,
   readonly ApplicationStatus[]
@@ -59,6 +60,23 @@ function sourcesOf(to: ApplicationStatus): ApplicationStatus[] {
   );
 }
 
+// Applications reach the applicant, the brand and admins. None of them gets
+// the other side's email (decision D5): users become public users.
+export function withPublicUsers(
+  application: OrderApplication,
+): OrderApplication {
+  if (application.applicant) {
+    Object.assign(application, {
+      applicant: toPublicUser(application.applicant),
+    });
+  }
+  const brand = application.order?.brand;
+  if (brand?.user) {
+    Object.assign(brand, { user: toPublicUser(brand.user) });
+  }
+  return application;
+}
+
 @Injectable()
 export class OrderApplicationsService {
   private readonly logger = new Logger(OrderApplicationsService.name);
@@ -68,8 +86,7 @@ export class OrderApplicationsService {
     private readonly orderApplicationRepository: Repository<OrderApplication>,
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
-    @InjectRepository(Match)
-    private readonly matchRepository: Repository<Match>,
+    private readonly dealsService: DealsService,
     private readonly profilesService: ProfilesService,
     private readonly chatsService: ChatsService,
     private readonly dataSource: DataSource,
@@ -153,13 +170,7 @@ export class OrderApplicationsService {
         createdAt: 'DESC',
       },
     });
-    // The brand's user id links to its profile page; its email stays private.
-    for (const { order } of applications) {
-      if (order?.brand?.user) {
-        Object.assign(order.brand, { user: toPublicUser(order.brand.user) });
-      }
-    }
-    return applications;
+    return applications.map(withPublicUsers);
   }
 
   // `requester` is passed from the controller for direct reads; internal
@@ -198,7 +209,8 @@ export class OrderApplicationsService {
       );
     }
 
-    return application;
+    // Direct reads leave without emails; internal callers need the full rows.
+    return requester ? withPublicUsers(application) : application;
   }
 
   async update(
@@ -234,6 +246,21 @@ export class OrderApplicationsService {
           apiError(
             ErrorCode.APPLICATION_NOT_PENDING,
             'You can only update pending applications',
+          ),
+        );
+      }
+    }
+    // Admins may move an application through the transition table, but the
+    // applicant's own words and price are not theirs to change.
+    else if (userRole === UserRole.ADMIN) {
+      if (
+        updateOrderApplicationDto.message !== undefined ||
+        updateOrderApplicationDto.proposedPrice !== undefined
+      ) {
+        throw new ForbiddenException(
+          apiError(
+            ErrorCode.APPLICATION_ACTION_FORBIDDEN,
+            'Admins can only change the application status',
           ),
         );
       }
@@ -283,7 +310,7 @@ export class OrderApplicationsService {
     }
 
     // Acceptance (owning brand or admin): order assignment, application save,
-    // match upsert and reject-others are one atomic transaction with a row
+    // deal creation and reject-others are one atomic transaction with a row
     // lock on the order (SECURITY_AUDIT M2). The chat seed stays outside the
     // transaction — it is best-effort and must not roll back an acceptance.
     if (nextStatus === ApplicationStatus.ACCEPTED) {
@@ -361,36 +388,18 @@ export class OrderApplicationsService {
             { status: ApplicationStatus.REJECTED },
           );
 
-          // Match upsert — keeps the matching lifecycle in sync. The lock was
-          // taken on the order row inside this same transaction, so the FK
-          // targets are loaded via relations fetched before the lock.
-          const brandUid = application.order.brand.user.id;
-          const influencerUid = application.applicant.id;
-          const existingMatch = await manager.findOne(Match, {
-            where: [
-              { brandId: brandUid, influencerId: influencerUid },
-              { brandId: influencerUid, influencerId: brandUid },
-            ],
-          });
-          if (!existingMatch) {
-            await manager.save(
-              Match,
-              manager.create(Match, {
-                brandId: brandUid,
-                influencerId: influencerUid,
-                status: MatchStatus.ACCEPTED,
-                name: order.title,
-                category: order.category,
-              }),
-            );
-          } else if (existingMatch.status === MatchStatus.PENDING) {
-            existingMatch.status = MatchStatus.ACCEPTED;
-            await manager.save(Match, existingMatch);
-          }
+          // One deal per accepted application, created under the same
+          // order lock (docs/adr/0001-deal-pipeline.md).
+          await this.dealsService.createForAcceptedApplication(
+            manager,
+            order,
+            current,
+            applicantProfile.id,
+          );
 
           return {
-            brandUserId: brandUid,
-            influencerUserId: influencerUid,
+            brandUserId: application.order.brand.user.id,
+            influencerUserId: application.applicant.id,
             orderTitle: order.title,
           };
         });
@@ -414,14 +423,16 @@ export class OrderApplicationsService {
       }
 
       application.status = ApplicationStatus.ACCEPTED;
-      return application;
+      return withPublicUsers(application);
     }
 
     if (nextStatus) {
       await this.setStatusIfAllowed(application.id, nextStatus);
     }
     Object.assign(application, updateOrderApplicationDto);
-    return this.orderApplicationRepository.save(application);
+    return withPublicUsers(
+      await this.orderApplicationRepository.save(application),
+    );
   }
 
   // Compare-and-set: the row changes only if its current status may move to
@@ -463,7 +474,7 @@ export class OrderApplicationsService {
     await this.setStatusIfAllowed(application.id, ApplicationStatus.WITHDRAWN);
 
     application.status = ApplicationStatus.WITHDRAWN;
-    return application;
+    return withPublicUsers(application);
   }
 
   async findByOrder(
@@ -493,9 +504,10 @@ export class OrderApplicationsService {
       );
     }
 
-    return this.orderApplicationRepository.find({
+    const applications = await this.orderApplicationRepository.find({
       where: { order: { id: orderId } },
       relations: ['applicant', 'order'],
     });
+    return applications.map(withPublicUsers);
   }
 }

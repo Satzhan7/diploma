@@ -32,7 +32,7 @@ describe('ChatsController response projection', () => {
   const controller = new ChatsController({
     findAll: jest.fn().mockResolvedValue([chat]),
     findOne: jest.fn().mockResolvedValue(chat),
-    create: jest.fn().mockResolvedValue(chat),
+    startForUser: jest.fn().mockResolvedValue(chat),
     addMessage: jest.fn().mockResolvedValue(message),
   } as any);
   const me = { id: 'u1', sub: 'u1', role: 'brand' } as any;

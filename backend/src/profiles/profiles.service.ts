@@ -253,44 +253,4 @@ export class ProfilesService {
       );
     }
   }
-
-  // Метод для поиска инфлюенсеров по категориям
-  async findInfluencersByCategories(
-    categories: string[],
-    limit: number = 10,
-  ): Promise<Profile[]> {
-    const queryBuilder = this.profilesRepository
-      .createQueryBuilder('profile')
-      .where('profile.type = :type', { type: ProfileType.INFLUENCER })
-      .leftJoinAndSelect('profile.user', 'user');
-
-    if (categories && categories.length > 0) {
-      queryBuilder.andWhere(
-        `string_to_array(COALESCE(profile.categories, ''), ',') && :categories::text[]`,
-        { categories },
-      );
-    }
-
-    return queryBuilder.orderBy('user.name', 'ASC').limit(limit).getMany();
-  }
-
-  // Метод для поиска брендов по категориям
-  async findBrandsByCategories(
-    categories: string[],
-    limit: number = 10,
-  ): Promise<Profile[]> {
-    const queryBuilder = this.profilesRepository
-      .createQueryBuilder('profile')
-      .where('profile.type = :type', { type: ProfileType.BRAND })
-      .leftJoinAndSelect('profile.user', 'user');
-
-    if (categories && categories.length > 0) {
-      queryBuilder.andWhere(
-        `string_to_array(COALESCE(profile.categories, ''), ',') && :categories::text[]`,
-        { categories },
-      );
-    }
-
-    return queryBuilder.orderBy('user.name', 'ASC').limit(limit).getMany();
-  }
 }
