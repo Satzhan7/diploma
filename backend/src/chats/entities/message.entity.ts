@@ -5,6 +5,7 @@ import {
   ManyToOne,
   CreateDateColumn,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Chat } from './chat.entity';
@@ -31,6 +32,7 @@ export class Message {
   @Column({ name: 'recipientId' })
   recipientId: string;
 
+  @Index()
   @ManyToOne(() => Chat, (chat) => chat.messages)
   @JoinColumn({ name: 'chatId' })
   chat: Chat;

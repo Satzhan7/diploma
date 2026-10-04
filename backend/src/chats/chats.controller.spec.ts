@@ -30,7 +30,7 @@ describe('ChatsController response projection', () => {
   };
   const message = { ...chat.messages[0], recipient: user('u2') };
   const controller = new ChatsController({
-    findAll: jest.fn().mockResolvedValue([chat]),
+    findAll: jest.fn().mockResolvedValue({ chats: [chat], total: 1 }),
     findOne: jest.fn().mockResolvedValue(chat),
     startForUser: jest.fn().mockResolvedValue(chat),
     addMessage: jest.fn().mockResolvedValue(message),
@@ -38,7 +38,7 @@ describe('ChatsController response projection', () => {
   const me = { id: 'u1', sub: 'u1', role: 'brand' } as any;
 
   it.each([
-    ['GET /chats', () => controller.findAll(me)],
+    ['GET /chats', () => controller.findAll(me, { take: 20, skip: 0 })],
     ['GET /chats/:id', () => controller.findOne('chat-1', me)],
     ['POST /chats/:recipientId', () => controller.create('u2', me)],
     [

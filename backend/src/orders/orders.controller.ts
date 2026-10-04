@@ -2,11 +2,12 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
+  ParseUUIDPipe,
   Query,
   UseGuards,
-  GoneException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,11 +19,20 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { GetCurrentUser } from '../auth/decorators/get-current-user.decorator';
-import { OrdersService, OrderViewer, PublicOrder } from './orders.service';
+import { OrdersService, OrderViewer } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { Order } from './entities/order.entity';
+import { UpdateOrderDto } from './dto/update-order.dto';
+import {
+  ListAvailableOrdersQueryDto,
+  ListBrandOrdersQueryDto,
+} from './dto/list-orders-query.dto';
+import { BriefView } from './brief-view';
 import { UserRole } from '../users/entities/user.entity';
+import { Page, PaginationQueryDto } from '../common/dto/pagination-query.dto';
 
+// Orders are the briefs a brand posts. A brief starts as a draft, is
+// published (OPEN) when complete, and closes when an application is
+// accepted (IN_PROGRESS) or the brand cancels it.
 @ApiTags('orders')
 @ApiBearerAuth()
 @Controller('orders')
@@ -32,96 +42,92 @@ export class OrdersController {
 
   @Post()
   @Roles(UserRole.BRAND)
-  @ApiOperation({ summary: 'Create a new order' })
-  @ApiResponse({
-    status: 201,
-    description: 'Order successfully created',
-    type: Order,
-  })
+  @ApiOperation({ summary: 'Save a new brief as a draft' })
+  @ApiResponse({ status: 201, description: 'Draft created' })
   create(
     @GetCurrentUser('sub') userId: string,
-    @Body() createOrderDto: CreateOrderDto,
-  ): Promise<Order> {
-    return this.ordersService.create(userId, createOrderDto);
+    @Body() dto: CreateOrderDto,
+  ): Promise<BriefView> {
+    return this.ordersService.create(userId, dto);
   }
 
   @Get('available')
   @Roles(UserRole.INFLUENCER)
-  @ApiOperation({ summary: 'Get all available orders' })
-  @ApiResponse({
-    status: 200,
-    description: 'Return all available orders',
-    type: [Order],
-  })
+  @ApiOperation({ summary: 'Creator feed: open briefs, newest first' })
   findAvailable(
-    @Query('category') category?: string,
-    @Query('minBudget') minBudget?: number,
-    @Query('maxBudget') maxBudget?: number,
-  ): Promise<PublicOrder[]> {
-    return this.ordersService.findAvailable({ category, minBudget, maxBudget });
-  }
-
-  @Post(':id/apply')
-  @Roles(UserRole.INFLUENCER)
-  @ApiOperation({ summary: 'Apply for an order' })
-  @ApiResponse({
-    status: 200,
-    description: 'Application successful',
-    type: Order,
-  })
-  apply(
-    @Param('id') orderId: string,
     @GetCurrentUser('sub') userId: string,
-  ): Promise<Order> {
-    // This endpoint formerly assigned an order directly and bypassed the
-    // canonical application workflow. No current frontend consumer uses it.
-    // Keep the route temporarily to return an explicit migration response
-    // rather than silently changing legacy clients' semantics.
-    void orderId;
-    void userId;
-    throw new GoneException(
-      'Direct order application is retired; use POST /order-applications/:orderId',
-    );
+    @Query() query: ListAvailableOrdersQueryDto,
+  ): Promise<Page<BriefView>> {
+    return this.ordersService.findAvailable(userId, query);
   }
 
   @Get('brand')
   @Roles(UserRole.BRAND)
-  @ApiOperation({ summary: 'Get all orders for the brand' })
-  @ApiResponse({
-    status: 200,
-    description: 'Return all brand orders',
-    type: [Order],
-  })
-  findBrandOrders(@GetCurrentUser('sub') userId: string): Promise<Order[]> {
-    return this.ordersService.findByBrand(userId);
+  @ApiOperation({ summary: "The brand's briefs with application counts" })
+  findBrandOrders(
+    @GetCurrentUser('sub') userId: string,
+    @Query() query: ListBrandOrdersQueryDto,
+  ): Promise<Page<BriefView>> {
+    return this.ordersService.findByBrand(userId, query);
   }
 
   @Get('influencer')
   @Roles(UserRole.INFLUENCER)
-  @ApiOperation({ summary: 'Get all orders for the influencer' })
-  @ApiResponse({
-    status: 200,
-    description: 'Return all influencer orders',
-    type: [Order],
-  })
+  @ApiOperation({ summary: 'Briefs the creator was accepted on' })
   findInfluencerOrders(
     @GetCurrentUser('sub') userId: string,
-  ): Promise<Order[]> {
-    return this.ordersService.findByInfluencer(userId);
+    @Query() query: PaginationQueryDto,
+  ): Promise<Page<BriefView>> {
+    return this.ordersService.findByInfluencer(userId, query);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get order by id' })
-  @ApiResponse({ status: 200, description: 'Return the order', type: Order })
+  @ApiOperation({ summary: 'Get a brief' })
   @ApiResponse({
     status: 403,
     description:
-      'Not the brand, assigned influencer or an admin, and the order is not open',
+      'Not the owning brand, an applicant, the assigned creator or an admin, and the brief is not open',
   })
   findOne(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @GetCurrentUser() viewer: OrderViewer,
-  ): Promise<Order | PublicOrder> {
+  ): Promise<BriefView> {
     return this.ordersService.findOne(id, viewer);
+  }
+
+  @Patch(':id')
+  @Roles(UserRole.BRAND)
+  @ApiOperation({ summary: 'Edit a draft or open brief' })
+  @ApiResponse({ status: 409, description: 'ORDER_NOT_EDITABLE' })
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetCurrentUser('sub') userId: string,
+    @Body() dto: UpdateOrderDto,
+  ): Promise<BriefView> {
+    return this.ordersService.update(id, userId, dto);
+  }
+
+  @Post(':id/publish')
+  @Roles(UserRole.BRAND)
+  @ApiOperation({ summary: 'Publish a complete draft' })
+  @ApiResponse({
+    status: 400,
+    description: 'VALIDATION_FAILED with the missing fields',
+  })
+  publish(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetCurrentUser('sub') userId: string,
+  ): Promise<BriefView> {
+    return this.ordersService.publish(id, userId);
+  }
+
+  @Post(':id/cancel')
+  @Roles(UserRole.BRAND)
+  @ApiOperation({ summary: 'Cancel a draft or open brief' })
+  cancel(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetCurrentUser('sub') userId: string,
+  ): Promise<BriefView> {
+    return this.ordersService.cancel(id, userId);
   }
 }

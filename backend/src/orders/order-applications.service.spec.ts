@@ -76,23 +76,26 @@ describe('OrderApplicationsService.create', () => {
 describe('OrderApplicationsService.findAllByUser', () => {
   it("returns the brand's user id for profile links but not its email", async () => {
     const repository = {
-      find: jest.fn().mockResolvedValue([
-        {
-          id: 'application-1',
-          order: {
-            id: 'order-1',
-            brand: {
-              id: 'brand-profile',
-              user: {
-                id: 'brand-user',
-                name: 'Brand',
-                role: 'brand',
-                email: 'brand@example.test',
-                password: '$2b$10$hash',
+      findAndCount: jest.fn().mockResolvedValue([
+        [
+          {
+            id: 'application-1',
+            order: {
+              id: 'order-1',
+              brand: {
+                id: 'brand-profile',
+                user: {
+                  id: 'brand-user',
+                  name: 'Brand',
+                  role: 'brand',
+                  email: 'brand@example.test',
+                  password: '$2b$10$hash',
+                },
               },
             },
           },
-        },
+        ],
+        1,
       ]),
     };
     const service = new OrderApplicationsService(
@@ -104,14 +107,22 @@ describe('OrderApplicationsService.findAllByUser', () => {
       {} as any,
     );
 
-    const [application] = await service.findAllByUser('influencer-1');
+    const page = await service.findAllByUser('influencer-1', {
+      take: 10,
+      skip: 0,
+    });
+    const [application] = page.items;
 
-    expect(repository.find).toHaveBeenCalledWith(
+    expect(repository.findAndCount).toHaveBeenCalledWith(
       expect.objectContaining({
-        relations: ['order', 'order.brand', 'order.brand.user'],
+        relations: { order: { brand: { user: true } } },
+        take: 10,
+        skip: 0,
       }),
     );
-    expect(application.order.brand.user.id).toBe('brand-user');
+    expect(page.total).toBe(1);
+    expect(application.order.brand?.userId).toBe('brand-user');
+    expect(application).not.toHaveProperty('shortlisted');
     expect(JSON.stringify(application)).not.toMatch(/email|password|\$2b\$/);
   });
   it('GET /order-applications/order/:orderId returns applicants without their email', async () => {
@@ -145,7 +156,7 @@ describe('OrderApplicationsService.findAllByUser', () => {
     );
 
     const body = JSON.stringify(
-      await service.findByOrder('order-1', 'brand-user'),
+      await service.findByOrder('order-1', 'brand-user', { take: 20, skip: 0 }),
     );
     expect(body).toContain('creator-user');
     expect(body).not.toMatch(/email|password|\$2b\$/);
@@ -380,5 +391,156 @@ describe('Application status transitions', () => {
       service.withdraw('application-1', 'influencer-user'),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(repository.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('OrderApplicationsService applicant ranking', () => {
+  const creator = (id: string, categories: string[], rate = 0) => ({
+    id,
+    name: id,
+    email: `${id}@example.test`,
+    profile: {
+      id: `${id}-profile`,
+      displayName: id,
+      categories,
+      languages: ['ru'],
+      contentTypes: [],
+      metrics: { averageEngagementRate: rate },
+      followersCount: 0,
+    },
+  });
+  const app = (id: string, user: object, createdAt: string, extra = {}) => ({
+    id,
+    status: ApplicationStatus.PENDING,
+    message: 'Pitch',
+    proposedPrice: null,
+    shortlisted: false,
+    createdAt: new Date(createdAt),
+    applicant: user,
+    ...extra,
+  });
+  // The brief targets Food; the brand profile itself says Fashion.
+  const order = {
+    id: 'order-1',
+    category: 'Food',
+    languages: [],
+    brand: {
+      user: { id: 'brand-user' },
+      categories: ['Fashion'],
+      languages: ['ru'],
+      contentTypes: [],
+    },
+  };
+  const serviceWith = (applications: object[]) => {
+    const repository = { find: jest.fn().mockResolvedValue(applications) };
+    const service = new OrderApplicationsService(
+      repository as any,
+      { findOne: jest.fn().mockResolvedValue(order) } as any,
+      {} as any,
+      {} as any,
+      {} as any,
+      {} as any,
+    );
+    return { service, repository };
+  };
+
+  it('ranks by the brief targeting, then oldest first, and pages after ranking', async () => {
+    const { service } = serviceWith([
+      app('fashion', creator('fashion', ['Fashion']), '2026-10-01'),
+      app('food-late', creator('food-late', ['Food']), '2026-10-03'),
+      app('food-early', creator('food-early', ['Food']), '2026-10-02'),
+      app('food-engaged', creator('food-engaged', ['Food'], 10), '2026-10-04'),
+    ]);
+
+    const first = await service.findByOrder('order-1', 'brand-user', {
+      take: 3,
+      skip: 0,
+    });
+    expect(first.items.map((a) => a.id)).toEqual([
+      'food-engaged',
+      'food-early',
+      'food-late',
+    ]);
+    expect(first.total).toBe(4);
+    expect(first.items[0].score.total).toBeGreaterThan(
+      first.items[1].score.total,
+    );
+
+    const second = await service.findByOrder('order-1', 'brand-user', {
+      take: 3,
+      skip: 3,
+    });
+    expect(second.items.map((a) => a.id)).toEqual(['fashion']);
+    expect(JSON.stringify(second)).not.toContain('@example.test');
+  });
+
+  it('filters the shortlist and leaves withdrawn applications out', async () => {
+    const { service, repository } = serviceWith([]);
+    await service.findByOrder('order-1', 'brand-user', {
+      take: 20,
+      skip: 0,
+      shortlisted: true,
+    });
+    const where = repository.find.mock.calls[0][0].where;
+    expect(where.shortlisted).toBe(true);
+    expect(where.status).toEqual(
+      expect.objectContaining({ _value: ApplicationStatus.WITHDRAWN }),
+    );
+  });
+
+  it("refuses another brand's applicants", async () => {
+    const { service } = serviceWith([]);
+    await expect(
+      service.findByOrder('order-1', 'other-brand', { take: 20, skip: 0 }),
+    ).rejects.toThrow(ForbiddenException);
+  });
+});
+
+describe('OrderApplicationsService.setShortlisted', () => {
+  const serviceWith = (affected: number) => {
+    const repository = {
+      findOne: jest.fn().mockResolvedValue({
+        id: 'application-1',
+        status: ApplicationStatus.PENDING,
+        applicant: { id: 'creator-user' },
+        order: { id: 'order-1', brand: { user: { id: 'brand-user' } } },
+      }),
+      update: jest.fn().mockResolvedValue({ affected }),
+    };
+    const service = new OrderApplicationsService(
+      repository as any,
+      {} as any,
+      {} as any,
+      {} as any,
+      {} as any,
+      {} as any,
+    );
+    return { service, repository };
+  };
+
+  it('lets the owning brand shortlist a pending application', async () => {
+    const { service, repository } = serviceWith(1);
+    await expect(
+      service.setShortlisted('application-1', 'brand-user', true),
+    ).resolves.toEqual({ id: 'application-1', shortlisted: true });
+    expect(repository.update).toHaveBeenCalledWith(
+      { id: 'application-1', status: ApplicationStatus.PENDING },
+      { shortlisted: true },
+    );
+  });
+
+  it('refuses another brand', async () => {
+    const { service, repository } = serviceWith(1);
+    await expect(
+      service.setShortlisted('application-1', 'other-brand', true),
+    ).rejects.toThrow(ForbiddenException);
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+
+  it('refuses an application that is no longer pending', async () => {
+    const { service } = serviceWith(0);
+    await expect(
+      service.setShortlisted('application-1', 'brand-user', true),
+    ).rejects.toThrow(BadRequestException);
   });
 });

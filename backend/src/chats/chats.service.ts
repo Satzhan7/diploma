@@ -9,6 +9,7 @@ import { Repository } from 'typeorm';
 import { Chat } from './entities/chat.entity';
 import { Message } from './entities/message.entity';
 import { ChatsGateway } from './chats.gateway';
+import { Page, PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { apiError, ErrorCode } from '../common/errors/error-codes';
 
 @Injectable()
@@ -27,14 +28,18 @@ export class ChatsService {
     this.chatsGateway = gateway;
   }
 
-  async findAll(userId: string): Promise<Chat[]> {
-    return this.chatsRepository.find({
+  async findAll(
+    userId: string,
+    { take, skip }: PaginationQueryDto,
+  ): Promise<{ chats: Chat[]; total: number }> {
+    const [chats, total] = await this.chatsRepository.findAndCount({
       where: [{ sender: { id: userId } }, { recipient: { id: userId } }],
-      relations: ['sender', 'recipient', 'messages'],
-      order: {
-        updatedAt: 'DESC',
-      },
+      relations: ['sender', 'recipient'],
+      order: { updatedAt: 'DESC', id: 'DESC' },
+      take,
+      skip,
     });
+    return { chats, total };
   }
 
   async findOne(id: string, userId: string): Promise<Chat> {
@@ -55,7 +60,13 @@ export class ChatsService {
     return chat;
   }
 
-  async getMessages(chatId: string, userId: string): Promise<Message[]> {
+  // The newest page (skip counts back from the latest message), returned
+  // oldest first so the client appends in reading order.
+  async getMessages(
+    chatId: string,
+    userId: string,
+    { take, skip }: PaginationQueryDto,
+  ): Promise<Page<Message>> {
     // First verify the user has access to this chat
     await this.findOne(chatId, userId);
 
@@ -69,9 +80,11 @@ export class ChatsService {
        LEFT JOIN "users" s ON m."senderId" = s.id
        LEFT JOIN "users" r ON m."recipientId" = r.id
        WHERE m."chatId" = $1
-       ORDER BY m."createdAt" ASC`,
-      [chatId],
+       ORDER BY m."createdAt" DESC, m.id DESC
+       LIMIT $2 OFFSET $3`,
+      [chatId, take, skip],
     );
+    const total = await this.messagesRepository.count({ where: { chatId } });
 
     // Transform the raw SQL results into message objects
     const messages = messageData.map((row) => ({
@@ -90,7 +103,7 @@ export class ChatsService {
       createdAt: row.createdAt,
     })) as Message[];
 
-    return messages;
+    return { items: messages.reverse(), total, take, skip };
   }
 
   // Users may only open a chat with someone they share an application with

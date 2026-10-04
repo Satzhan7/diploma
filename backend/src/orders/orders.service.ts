@@ -6,78 +6,35 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, EntityManager, In } from 'typeorm';
 import { Order, OrderStatus } from './entities/order.entity';
-import { OrderApplication } from './entities/order-application.entity';
+import {
+  ApplicationStatus,
+  OrderApplication,
+} from './entities/order-application.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdateOrderDto } from './dto/update-order.dto';
+import {
+  ListAvailableOrdersQueryDto,
+  ListBrandOrdersQueryDto,
+} from './dto/list-orders-query.dto';
+import { BriefCounts, BriefView, toBriefView } from './brief-view';
+import { assertBriefComplete, todayInKazakhstan } from './brief-completeness';
 import { ProfilesService } from '../profiles/profiles.service';
-import { ProfileType } from '../profiles/entities/profile.entity';
+import { Profile, ProfileType } from '../profiles/entities/profile.entity';
 import { UserRole } from '../users/entities/user.entity';
-import { PublicUser, toPublicUser } from '../users/public-user';
 import { apiError, ErrorCode } from '../common/errors/error-codes';
-
-export type PublicOrder = Pick<
-  Order,
-  | 'id'
-  | 'title'
-  | 'description'
-  | 'budget'
-  | 'category'
-  | 'requirements'
-  | 'deadline'
-  | 'status'
-  | 'brandId'
-  | 'createdAt'
-  | 'updatedAt'
-> & {
-  brand: Omit<Order['brand'], 'user' | 'socialMediaData'> & {
-    user?: PublicUser;
-  };
-};
+import { Page, PaginationQueryDto } from '../common/dto/pagination-query.dto';
 
 export interface OrderViewer {
   id: string;
   role: UserRole;
 }
 
-// What any authenticated user may see of an OPEN order: the brief plus the
-// brand's public identity. No emails, no assigned influencer.
-export function toPublicOrder(order: Order): PublicOrder {
-  const { user, ...brandProfile } = order.brand;
-  return {
-    id: order.id,
-    title: order.title,
-    description: order.description,
-    budget: order.budget,
-    category: order.category,
-    requirements: order.requirements,
-    deadline: order.deadline,
-    status: order.status,
-    brandId: order.brandId,
-    createdAt: order.createdAt,
-    updatedAt: order.updatedAt,
-    brand: { ...brandProfile, user: user ? toPublicUser(user) : undefined },
-  };
-}
+const BRIEF_RELATIONS = { brand: { user: true } };
 
-// What the two sides of an order see: the full order, but every user on it
-// (brand owner, assigned creator, applicants) as a public user without an
-// email (decision D5). Admins get the same shape.
-export function toParticipantOrder(order: Order): Order {
-  for (const profile of [order.brand, order.influencer]) {
-    if (profile?.user) {
-      Object.assign(profile, { user: toPublicUser(profile.user) });
-    }
-  }
-  for (const application of order.applications ?? []) {
-    if (application.applicant) {
-      Object.assign(application, {
-        applicant: toPublicUser(application.applicant),
-      });
-    }
-  }
-  return order;
-}
+// Statuses a brand may still change the brief in.
+const EDITABLE = [OrderStatus.DRAFT, OrderStatus.OPEN];
 
 @Injectable()
 export class OrdersService {
@@ -88,80 +45,259 @@ export class OrdersService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async create(userId: string, createOrderDto: CreateOrderDto): Promise<Order> {
-    const brandProfile = await this.profilesService.findByUserId(userId);
-
-    if (brandProfile.type !== ProfileType.BRAND) {
+  private async brandProfileOf(userId: string): Promise<Profile> {
+    const profile = await this.profilesService.findByUserId(userId);
+    if (profile.type !== ProfileType.BRAND) {
       throw new BadRequestException(
-        apiError(ErrorCode.ORDER_BRAND_ONLY, 'Only brands can create orders'),
+        apiError(ErrorCode.ORDER_BRAND_ONLY, 'Only brands can manage briefs'),
       );
     }
-
-    const order = this.orderRepository.create({
-      ...createOrderDto,
-      brand: brandProfile,
-      brandId: brandProfile.id,
-    });
-
-    return this.orderRepository.save(order);
+    return profile;
   }
 
-  async findAvailable(filters: any = {}): Promise<PublicOrder[]> {
-    const queryBuilder = this.orderRepository
+  private notFound(id: string) {
+    return new NotFoundException(
+      apiError(ErrorCode.ORDER_NOT_FOUND, `Order with ID ${id} not found`),
+    );
+  }
+
+  // Locks the brief row (no joins: FOR UPDATE cannot cover the nullable side
+  // of an outer join) and checks that the brand owns it.
+  private async lockOwned(
+    manager: EntityManager,
+    id: string,
+    brand: Profile,
+  ): Promise<Order> {
+    const order = await manager.findOne(Order, {
+      where: { id },
+      lock: { mode: 'pessimistic_write' },
+    });
+    if (!order) throw this.notFound(id);
+    if (order.brandId !== brand.id) {
+      throw new ForbiddenException(
+        apiError(ErrorCode.ORDER_ACCESS_DENIED, 'This brief is not yours'),
+      );
+    }
+    return order;
+  }
+
+  private async viewOf(id: string, extra?: BriefCounts): Promise<BriefView> {
+    const order = await this.orderRepository.findOne({
+      where: { id },
+      relations: BRIEF_RELATIONS,
+    });
+    if (!order) throw this.notFound(id);
+    return toBriefView(order, extra);
+  }
+
+  /** Always a draft; `publish` makes it visible to creators. */
+  async create(userId: string, dto: CreateOrderDto): Promise<BriefView> {
+    const brand = await this.brandProfileOf(userId);
+    const order = await this.orderRepository.save(
+      this.orderRepository.create({
+        ...dto,
+        brandId: brand.id,
+        status: OrderStatus.DRAFT,
+      }),
+    );
+    return this.viewOf(order.id);
+  }
+
+  // Drafts take any partial change. An open brief stays complete: the
+  // change is refused when it would leave the brief unpublishable.
+  async update(
+    id: string,
+    userId: string,
+    dto: UpdateOrderDto,
+  ): Promise<BriefView> {
+    const brand = await this.brandProfileOf(userId);
+    await this.dataSource.transaction(async (manager) => {
+      const order = await this.lockOwned(manager, id, brand);
+      if (!EDITABLE.includes(order.status)) {
+        throw new ConflictException(
+          apiError(
+            ErrorCode.ORDER_NOT_EDITABLE,
+            `A ${order.status} brief cannot be edited`,
+          ),
+        );
+      }
+      for (const [key, value] of Object.entries(dto)) {
+        if (value !== undefined) Object.assign(order, { [key]: value });
+      }
+      if (order.status === OrderStatus.OPEN) assertBriefComplete(order);
+      await manager.save(Order, order);
+    });
+    return this.viewOf(id);
+  }
+
+  async publish(id: string, userId: string): Promise<BriefView> {
+    const brand = await this.brandProfileOf(userId);
+    await this.dataSource.transaction(async (manager) => {
+      const order = await this.lockOwned(manager, id, brand);
+      if (order.status !== OrderStatus.DRAFT) {
+        throw new ConflictException(
+          apiError(
+            ErrorCode.ORDER_INVALID_TRANSITION,
+            `Only a draft can be published (this brief is ${order.status})`,
+          ),
+        );
+      }
+      assertBriefComplete(order);
+      order.status = OrderStatus.OPEN;
+      order.publishedAt = new Date();
+      await manager.save(Order, order);
+    });
+    return this.viewOf(id);
+  }
+
+  // Cancelling closes the brief and rejects the applications still waiting.
+  // Acceptance takes the same order lock, so the two cannot interleave.
+  async cancel(id: string, userId: string): Promise<BriefView> {
+    const brand = await this.brandProfileOf(userId);
+    await this.dataSource.transaction(async (manager) => {
+      const order = await this.lockOwned(manager, id, brand);
+      if (!EDITABLE.includes(order.status)) {
+        throw new ConflictException(
+          apiError(
+            ErrorCode.ORDER_INVALID_TRANSITION,
+            `A ${order.status} brief cannot be cancelled`,
+          ),
+        );
+      }
+      order.status = OrderStatus.CANCELLED;
+      await manager.save(Order, order);
+      await manager.update(
+        OrderApplication,
+        { order: { id }, status: ApplicationStatus.PENDING },
+        { status: ApplicationStatus.REJECTED },
+      );
+    });
+    return this.viewOf(id);
+  }
+
+  // Per brief: applications that are not withdrawn, and those still pending.
+  private async countApplications(
+    orderIds: string[],
+  ): Promise<Map<string, { applications: number; pending: number }>> {
+    const counts = new Map<string, { applications: number; pending: number }>();
+    if (!orderIds.length) return counts;
+    const rows = await this.dataSource
+      .getRepository(OrderApplication)
+      .createQueryBuilder('app')
+      .select('app."orderId"', 'orderId')
+      .addSelect('COUNT(*) FILTER (WHERE app.status <> :withdrawn)', 'total')
+      .addSelect('COUNT(*) FILTER (WHERE app.status = :pending)', 'pending')
+      .where('app."orderId" IN (:...orderIds)', { orderIds })
+      .setParameters({
+        withdrawn: ApplicationStatus.WITHDRAWN,
+        pending: ApplicationStatus.PENDING,
+      })
+      .groupBy('app."orderId"')
+      .getRawMany<{ orderId: string; total: string; pending: string }>();
+    for (const row of rows) {
+      counts.set(row.orderId, {
+        applications: Number(row.total),
+        pending: Number(row.pending),
+      });
+    }
+    return counts;
+  }
+
+  private async myApplications(
+    orderIds: string[],
+    userId: string,
+  ): Promise<Map<string, OrderApplication>> {
+    if (!orderIds.length) return new Map();
+    const applications = await this.dataSource
+      .getRepository(OrderApplication)
+      .find({
+        where: { order: { id: In(orderIds) }, applicant: { id: userId } },
+        relations: { order: true },
+      });
+    return new Map(applications.map((a) => [a.order.id, a]));
+  }
+
+  private async withCreatorCounts(
+    orders: Order[],
+    userId: string,
+  ): Promise<BriefView[]> {
+    const ids = orders.map((o) => o.id);
+    const [counts, mine] = await Promise.all([
+      this.countApplications(ids),
+      this.myApplications(ids, userId),
+    ]);
+    return orders.map((order) => {
+      const own = mine.get(order.id);
+      return toBriefView(order, {
+        applicationsCount: counts.get(order.id)?.applications ?? 0,
+        myApplication: own
+          ? {
+              id: own.id,
+              status: own.status,
+              proposedPrice: own.proposedPrice ?? null,
+            }
+          : null,
+      });
+    });
+  }
+
+  /** Creator feed: open briefs whose post-by date has not passed. */
+  async findAvailable(
+    userId: string,
+    query: ListAvailableOrdersQueryDto,
+  ): Promise<Page<BriefView>> {
+    const { take, skip, category, platform, city } = query;
+    const qb = this.orderRepository
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.brand', 'brand')
       .leftJoinAndSelect('brand.user', 'brandUser')
-      .where('order.status = :status', { status: OrderStatus.OPEN });
-
-    if (filters.category) {
-      queryBuilder.andWhere('order.category = :category', {
-        category: filters.category,
-      });
+      .where('order.status = :status', { status: OrderStatus.OPEN })
+      .andWhere('order.postBy > :today', { today: todayInKazakhstan() })
+      .orderBy('order.publishedAt', 'DESC')
+      .addOrderBy('order.id', 'DESC')
+      .take(take)
+      .skip(skip);
+    if (category) qb.andWhere('order.category = :category', { category });
+    if (platform) qb.andWhere('order.platform = :platform', { platform });
+    if (city) {
+      qb.andWhere("order.city IN (:city, 'any')", { city });
     }
-
-    if (filters.minBudget) {
-      queryBuilder.andWhere('order.budget >= :minBudget', {
-        minBudget: filters.minBudget,
-      });
-    }
-
-    if (filters.maxBudget) {
-      queryBuilder.andWhere('order.budget <= :maxBudget', {
-        maxBudget: filters.maxBudget,
-      });
-    }
-
-    const orders = await queryBuilder.getMany();
-    return orders.map(toPublicOrder);
+    const [orders, total] = await qb.getManyAndCount();
+    return {
+      items: await this.withCreatorCounts(orders, userId),
+      total,
+      take,
+      skip,
+    };
   }
 
-  async findOne(id: string, viewer: OrderViewer): Promise<Order | PublicOrder> {
+  async findOne(id: string, viewer: OrderViewer): Promise<BriefView> {
     const order = await this.orderRepository.findOne({
       where: { id },
-      relations: ['brand', 'brand.user', 'influencer', 'influencer.user'],
+      relations: { ...BRIEF_RELATIONS, influencer: { user: true } },
     });
+    if (!order) throw this.notFound(id);
 
-    if (!order) {
-      throw new NotFoundException(
-        apiError(ErrorCode.ORDER_NOT_FOUND, `Order with ID ${id} not found`),
-      );
+    const isOwner =
+      viewer.role === UserRole.ADMIN || order.brand?.user?.id === viewer.id;
+    if (isOwner) {
+      const counts = (await this.countApplications([id])).get(id);
+      return toBriefView(order, {
+        applicationsCount: counts?.applications ?? 0,
+        pendingCount: counts?.pending ?? 0,
+      });
     }
 
-    const isParticipant =
-      viewer.role === UserRole.ADMIN ||
-      order.brand?.user?.id === viewer.id ||
-      order.influencer?.user?.id === viewer.id;
-    if (isParticipant) return toParticipantOrder(order);
-
-    // Applicants keep the brief after it leaves OPEN (accepted elsewhere,
-    // cancelled, completed) so their application keeps its context.
+    // Creators see open briefs; applicants and the assigned creator keep the
+    // brief after it closes, so their application or deal keeps its context.
+    const [view] = await this.withCreatorCounts([order], viewer.id);
     if (
       order.status === OrderStatus.OPEN ||
-      (await this.hasApplied(order.id, viewer.id))
+      order.influencer?.user?.id === viewer.id ||
+      view.myApplication
     ) {
-      return toPublicOrder(order);
+      return view;
     }
-
     throw new ForbiddenException(
       apiError(
         ErrorCode.ORDER_ACCESS_DENIED,
@@ -170,85 +306,52 @@ export class OrdersService {
     );
   }
 
-  private hasApplied(orderId: string, userId: string): Promise<boolean> {
-    return this.dataSource.getRepository(OrderApplication).exists({
-      where: { order: { id: orderId }, applicant: { id: userId } },
+  async findByBrand(
+    userId: string,
+    query: ListBrandOrdersQueryDto,
+  ): Promise<Page<BriefView>> {
+    const brand = await this.brandProfileOf(userId);
+    const { take, skip, status } = query;
+    const [orders, total] = await this.orderRepository.findAndCount({
+      where: {
+        brandId: brand.id,
+        ...(status?.length && { status: In(status) }),
+      },
+      relations: BRIEF_RELATIONS,
+      order: { updatedAt: 'DESC', id: 'DESC' },
+      take,
+      skip,
     });
-  }
-
-  async apply(orderId: string, userId: string): Promise<Order> {
-    const influencerProfile = await this.profilesService.findByUserId(userId);
-
-    if (influencerProfile.type !== ProfileType.INFLUENCER) {
-      throw new BadRequestException(
-        apiError(
-          ErrorCode.ORDER_INFLUENCER_ONLY,
-          'Only influencers can apply to orders',
-        ),
-      );
-    }
-
-    // Transaction + row lock: two influencers claiming the same open order
-    // concurrently was a lost-update race (SECURITY_AUDIT M1).
-    return this.dataSource.transaction(async (manager) => {
-      const order = await manager.findOne(Order, {
-        where: { id: orderId },
-        lock: { mode: 'pessimistic_write' },
-      });
-
-      if (!order) {
-        throw new NotFoundException(
-          apiError(
-            ErrorCode.ORDER_NOT_FOUND,
-            `Order with ID ${orderId} not found`,
-          ),
-        );
-      }
-      if (order.status !== OrderStatus.OPEN) {
-        throw new ConflictException(
-          apiError(
-            ErrorCode.ORDER_NOT_OPEN,
-            'This order is no longer open for applications',
-          ),
-        );
-      }
-
-      order.status = OrderStatus.IN_PROGRESS;
-      order.influencerId = influencerProfile.id;
-
-      return manager.save(Order, order);
-    });
-  }
-
-  async findByBrand(userId: string): Promise<Order[]> {
-    const brandProfile = await this.profilesService.findByUserId(userId);
-
-    const orders = await this.orderRepository.find({
-      where: { brandId: brandProfile.id },
-      relations: [
-        'brand',
-        'brand.user',
-        'influencer',
-        'influencer.user',
-        'applications',
-        'applications.applicant',
-      ],
-      order: { createdAt: 'DESC' },
-    });
-    return orders.map(toParticipantOrder);
+    const counts = await this.countApplications(orders.map((o) => o.id));
+    return {
+      items: orders.map((order) =>
+        toBriefView(order, {
+          applicationsCount: counts.get(order.id)?.applications ?? 0,
+          pendingCount: counts.get(order.id)?.pending ?? 0,
+        }),
+      ),
+      total,
+      take,
+      skip,
+    };
   }
 
   // Order foreign keys reference Profile IDs. Public service methods receive
   // the authenticated User ID, so resolve it once at this boundary rather than
   // comparing a User ID to a Profile FK.
-  async findByInfluencer(userId: string): Promise<Order[]> {
+  async findByInfluencer(
+    userId: string,
+    query: PaginationQueryDto,
+  ): Promise<Page<BriefView>> {
+    const { take, skip } = query;
     const influencerProfile = await this.profilesService.findByUserId(userId);
-
-    const orders = await this.orderRepository.find({
+    const [orders, total] = await this.orderRepository.findAndCount({
       where: { influencerId: influencerProfile.id },
-      relations: ['brand', 'brand.user', 'influencer', 'influencer.user'],
-      order: { createdAt: 'DESC' },
+      relations: BRIEF_RELATIONS,
+      order: { updatedAt: 'DESC', id: 'DESC' },
+      take,
+      skip,
     });
-    return orders.map(toParticipantOrder);
+    return { items: orders.map((o) => toBriefView(o)), total, take, skip };
   }
 }

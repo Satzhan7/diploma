@@ -9,7 +9,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 // Static category list used by the brand and influencer dashboards.
 // Kept deliberately small and stable so it can be cited in the diploma defense.
-const CATEGORIES: string[] = [
+export const CATEGORIES: string[] = [
   'Fashion',
   'Beauty',
   'Lifestyle',

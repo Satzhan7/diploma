@@ -6,6 +6,7 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Message } from './message.entity';
@@ -15,9 +16,11 @@ export class Chat {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @ManyToOne(() => User)
   sender: User;
 
+  @Index()
   @ManyToOne(() => User)
   recipient: User;
 
