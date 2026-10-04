@@ -91,6 +91,25 @@ Rule: every phase ends with something deployable and usable. Nothing goes to `ma
 - Branching (2026-10-03): PR #1 is unmerged, so Phase 1 is stacked on `audit/fixes`: one branch per step (`phase1/node24` → `phase1/ci` → `phase1/vite` → `phase1/i18n` → `phase1/migrations`), each PR based on the previous branch.
 - **Done when:** CI is green on `main`; a fresh Postgres plus `migration:run` boots production mode; the UI switches RU/KZ/EN.
 
+### Phase 1 review (2026-10-04, stack `phase1/node24` … `phase1/migrations`)
+
+**Done-when status:** CI green on every PR that has the workflow (below; `main` itself waits for the stack to merge into `v1`) ✅ · fresh Postgres + `migration:run` boots production mode ✅ (1.4 proof, 2026-10-03) · UI switches RU/KZ/EN ✅ (1.5 browser QA 25/25).
+
+**CI per PR** (GitHub Actions `CI`, `pull_request` runs on the PR head):
+- #1 `audit/fixes` → `v1` (`a9e1d4d`) and #2 `phase1/node24` → `audit/fixes` (`20f908c`): no run, the workflow arrives in #3.
+- #3 `phase1/ci` (`43d34d0`) success · #4 `phase1/vite` (`16155b6`) success · #5 `phase1/i18n` (`d867868`) success · #6 `phase1/migrations`: `d5d0deb` success; final head recorded below.
+
+**Final checks (host Node v25, `phase1/migrations` after the review fixes):**
+- Backend: `tsc --noEmit` ok · `npx eslint "{src,apps,libs,test}/**/*.ts"` 0 problems · Jest `Test Suites: 14 passed, 14 total` / `Tests: 62 passed, 62 total` · `nest build` ok.
+- Frontend: `tsc --noEmit` ok · `eslint src` `✖ 1 problem (0 errors, 1 warning)` (react-refresh, AuthContext) · Vitest `Test Files 4 passed (4)` / `Tests 11 passed (11)` · `vite build` ok (1.25 MB chunk warning).
+
+**Review** (code reviewer on the Phase 1 diff): "approve with comments", no high items. Fixed:
+- `b569efc` regression from 1.5: the catch-all `HttpErrorFilter` turned body-parser errors into 500. Exposed 4xx `http-errors` keep their status now (live on the dev stack: body > 100 kB → 413, malformed JSON → 400, no token → 401); no write after headers are sent. New spec case.
+- `32f20f7` `?category=` Raw param renamed `:profileCategory` (unique name in the query) and the input trimmed.
+- README: runbook for a database created by `synchronize` (mark the Baseline applied by hand) and for the `uuid-ossp` extension on managed Postgres.
+
+**Follow-ups (placed in the redesign plan below):** EditProfile loads `/profiles/me`; field-level ValidationPipe `details` in forms; FK indexes with pagination; auth refresh `catch` turns DB errors into 401; optional `DB_MIGRATIONS_RUN` kill switch; `PAYLOAD_TOO_LARGE` error code with uploads; OrderDetail `toast()` during render; nginx `client_max_body_size` for uploads; route code-splitting; react-router 7 and NestJS 11 audit items; `landing`/`stats` locale files unused until the redesign.
+
 ## Phase 2 — Domain model: one Deal pipeline (Needs: D1, 1.4)
 - [ ] 2.1 Design doc and ADR (ECC `architecture-decision-records`): the Brief → Application → Deal lifecycle and Mermaid state diagrams.
 - [ ] 2.2 Deal state machine in one service with a transition table. Application: PENDING → ACCEPTED / REJECTED / WITHDRAWN. Deal: ACTIVE → PROOF_SUBMITTED → COMPLETED or DISPUTED, plus CANCELLED. Unit tests for every allowed and forbidden transition.
