@@ -127,12 +127,10 @@ In development, the full OpenAPI reference is served at `/docs`.
 | Profiles | `/profiles` | Brand and influencer profiles, social-media handles, role-gated counterpart search. |
 | Orders | `/orders` | Brand publishes orders; influencer browses available orders. |
 | Order Applications | `/order-applications` | Influencer applies; brand accepts/rejects; influencer withdraws. |
-| Collaborations | `/collaborations` | Long-running brand–influencer collaboration records. |
-| Matching | `/matching` | Match lifecycle, deterministic match-score, recommendation endpoints. |
-| Chats | `/chats` | REST chat creation and message persistence. |
+| Deals | `/deals` | One deal per accepted application: paginated list (`take`/`skip`) and a participant-only detail. Lifecycle in [ADR 0001](docs/adr/0001-deal-pipeline.md). |
+| Chats | `/chats` | REST chat creation (only between users who share an application or deal) and message persistence. |
 | Chats WebSocket | `ws://.../chats` | Real-time `newMessage`, `chatUpdated`, `messagesRead`, `newChat` events. |
 | Categories | `/categories` | Static list of platform-wide content categories used by the dashboards (JWT-guarded). |
-| Statistics | `/statistics` | Brand and influencer aggregated KPIs. |
 
 Maintenance endpoints under `/chats/debug/*` and `/chats/fix-messages/*` are restricted to the `admin` role and hidden from the public Swagger document.
 
@@ -147,19 +145,45 @@ Maintenance endpoints under `/chats/debug/*` and `/chats/fix-messages/*` are res
 
 These items are listed honestly so the defense committee can verify what is implemented and what is a future improvement.
 
-- **No admin UI.** The `admin` role exists at the API layer (used only for `/chats/...` maintenance endpoints and `/collaborations` deletion) but no admin page is shipped.
+- **No admin UI.** The `admin` role exists at the API layer (used for `/chats/...` maintenance endpoints) but no admin page is shipped yet. Admin accounts are created with the CLI below.
 - **No notifications subsystem.** Email and in-app notifications are not implemented; only WebSocket chat updates are real-time.
 - **No file uploads.** Avatars and other media must be supplied as external URLs.
 - **Settings preferences are client-only.** Notification, language, and timezone preferences are stored in `localStorage` (key `adpartners.userSettings`); there is no `/users/settings` backend endpoint.
-- **Daily-stat aggregation is illustrative.** `StatisticsService` currently returns Match-level totals and a campaign-distribution array; daily-bucket aggregation is a future improvement.
-- **Recommendation listings rank by category only.** `MatchingService.calculateMatchScore` returns a deterministic three-factor score (category Jaccard + audience overlap + engagement); the listing endpoints (`/matching/recommendations/influencers` and `.../brands`) currently rank by `categoryMatch`. Wiring the full score into the listings is a future improvement.
-- **Schema in production comes from migrations.** With `NODE_ENV=production` the backend never synchronizes; it applies `backend/src/database/migrations` on boot (`migrationsRun`). The baseline creates the whole schema on an empty database. After changing an entity, run `npm run migration:generate -- src/database/migrations/<Name>` in `backend/` against a database that is up to date with the existing migrations, then review the SQL before committing it. `npm run migration:run:prod` applies the compiled migrations by hand. Development still uses `synchronize`.
+- **Match score is not shown yet.** `matchScore()` (`backend/src/profiles/match-score.ts`) is a pure three-factor score (category Jaccard + audience overlap + engagement from the creator's self-reported metrics); the Applicants screen ranks by it from R3.
+- **Schema in production comes from migrations.** With `NODE_ENV=production` the backend never synchronizes; it applies `backend/src/database/migrations` on boot (`migrationsRun`; set `DB_MIGRATIONS_RUN=false` to skip that and apply them by hand). The baseline creates the whole schema on an empty database. After changing an entity, run `npm run migration:generate -- src/database/migrations/<Name>` in `backend/` against a database that is up to date with the existing migrations, then review the SQL before committing it. `npm run migration:run:prod` applies the compiled migrations by hand. Development still uses `synchronize`.
   - *Existing database made by `synchronize`* (production has never been deployed, so this applies only to a copied dev database): it already has the tables, so the Baseline would fail with "already exists". Check that its schema matches the Baseline (e.g. `migration:generate --dr` reports no changes), then mark the Baseline as applied by hand: `INSERT INTO migrations("timestamp", name) VALUES (1791039402679, 'Baseline1791039402679');` (create the `migrations` table first if it is missing: `id SERIAL PRIMARY KEY, "timestamp" bigint NOT NULL, name varchar NOT NULL`).
   - *Managed Postgres:* the Baseline runs `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`, which needs extension privileges. Create the extension as an admin before the first boot.
 - **Frontend dependency risk is small.** The frontend builds with Vite (CRA removed). `npm audit` reports 2 moderate advisories in React Router 6, fixed only in v7.
 - **No verified production hosting.** A production Docker/NGINX deployment configuration exists in [DEPLOY.md](DEPLOY.md), but it has not been deployed or operationally verified in this repository.
-- **Automated coverage is targeted, not comprehensive.** The backend has focused auth, matching, profile-filter, order, and stats-validation unit tests; the frontend has a smoke test. Disposable-PostgreSQL integration and browser E2E coverage remain required before production.
+- **Automated coverage is targeted, not comprehensive.** The backend has focused auth, deal-transition, match-score, profile-filter, order and application unit tests; the frontend has a smoke test. Disposable-PostgreSQL integration and browser E2E coverage remain required before production.
 - **Order edit / delete are not available.** The brand UI does not expose Edit/Delete buttons in the demo build because the backend does not implement `PATCH /orders/:id` or `DELETE /orders/:id`. Order creation, listing, and application acceptance are fully implemented.
+
+## Runbook
+
+### Create an admin account
+
+Sign-up never creates admins. Create one from the command line; the account is created verified. Set `ADMIN_PASSWORD` (12+ characters) or let the script generate a password and print it once. An existing email is refused.
+
+```bash
+# Development (host, against the dev compose database on port 5435)
+cd backend && DB_PORT=5435 DB_NAME=influencer_platform npm run admin:create -- ops@adpartners.kz
+
+# Production image (compiled script, no ts-node)
+docker compose -f docker-compose.prod.yml exec -e ADMIN_PASSWORD backend node dist/scripts/create-admin.js ops@adpartners.kz
+```
+
+### Dev database after R2 (deals)
+
+The dev compose database uses `synchronize`, which creates the new `deals` table but does not drop the removed `match` and `collaboration` tables. Drop them once:
+
+```bash
+docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' <<'SQL'
+BEGIN;
+DROP TABLE IF EXISTS "match", "collaboration";
+DROP TYPE IF EXISTS "public"."match_status_enum", "public"."collaboration_status_enum";
+COMMIT;
+SQL
+```
 
 ## Documentation index
 
@@ -167,6 +191,7 @@ These items are listed honestly so the defense committee can verify what is impl
 |---|---|
 | [docs/PRODUCT-BRIEF.md](docs/PRODUCT-BRIEF.md) | Product decisions for the Kazakhstan launch |
 | [tasks/todo.md](tasks/todo.md) | Productization plan, phase by phase |
+| [docs/adr/](docs/adr/) | Architecture decisions (0001: the Brief → Application → Deal pipeline) |
 | [DEPLOY.md](DEPLOY.md) | Production deployment with Docker Compose and nginx |
 | [docs/ENVIRONMENT_VARIABLES.md](docs/ENVIRONMENT_VARIABLES.md) | Every environment variable and where it is read |
 | [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) | Theme tokens and shared UI components |
