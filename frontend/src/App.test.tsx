@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import App from './App';
 import i18n from './i18n';
 
@@ -18,4 +18,16 @@ test('renders the public landing page for an unauthenticated visitor', async () 
     'href',
     '/register?role=brand',
   );
+});
+
+test('sign-up role cards are named, described radios', async () => {
+  window.history.pushState({}, '', '/register?role=brand');
+  render(<App />);
+  const brand = await screen.findByRole('radio', { name: i18n.t('role.brand.title', { ns: 'auth' }) });
+  const creator = screen.getByRole('radio', { name: i18n.t('role.influencer.title', { ns: 'auth' }) });
+  expect(brand).toBeChecked();
+  expect(creator).toHaveAccessibleDescription(i18n.t('role.influencer.text', { ns: 'auth' }));
+  fireEvent.click(creator);
+  expect(creator).toBeChecked();
+  window.history.pushState({}, '', '/');
 });

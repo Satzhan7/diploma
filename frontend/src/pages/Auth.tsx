@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Alert,
@@ -16,6 +16,9 @@ import {
   SimpleGrid,
   Stack,
   Text,
+  useRadio,
+  useRadioGroup,
+  UseRadioProps,
 } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
@@ -29,6 +32,40 @@ type Mode = 'login' | 'register';
 type SignupRole = UserRole.BRAND | UserRole.INFLUENCER;
 
 const ROLES: SignupRole[] = [UserRole.BRAND, UserRole.INFLUENCER];
+/** Fields that have an input on this page; other field errors go to the form alert. */
+const FIELDS = ['name', 'email', 'password'];
+
+/**
+ * Card-styled native radio: arrow keys and focus work like any radio group.
+ * Chakra marks the visual box aria-hidden, so the input is named by id references.
+ */
+const RoleCard: React.FC<UseRadioProps & { title: string; text: string }> = ({ title, text, ...radioProps }) => {
+  const id = useId();
+  const { getInputProps, getRadioProps, getLabelProps } = useRadio({ ...radioProps, 'aria-describedby': `${id}-text` });
+  return (
+    <Box as="label" cursor="pointer" {...getLabelProps()}>
+      <input {...getInputProps({ 'aria-labelledby': `${id}-title` })} />
+      <Box
+        {...getRadioProps()}
+        h="full"
+        p={3.5}
+        borderRadius="xl"
+        borderWidth="2px"
+        borderColor="border.default"
+        bg="bg.surface"
+        _checked={{ borderColor: 'primary', bg: 'primary.soft' }}
+        _focusVisible={{ outline: '3px solid var(--ap-primary)', outlineOffset: '2px' }}
+      >
+        <Text id={`${id}-title`} fontWeight="700" fontSize="15px">
+          {title}
+        </Text>
+        <Text id={`${id}-text`} fontSize="13px" color="fg.muted" lineHeight="1.4" mt={1}>
+          {text}
+        </Text>
+      </Box>
+    </Box>
+  );
+};
 
 export const Auth: React.FC<{ mode: Mode }> = ({ mode }) => {
   const { t } = useTranslation('auth');
@@ -46,6 +83,17 @@ export const Auth: React.FC<{ mode: Mode }> = ({ mode }) => {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { getRootProps, getRadioProps } = useRadioGroup({
+    name: 'role',
+    value: role,
+    onChange: (value) => setRole(value as SignupRole),
+  });
+
+  // /login and /register share this component: errors belong to one mode.
+  useEffect(() => {
+    setFieldErrors({});
+    setFormError(null);
+  }, [mode]);
 
   const switchMode = (next: Mode) => {
     if (next === mode) return;
@@ -60,13 +108,14 @@ export const Auth: React.FC<{ mode: Mode }> = ({ mode }) => {
     try {
       if (isRegister) {
         await register({ name: name.trim(), email: email.trim(), password, role });
+      } else {
+        await login(email.trim(), password);
       }
-      await login(email.trim(), password);
       navigate('/');
     } catch (error) {
       const fields = getFieldErrors(error);
       setFieldErrors(fields);
-      if (Object.keys(fields).length === 0) {
+      if (!Object.keys(fields).some((f) => FIELDS.includes(f))) {
         setFormError(getErrorMessage(error, t(isRegister ? 'errors.registerFailed' : 'errors.loginFailed')));
       }
     } finally {
@@ -111,33 +160,15 @@ export const Auth: React.FC<{ mode: Mode }> = ({ mode }) => {
             <form onSubmit={handleSubmit} noValidate>
               <Stack spacing={4}>
                 {isRegister && (
-                  <SimpleGrid columns={2} spacing={2.5} role="radiogroup" aria-label={t('role.label')}>
-                    {ROLES.map((r) => {
-                      const on = role === r;
-                      return (
-                        <Box
-                          key={r}
-                          as="button"
-                          type="button"
-                          role="radio"
-                          aria-checked={on}
-                          onClick={() => setRole(r)}
-                          textAlign="left"
-                          p={3.5}
-                          borderRadius="xl"
-                          borderWidth="2px"
-                          borderColor={on ? 'primary' : 'border.default'}
-                          bg={on ? 'primary.soft' : 'bg.surface'}
-                        >
-                          <Text fontWeight="700" fontSize="15px">
-                            {t(`role.${r}.title`)}
-                          </Text>
-                          <Text fontSize="13px" color="fg.muted" lineHeight="1.4" mt={1}>
-                            {t(`role.${r}.text`)}
-                          </Text>
-                        </Box>
-                      );
-                    })}
+                  <SimpleGrid columns={2} spacing={2.5} aria-label={t('role.label')} {...getRootProps()}>
+                    {ROLES.map((r) => (
+                      <RoleCard
+                        key={r}
+                        title={t(`role.${r}.title`)}
+                        text={t(`role.${r}.text`)}
+                        {...getRadioProps({ value: r })}
+                      />
+                    ))}
                   </SimpleGrid>
                 )}
 
