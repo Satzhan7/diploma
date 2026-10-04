@@ -28,6 +28,9 @@ import { ResendCodeDto } from './dto/resend-code.dto';
  */
 export const VERIFICATION_REQUIRED = { verificationRequired: true } as const;
 
+const profileTypeOf = (role: UserRole) =>
+  role === UserRole.BRAND ? ProfileType.BRAND : ProfileType.INFLUENCER;
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -45,9 +48,18 @@ export class AuthService {
     const { name, email, password, role, language = 'ru' } = registerDto;
     const existingUser = await this.usersService.findByEmail(email);
     if (existingUser) {
-      // An unverified owner gets a fresh code (cooldown applies); a verified
-      // one gets nothing. The response is the same either way.
-      if (!existingUser.emailVerifiedAt) {
+      if (existingUser.emailVerifiedAt) {
+        // Nothing to do, but cost the same bcrypt work as a new account so
+        // response time does not reveal the email.
+        await bcrypt.hash(password, 10);
+      } else {
+        // Unconfirmed sign-up: the latest name and role win, a fresh code
+        // goes out (cooldown applies). The password is set at verification.
+        await this.usersService.update(existingUser.id, { name, role });
+        await this.profilesService.setType(
+          existingUser.id,
+          profileTypeOf(role),
+        );
         await this.emailVerification.send(existingUser, language);
       }
       return VERIFICATION_REQUIRED;
@@ -60,24 +72,28 @@ export class AuthService {
       role,
     });
 
-    // Create a profile for the user based on their role
-    const profileType =
-      role === UserRole.BRAND ? ProfileType.BRAND : ProfileType.INFLUENCER;
-    await this.profilesService.createProfile(user.id, profileType);
+    await this.profilesService.createProfile(user.id, profileTypeOf(role));
 
     await this.emailVerification.send(user, language);
     return VERIFICATION_REQUIRED;
   }
 
-  /** Checks the emailed code, marks the email verified and signs the user in. */
-  async verifyEmail({ email, code }: VerifyEmailDto) {
+  /**
+   * Checks the emailed code, then marks the email verified with the password
+   * sent here and signs the user in. Whoever registered the email first
+   * cannot keep access: only the inbox owner gets this far.
+   */
+  async verifyEmail({ email, code, password }: VerifyEmailDto) {
     const user = await this.usersService.findByEmail(email);
     // Unknown and already-verified emails look like a wrong code.
     if (!user || user.emailVerifiedAt) {
       throw this.emailVerification.invalid();
     }
     await this.emailVerification.verify(user.id, code);
-    await this.usersService.markEmailVerified(user.id);
+    // Verified first, then the code is used up: if the second step fails the
+    // user is already in, never locked out.
+    await this.usersService.completeEmailVerification(user.id, password);
+    await this.emailVerification.consume(user.id);
     return this.startSession(await this.usersService.findById(user.id));
   }
 

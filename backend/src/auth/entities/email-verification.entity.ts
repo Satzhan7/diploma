@@ -34,4 +34,14 @@ export class EmailVerification {
   /** When the code was last emailed; drives the resend cooldown. */
   @Column({ type: 'timestamptz' })
   sentAt: Date;
+
+  /**
+   * Codes sent since `windowStartedAt`. Capped per day so resends cannot
+   * buy unlimited guesses (each new code resets `attempts`).
+   */
+  @Column({ type: 'int', default: 0 })
+  sendCount: number;
+
+  @Column({ type: 'timestamptz' })
+  windowStartedAt: Date;
 }

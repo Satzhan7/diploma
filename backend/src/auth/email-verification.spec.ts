@@ -10,6 +10,7 @@ import { AuthService, VERIFICATION_REQUIRED } from './auth.service';
 import {
   EmailVerificationService,
   MAX_ATTEMPTS,
+  MAX_SENDS_PER_DAY,
 } from './email-verification.service';
 import { EmailVerification } from './entities/email-verification.entity';
 import { InMemoryMailService } from '../mail/in-memory-mail.service';
@@ -41,15 +42,19 @@ class FakeCodeRepo {
     if (row) row.attempts += by;
     return { affected: row ? 1 : 0 };
   }
-  async delete({ id }: { id: string }) {
-    this.rows = this.rows.filter((r) => r.id !== id);
+  async delete({ userId }: { userId: string }) {
+    this.rows = this.rows.filter((r) => r.userId !== userId);
   }
 }
 
 class FakeUsers {
   users: User[] = [];
   async findByEmail(email: string) {
-    return this.users.find((u) => u.email === email) ?? null;
+    const wanted = email.trim().toLowerCase();
+    return this.users.find((u) => u.email.toLowerCase() === wanted) ?? null;
+  }
+  async update(id: string, data: Partial<User>) {
+    Object.assign(await this.findById(id), data);
   }
   async findById(id: string) {
     return this.users.find((u) => u.id === id) ?? null;
@@ -66,8 +71,13 @@ class FakeUsers {
     this.users.push(user);
     return user;
   }
-  async markEmailVerified(id: string) {
-    (await this.findById(id)).emailVerifiedAt = new Date();
+  async completeEmailVerification(id: string, password: string) {
+    const bcrypt = await import('bcrypt');
+    Object.assign(await this.findById(id), {
+      password: await bcrypt.hash(password, 4),
+      emailVerifiedAt: new Date(),
+      refreshToken: null,
+    });
   }
   async updateRefreshToken() {}
 }
@@ -78,20 +88,20 @@ const errorCode = (e: unknown) => (e as any).getResponse().code;
 describe('Email verification on sign-up', () => {
   const T0 = new Date('2026-10-04T10:00:00Z').getTime();
   const email = 'new@example.test';
-  const signUp = {
-    name: 'Aru',
-    email,
-    password: 'password123',
-    role: UserRole.BRAND,
-  };
+  const password = 'password123';
+  const signUp = { name: 'Aru', email, password, role: UserRole.BRAND };
 
   let mail: InMemoryMailService;
   let codes: FakeCodeRepo;
   let users: FakeUsers;
+  let profiles: { createProfile: jest.Mock; setType: jest.Mock };
   let auth: AuthService;
 
   const at = (ms: number) => jest.setSystemTime(T0 + ms);
   const lastCode = () => codeIn(mail.lastTo(email).text);
+  const wrongFor = (code: string) => (code === '000000' ? '111111' : '000000');
+  const verify = (code: string, pw = password, address = email) =>
+    auth.verifyEmail({ email: address, code, password: pw });
   const fail = (p: Promise<unknown>) =>
     p.then(
       () => {
@@ -99,6 +109,7 @@ describe('Email verification on sign-up', () => {
       },
       (e) => e,
     );
+  const failCode = async (p: Promise<unknown>) => errorCode(await fail(p));
 
   beforeEach(() => {
     jest.useFakeTimers({
@@ -114,6 +125,7 @@ describe('Email verification on sign-up', () => {
     mail = new InMemoryMailService();
     codes = new FakeCodeRepo();
     users = new FakeUsers();
+    profiles = { createProfile: jest.fn(), setType: jest.fn() };
     const verification = new EmailVerificationService(codes as any, mail);
     const config = {
       get: (key: string, fallback?: string) =>
@@ -122,7 +134,7 @@ describe('Email verification on sign-up', () => {
     auth = new AuthService(
       users as any,
       new JwtService({}),
-      { createProfile: jest.fn() } as any,
+      profiles as any,
       config as any,
       verification,
     );
@@ -148,7 +160,7 @@ describe('Email verification on sign-up', () => {
   it('login of an unverified user is 403 AUTH_EMAIL_NOT_VERIFIED, but only with the right password', async () => {
     await auth.register(signUp);
 
-    const e = await fail(auth.login({ email, password: 'password123' }));
+    const e = await fail(auth.login({ email, password }));
     expect(e).toBeInstanceOf(ForbiddenException);
     expect(errorCode(e)).toBe('AUTH_EMAIL_NOT_VERIFIED');
     await expect(
@@ -160,70 +172,54 @@ describe('Email verification on sign-up', () => {
     await auth.register(signUp);
     const code = lastCode();
 
-    const session = await auth.verifyEmail({ email, code });
+    const session = await verify(code);
     expect(session).toMatchObject({
       accessToken: expect.any(String),
       refreshToken: expect.any(String),
     });
     expect(users.users[0].emailVerifiedAt).toBeInstanceOf(Date);
     expect(codes.rows).toHaveLength(0);
-    await expect(
-      auth.login({ email, password: 'password123' }),
-    ).resolves.toHaveProperty('accessToken');
-    expect(errorCode(await fail(auth.verifyEmail({ email, code })))).toBe(
-      'AUTH_CODE_INVALID',
+    await expect(auth.login({ email, password })).resolves.toHaveProperty(
+      'accessToken',
     );
+    expect(await failCode(verify(code))).toBe('AUTH_CODE_INVALID');
   });
 
   it('a wrong code is AUTH_CODE_INVALID and counts as an attempt', async () => {
     await auth.register(signUp);
-    const wrong = lastCode() === '000000' ? '111111' : '000000';
 
-    const e = await fail(auth.verifyEmail({ email, code: wrong }));
+    const e = await fail(verify(wrongFor(lastCode())));
     expect(e).toBeInstanceOf(BadRequestException);
     expect(errorCode(e)).toBe('AUTH_CODE_INVALID');
     expect(codes.rows[0].attempts).toBe(1);
   });
 
-  it(`after ${MAX_ATTEMPTS} wrong codes even the right one is refused`, async () => {
+  it(`after ${MAX_ATTEMPTS} wrong codes even the right one is refused, with the same error`, async () => {
     await auth.register(signUp);
     const code = lastCode();
-    const wrong = code === '000000' ? '111111' : '000000';
     for (let i = 0; i < MAX_ATTEMPTS; i++) {
-      expect(
-        errorCode(await fail(auth.verifyEmail({ email, code: wrong }))),
-      ).toBe('AUTH_CODE_INVALID');
+      expect(await failCode(verify(wrongFor(code)))).toBe('AUTH_CODE_INVALID');
     }
 
-    expect(errorCode(await fail(auth.verifyEmail({ email, code })))).toBe(
-      'AUTH_CODE_TOO_MANY_ATTEMPTS',
-    );
+    // A distinct "too many attempts" code would reveal pending sign-ups.
+    expect(await failCode(verify(code))).toBe('AUTH_CODE_INVALID');
     expect(users.users[0].emailVerifiedAt).toBeNull();
   });
 
-  it('a code expires after 10 minutes', async () => {
+  it('a code expires after 10 minutes, with the same error', async () => {
     await auth.register(signUp);
     const code = lastCode();
 
     at(10 * 60 * 1000);
-    expect(errorCode(await fail(auth.verifyEmail({ email, code })))).toBe(
-      'AUTH_CODE_EXPIRED',
-    );
+    expect(await failCode(verify(code))).toBe('AUTH_CODE_INVALID');
     at(10 * 60 * 1000 - 1);
-    await expect(auth.verifyEmail({ email, code })).resolves.toHaveProperty(
-      'accessToken',
-    );
+    await expect(verify(code)).resolves.toHaveProperty('accessToken');
   });
 
   it('resend waits 60 s, then replaces the code and resets the attempts', async () => {
     await auth.register(signUp);
     const first = lastCode();
-    await fail(
-      auth.verifyEmail({
-        email,
-        code: first === '000000' ? '111111' : '000000',
-      }),
-    );
+    await fail(verify(wrongFor(first)));
 
     at(59 * 1000);
     expect(await auth.resendCode({ email })).toEqual(VERIFICATION_REQUIRED);
@@ -241,18 +237,27 @@ describe('Email verification on sign-up', () => {
     expect(codes.rows[0].attempts).toBe(0);
     const second = lastCode();
     if (second !== first) {
-      expect(
-        errorCode(await fail(auth.verifyEmail({ email, code: first }))),
-      ).toBe('AUTH_CODE_INVALID');
+      expect(await failCode(verify(first))).toBe('AUTH_CODE_INVALID');
     }
-    await expect(
-      auth.verifyEmail({ email, code: second }),
-    ).resolves.toHaveProperty('accessToken');
+    await expect(verify(second)).resolves.toHaveProperty('accessToken');
+  });
+
+  it(`sends at most ${MAX_SENDS_PER_DAY} codes per account a day, so resends cannot buy unlimited guesses`, async () => {
+    await auth.register(signUp);
+    for (let i = 1; i <= MAX_SENDS_PER_DAY + 2; i++) {
+      at(i * 60 * 1000);
+      await auth.resendCode({ email });
+    }
+    expect(mail.sent).toHaveLength(MAX_SENDS_PER_DAY);
+
+    at(24 * 60 * 60 * 1000);
+    await auth.resendCode({ email });
+    expect(mail.sent).toHaveLength(MAX_SENDS_PER_DAY + 1);
   });
 
   it('answers the same for registered, verified and unknown emails', async () => {
     await auth.register(signUp);
-    await auth.verifyEmail({ email, code: lastCode() });
+    await verify(lastCode());
     const sentBefore = mail.sent.length;
 
     expect(
@@ -264,33 +269,66 @@ describe('Email verification on sign-up', () => {
     );
     expect(mail.sent).toHaveLength(sentBefore);
     expect(users.users).toHaveLength(1);
+    await expect(
+      auth.login({ email, password: 'another-password' }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
     expect(
-      errorCode(
-        await fail(
-          auth.verifyEmail({ email: 'nobody@example.test', code: '123456' }),
-        ),
-      ),
+      await failCode(verify('123456', password, 'nobody@example.test')),
     ).toBe('AUTH_CODE_INVALID');
-    expect(
-      errorCode(await fail(auth.verifyEmail({ email, code: '123456' }))),
-    ).toBe('AUTH_CODE_INVALID');
+    expect(await failCode(verify('123456'))).toBe('AUTH_CODE_INVALID');
   });
 
-  it('registering again while unverified re-sends a code (after the cooldown) without changing the account', async () => {
-    await auth.register(signUp);
-    const password = users.users[0].password;
-
+  it('a stranger who registered the email first cannot keep access', async () => {
+    // The attacker signs up with the victim's address and their own password.
+    await auth.register({
+      ...signUp,
+      name: 'Attacker',
+      password: 'attacker-pass',
+      role: UserRole.INFLUENCER,
+    });
+    // Later the victim signs up (in Kazakh) and gets a fresh code in their inbox.
     at(60 * 1000);
     await auth.register({
       ...signUp,
-      name: 'Someone else',
-      password: 'another-password',
+      name: 'Victim',
+      password: 'victim-pass1',
       language: 'kk',
     });
     expect(mail.sent).toHaveLength(2);
     expect(mail.lastTo(email).subject).toBe('AdPartners растау коды');
     expect(users.users).toHaveLength(1);
-    expect(users.users[0].password).toBe(password);
+    expect(users.users[0]).toMatchObject({
+      name: 'Victim',
+      role: UserRole.BRAND,
+    });
+    expect(profiles.setType).toHaveBeenCalledWith(users.users[0].id, 'brand');
+
+    await verify(lastCode(), 'victim-pass1');
+
+    await expect(
+      auth.login({ email, password: 'attacker-pass' }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(
+      auth.login({ email, password: 'victim-pass1' }),
+    ).resolves.toHaveProperty('accessToken');
+  });
+
+  it('matches the email case-insensitively', async () => {
+    await auth.register(signUp);
+    await expect(
+      verify(lastCode(), password, ' NEW@Example.test '),
+    ).resolves.toHaveProperty('accessToken');
+  });
+
+  it('marks the user verified before using up the code', async () => {
+    await auth.register(signUp);
+    jest.spyOn(codes, 'delete').mockRejectedValueOnce(new Error('db down'));
+
+    await expect(verify(lastCode())).rejects.toThrow('db down');
+    expect(users.users[0].emailVerifiedAt).toBeInstanceOf(Date);
+    await expect(auth.login({ email, password })).resolves.toHaveProperty(
+      'accessToken',
+    );
   });
 
   it('a mail failure does not lose the account; resend works later', async () => {
@@ -300,9 +338,7 @@ describe('Email verification on sign-up', () => {
     expect(users.users).toHaveLength(1);
     at(60 * 1000);
     await auth.resendCode({ email });
-    await expect(
-      auth.verifyEmail({ email, code: lastCode() }),
-    ).resolves.toHaveProperty('accessToken');
+    await expect(verify(lastCode())).resolves.toHaveProperty('accessToken');
   });
 });
 

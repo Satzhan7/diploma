@@ -42,6 +42,14 @@ export class ProfilesService {
     return this.profilesRepository.save(profile);
   }
 
+  /** Used while sign-up is unconfirmed, when the role may still change. */
+  async setType(userId: string, type: ProfileType): Promise<void> {
+    const profile = await this.findByUserId(userId);
+    if (profile.type !== type) {
+      await this.profilesRepository.update(profile.id, { type });
+    }
+  }
+
   async findByUserId(userId: string): Promise<Profile> {
     const profile = await this.profilesRepository.findOne({
       where: { user: { id: userId } },

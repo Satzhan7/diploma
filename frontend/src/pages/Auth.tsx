@@ -80,7 +80,11 @@ const CODE_LENGTH = 6;
 const RESEND_SECONDS = 60;
 
 /** Second sign-up step: the 6-digit code from the email (paste, auto-advance, resend timer). */
-const CodeStep: React.FC<{ email: string; onChangeEmail: () => void }> = ({ email, onChangeEmail }) => {
+const CodeStep: React.FC<{ email: string; password: string; onChangeEmail: () => void }> = ({
+  email,
+  password,
+  onChangeEmail,
+}) => {
   const { t } = useTranslation('auth');
   const navigate = useNavigate();
   const { verifyEmail, resendCode } = useAuth();
@@ -104,7 +108,7 @@ const CodeStep: React.FC<{ email: string; onChangeEmail: () => void }> = ({ emai
     setError(null);
     setNotice(null);
     try {
-      await verifyEmail(email, value);
+      await verifyEmail(email, value, password);
       navigate('/');
     } catch (err) {
       setError(getErrorMessage(err, t('code.failed')));
@@ -186,6 +190,10 @@ const CodeStep: React.FC<{ email: string; onChangeEmail: () => void }> = ({ emai
         <Button type="submit" size="lg" h="50px" isLoading={isSubmitting} isDisabled={code.length !== CODE_LENGTH}>
           {t('code.submit')}
         </Button>
+
+        <Text fontSize="sm" color="fg.muted">
+          {t('code.help')}
+        </Text>
 
         <Flex justify="space-between" wrap="wrap" gap={3} fontSize="sm">
           <Button variant="link" size="sm" onClick={resend} isDisabled={secondsLeft > 0}>
@@ -306,7 +314,7 @@ export const Auth: React.FC<{ mode: Mode }> = ({ mode }) => {
             />
 
             {pendingEmail ? (
-              <CodeStep email={pendingEmail} onChangeEmail={() => setPendingEmail(null)} />
+              <CodeStep email={pendingEmail} password={password} onChangeEmail={() => setPendingEmail(null)} />
             ) : (
               <form onSubmit={handleSubmit} noValidate>
                 <Stack spacing={4}>

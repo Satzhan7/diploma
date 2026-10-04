@@ -13,7 +13,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ user: User }>;
   /** Creates the account and emails a 6-digit code; no session until verifyEmail. */
   register: (data: RegisterData) => Promise<void>;
-  verifyEmail: (email: string, code: string) => Promise<{ user: User }>;
+  /** `password` becomes the account password: whoever proves the inbox sets it. */
+  verifyEmail: (email: string, code: string, password: string) => Promise<{ user: User }>;
   resendCode: (email: string) => Promise<void>;
   logout: () => void;
   deleteAccount: () => Promise<void>;
@@ -89,8 +90,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const verifyEmail = async (email: string, code: string) => {
-    const response = await api.post('/auth/verify-email', { email, code });
+  const verifyEmail = async (email: string, code: string, password: string) => {
+    const response = await api.post('/auth/verify-email', { email, code, password });
     return startSession(response.data);
   };
 

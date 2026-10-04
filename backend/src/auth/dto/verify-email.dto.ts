@@ -1,4 +1,4 @@
-import { IsEmail, Matches } from 'class-validator';
+import { IsEmail, IsString, Matches, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class VerifyEmailDto {
@@ -12,4 +12,13 @@ export class VerifyEmailDto {
   })
   @Matches(/^\d{6}$/)
   code: string;
+
+  @ApiProperty({
+    example: 'password123',
+    description:
+      'Becomes the account password: the person who proves the inbox chooses it',
+  })
+  @IsString()
+  @MinLength(8)
+  password: string;
 }
