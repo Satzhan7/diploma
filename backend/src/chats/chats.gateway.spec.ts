@@ -60,7 +60,7 @@ describe('ChatsGateway event payloads', () => {
     role: 'brand',
     password: '$2b$10$password-hash',
     refreshToken: '$2b$10$refresh-hash',
-    isEmailVerified: true,
+    emailVerifiedAt: new Date('2024-01-01T00:00:00Z'),
   });
 
   // Collects every key at any depth so nested relations cannot hide a hash.

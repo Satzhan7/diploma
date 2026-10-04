@@ -73,8 +73,15 @@ export class UsersService {
     return user;
   }
 
+  /** Case-insensitive exact match (LOWER, not ILIKE: `_` is a LIKE wildcard). */
   async findByEmail(email: string): Promise<User> {
-    return this.usersRepository.findOne({ where: { email } });
+    return this.usersRepository.findOne({
+      where: {
+        email: Raw((column) => `LOWER(${column}) = LOWER(:email)`, {
+          email: email.trim(),
+        }),
+      },
+    });
   }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -112,11 +119,22 @@ export class UsersService {
     await this.usersRepository.save(user);
   }
 
-  async verifyEmail(userId: string): Promise<User> {
-    const user = await this.findById(userId);
+  async markEmailVerified(userId: string): Promise<void> {
+    await this.usersRepository.update(userId, { emailVerifiedAt: new Date() });
+  }
 
-    user.isEmailVerified = true;
-
-    return this.usersRepository.save(user);
+  /**
+   * Ends sign-up: whoever proved the inbox sets the password, so a stranger
+   * who registered the email first never keeps access.
+   */
+  async completeEmailVerification(
+    userId: string,
+    password: string,
+  ): Promise<void> {
+    await this.usersRepository.update(userId, {
+      password: await bcrypt.hash(password, 10),
+      emailVerifiedAt: new Date(),
+      refreshToken: null,
+    });
   }
 }

@@ -67,11 +67,13 @@ export class User {
   role: UserRole;
 
   @ApiProperty({
-    example: false,
-    description: 'Whether the user email is verified',
+    example: '2024-04-19T09:00:00.000Z',
+    nullable: true,
+    description:
+      'When the user entered the emailed sign-up code; null until then',
   })
-  @Column({ default: false })
-  isEmailVerified: boolean;
+  @Column({ type: 'timestamptz', nullable: true })
+  emailVerifiedAt: Date | null;
 
   @Column({ nullable: true })
   @Exclude()

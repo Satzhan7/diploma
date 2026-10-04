@@ -42,12 +42,18 @@ services:
       # Support both conventional local URLs used by browsers. This is a
       # development-only allow-list; production remains explicitly configured.
       - CORS_ORIGIN=http://localhost:3000,http://127.0.0.1:3000
+      # Sign-up codes go to Mailpit; read them at http://localhost:8025.
+      - SMTP_HOST=mailpit
+      - SMTP_PORT=1025
+      - MAIL_FROM=AdPartners <no-reply@adpartners.kz>
     volumes:
       - ./backend:/usr/src/app
       - /usr/src/app/node_modules
     depends_on:
       postgres:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     networks:
       - app-network
     command: sh -c "npm ci && npm run build && npm run start:dev"
@@ -57,6 +63,16 @@ services:
       timeout: 5s
       retries: 5
       start_period: 60s
+
+  # Development mail catcher: SMTP on mailpit:1025, web UI and API on :8025.
+  mailpit:
+    image: axllent/mailpit:v1.27
+    container_name: influencer_platform_mailpit
+    restart: always
+    ports:
+      - "127.0.0.1:8025:8025"
+    networks:
+      - app-network
 
   frontend:
     build:

@@ -33,3 +33,12 @@
 - **Chakra `Switch` / `Checkbox` submit an empty value when checked.** With `FormData`, test `formData.has(name)`, not `=== 'on'`.
 - **A custom `@Catch()` filter replaces Nest's default handling for every error, not just HttpExceptions.** Nest's base filter keeps the status of `http-errors` (body-parser 413 / 400); ours turned them into 500. Any catch-all filter must pass through exposed 4xx `http-errors` (`expose === true`, `status` 400–499) and skip writing when `res.headersSent`. Prove it live with an oversized and a malformed body.
 - **`git rm` stages the deletion immediately.** When splitting work into several commits, a later partial `git add` + `git commit` also commits that deletion. Run `git status --short` before each commit of a split and check that only the intended paths are staged.
+
+## 2026-10-04 — Redesign R1 / R1b
+
+- **Chakra `useRadio`: `getRadioProps()` marks the visual box `aria-hidden`, so text inside it does not name the radio.** Name the input with `getInputProps({ 'aria-labelledby': titleId })`, and pass `aria-describedby` to `useRadio(...)` itself — `getInputProps` overwrites an `aria-describedby` given to it. Check names in Chrome's accessibility tree (`locator.ariaSnapshot()`), not only visually.
+- **The frontend has no prettier dependency.** `npx prettier` downloads one with defaults (double quotes, 80 columns) and rewrites whole files. Use `npx -y prettier@3 --single-quote --print-width 120` and check `git diff -w --stat` for churn.
+- **Browser QA: never assert "gone" right after `waitForURL`.** The URL changes before React re-renders. Wait for `state: 'detached'` with a timeout.
+- **Vite 8 (Rolldown) can merge an eagerly-preloaded shared chunk into the entry.** A bigger `index-*.js` is not a regression by itself; compare the total first-load JS (entry + `modulepreload` list in `build/index.html`) before and after.
+- **Use one-pass substitution for email templates** (`/\{(name|code)\}/g`). Replacing `{code}` after inserting a user-controlled name expands placeholders inside the name.
+- **Email verification with a password chosen at sign-up invites pre-registration hijack.** An attacker registers the victim's address; the victim later "signs up", gets the code, verifies — and the attacker's password still works. The person who proves the inbox must set the password (verify takes it), and verify errors must not distinguish pending accounts.

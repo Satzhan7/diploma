@@ -11,6 +11,8 @@ import {
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
+import { ResendCodeDto } from './dto/resend-code.dto';
 import { Public } from './decorators/public.decorator';
 import { GetCurrentUser } from './decorators/get-current-user.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -26,6 +28,8 @@ import { Throttle } from '@nestjs/throttler';
 // brute-force surface (SECURITY_AUDIT H5). Applied per route, not per class:
 // GET /auth/profile runs on every page load and must not share this budget.
 export const AUTH_THROTTLE = { default: { limit: 10, ttl: 60000 } };
+// Each resend can send an email, so it gets a smaller budget per IP.
+export const RESEND_THROTTLE = { default: { limit: 5, ttl: 60000 } };
 
 @ApiTags('auth')
 @Controller('auth')
@@ -35,11 +39,47 @@ export class AuthController {
   @Public()
   @Throttle(AUTH_THROTTLE)
   @Post('register')
-  @ApiOperation({ summary: 'Register a new user' })
-  @ApiResponse({ status: 201, description: 'User successfully registered' })
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({
+    summary: 'Register a new user and email a 6-digit code (no tokens)',
+  })
+  @ApiResponse({
+    status: 202,
+    description: 'Same answer whether or not the email is registered',
+  })
   @ApiResponse({ status: 400, description: 'Bad request' })
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
+  }
+
+  @Public()
+  @Throttle(AUTH_THROTTLE)
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Enter the emailed code; returns tokens' })
+  @ApiResponse({ status: 200, description: 'Email verified, user signed in' })
+  @ApiResponse({
+    status: 400,
+    description:
+      'AUTH_CODE_INVALID / AUTH_CODE_EXPIRED / AUTH_CODE_TOO_MANY_ATTEMPTS',
+  })
+  async verifyEmail(@Body() dto: VerifyEmailDto) {
+    return this.authService.verifyEmail(dto);
+  }
+
+  @Public()
+  @Throttle(RESEND_THROTTLE)
+  @Post('resend-code')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({
+    summary: 'Email a new code (at most one per 60 s per account)',
+  })
+  @ApiResponse({
+    status: 202,
+    description: 'Same answer whether or not a code was sent',
+  })
+  async resendCode(@Body() dto: ResendCodeDto) {
+    return this.authService.resendCode(dto);
   }
 
   @Public()

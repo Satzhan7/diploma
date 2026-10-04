@@ -7,12 +7,18 @@ import { ProfilesModule } from '../profiles/profiles.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { MailModule } from '../mail/mail.module';
+import { EmailVerification } from './entities/email-verification.entity';
+import { EmailVerificationService } from './email-verification.service';
 
 @Module({
   imports: [
     UsersModule,
     ProfilesModule,
     PassportModule,
+    MailModule,
+    TypeOrmModule.forFeature([EmailVerification]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -26,7 +32,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       }),
     }),
   ],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, EmailVerificationService, JwtStrategy],
   // JwtModule exported so other modules (chats gateway) verify tokens with
   // the same secret/options instead of registering their own copy.
   exports: [AuthService, JwtModule],

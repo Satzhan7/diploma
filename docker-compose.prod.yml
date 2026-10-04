@@ -37,6 +37,12 @@ services:
       - JWT_REFRESH_EXPIRATION=7d
       - PORT=3005
       - CORS_ORIGIN=https://${DOMAIN}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_SECURE=${SMTP_SECURE:-false}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - MAIL_FROM=${MAIL_FROM}
     depends_on:
       postgres:
         condition: service_healthy

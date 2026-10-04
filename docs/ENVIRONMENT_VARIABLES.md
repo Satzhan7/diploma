@@ -19,6 +19,11 @@
 | `JWT_ACCESS_EXPIRATION` | no | `configuration.ts`, `auth.service.ts`, `auth.module.ts` | ✅ `15m` | ✅ `15m` | `15m` | Consumed by access-token signing. |
 | `JWT_REFRESH_EXPIRATION` | no | `configuration.ts`, `auth.service.ts` | ✅ `7d` | ✅ `7d` | `7d` | Consumed by refresh-token signing. |
 | `CORS_ORIGIN` | **yes (prod)** | `main.ts`, `chats.gateway.ts` | ✅ `http://localhost:3000` | ✅ `https://${DOMAIN}` | reflect-all only in development | Production startup fails if missing. |
+| `SMTP_HOST` | **yes (prod)** | `configuration.ts` (`mail.smtp`), `smtp-mail.service.ts` | ✅ `mailpit` | ✅ `${SMTP_HOST}` | `localhost` | Sign-up code email. Production startup fails if missing. Dev mail lands in Mailpit (UI http://localhost:8025). |
+| `SMTP_PORT` | no | `configuration.ts` | ✅ `1025` | ✅ `${SMTP_PORT:-587}` | `1025` | |
+| `SMTP_SECURE` | no | `configuration.ts` | ❌ | ✅ `${SMTP_SECURE:-false}` | `false` | `true` = TLS from the start (port 465); `false` = STARTTLS when the server offers it. |
+| `SMTP_USER` / `SMTP_PASS` | prod provider | `configuration.ts` | ❌ (Mailpit needs no auth) | ✅ `${SMTP_USER}` / `${SMTP_PASS}` | unset = no auth | Secret; never commit. |
+| `MAIL_FROM` | **yes (prod)** | `configuration.ts`, `smtp-mail.service.ts` | ✅ `AdPartners <no-reply@adpartners.kz>` | ✅ `${MAIL_FROM}` | `AdPartners <no-reply@adpartners.kz>` | Sender of every email. Production startup fails if missing. |
 
 ## Frontend (build-time only — Vite inlines `VITE_*` at `npm run build`)
 
@@ -38,6 +43,7 @@
 | `JWT_SECRET` | yes | backend | `CHANGE_ME_64_RANDOM_CHARS` | Placeholder ✅ |
 | `JWT_REFRESH_SECRET` | yes | backend | `CHANGE_ME_A_DIFFERENT_64_RANDOM_CHARS` | Placeholder ✅; must differ from access secret. |
 | `DB_SYNCHRONIZE` | no | backend | `false` | Forced false by production compose. |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | `SMTP_HOST`, `MAIL_FROM` yes | backend | `smtp.example.kz`, `587`, `false`, `CHANGE_ME`, `CHANGE_ME`, `AdPartners <no-reply@adpartners.kz>` | Provider chosen with D2 (KZ data residency). |
 
 ## Findings summary
 

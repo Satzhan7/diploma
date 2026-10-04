@@ -4,13 +4,18 @@ import api from '../services/api';
 import socketService from '../services/socket';
 import { User, UserRole } from '../types/user';
 import { getErrorMessage } from '../i18n/errors';
+import i18n, { isLanguage } from '../i18n';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<{ user: User }>;
+  /** Creates the account and emails a 6-digit code; no session until verifyEmail. */
   register: (data: RegisterData) => Promise<void>;
+  /** `password` becomes the account password: whoever proves the inbox sets it. */
+  verifyEmail: (email: string, code: string, password: string) => Promise<{ user: User }>;
+  resendCode: (email: string) => Promise<void>;
   logout: () => void;
   deleteAccount: () => Promise<void>;
   isAuthenticated: boolean;
@@ -53,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Both /auth/login and /auth/register answer with { user, accessToken, refreshToken }.
+  // /auth/login and /auth/verify-email answer with { user, accessToken, refreshToken }.
   const startSession = (data: { user: User; accessToken: string; refreshToken: string }) => {
     localStorage.setItem('accessToken', data.accessToken);
     localStorage.setItem('refreshToken', data.refreshToken);
@@ -72,15 +77,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // The code email is written in the interface language.
+  const mailLanguage = () => (isLanguage(i18n.language) ? i18n.language : undefined);
+
   const register = async (data: RegisterData) => {
     try {
       setError(null);
-      const response = await api.post('/auth/register', data);
-      startSession(response.data);
+      await api.post('/auth/register', { ...data, language: mailLanguage() });
     } catch (err) {
       setError(getErrorMessage(err));
       throw err;
     }
+  };
+
+  const verifyEmail = async (email: string, code: string, password: string) => {
+    const response = await api.post('/auth/verify-email', { email, code, password });
+    return startSession(response.data);
+  };
+
+  const resendCode = async (email: string) => {
+    await api.post('/auth/resend-code', { email, language: mailLanguage() });
   };
 
   const logout = () => {
@@ -122,6 +138,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     error,
     login,
     register,
+    verifyEmail,
+    resendCode,
     logout,
     deleteAccount,
     isAuthenticated: !!user,
@@ -137,4 +155,4 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-} 
+}

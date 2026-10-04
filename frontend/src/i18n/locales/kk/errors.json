@@ -13,6 +13,8 @@
   "AUTH_EMAIL_TAKEN": "Бұл email-мен аккаунт бұрыннан бар.",
   "AUTH_INVALID_CREDENTIALS": "Email немесе құпиясөз қате.",
   "AUTH_INVALID_TOKEN": "Сессия мерзімі бітті. Қайта кіріңіз.",
+  "AUTH_EMAIL_NOT_VERIFIED": "Email-ді растаңыз: хаттағы кодты енгізіңіз.",
+  "AUTH_CODE_INVALID": "Код қате немесе мерзімі өткен. Қажет болса, жаңасын сұраңыз.",
   "USER_NOT_FOUND": "Пайдаланушы табылмады.",
   "USER_NOT_SELF": "Тек өз аккаунтыңызды өзгерте аласыз.",
   "PROFILE_NOT_FOUND": "Профиль табылмады.",

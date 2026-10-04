@@ -13,6 +13,8 @@
   "AUTH_EMAIL_TAKEN": "An account with this email already exists.",
   "AUTH_INVALID_CREDENTIALS": "Wrong email or password.",
   "AUTH_INVALID_TOKEN": "Your session has expired. Please log in again.",
+  "AUTH_EMAIL_NOT_VERIFIED": "Confirm your email: enter the code from the email.",
+  "AUTH_CODE_INVALID": "Wrong or expired code. Request a new one if needed.",
   "USER_NOT_FOUND": "User not found.",
   "USER_NOT_SELF": "You can only change your own account.",
   "PROFILE_NOT_FOUND": "Profile not found.",
