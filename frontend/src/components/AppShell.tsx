@@ -44,19 +44,19 @@ interface NavItem {
   noTab?: boolean;
 }
 
-// Routes are the current pages; R2–R4 swap in Deals, Applicants and Plan.
+// Routes are the current pages; R3–R4 swap in Applicants and Plan.
 const NAV: Partial<Record<UserRole, NavItem[]>> = {
   [UserRole.BRAND]: [
     { key: 'home', to: '/brand/dashboard', icon: FiHome },
     { key: 'newBrief', to: '/brand/orders/create', icon: FiFilePlus, noTab: true },
     { key: 'briefs', to: '/brand/orders', icon: FiList },
-    { key: 'deals', to: '/brand/matches', icon: FiCheckCircle },
+    { key: 'deals', to: '/brand/deals', icon: FiCheckCircle },
     { key: 'messages', to: '/brand/messages', icon: FiMessageSquare },
   ],
   [UserRole.INFLUENCER]: [
     { key: 'findBriefs', to: '/influencer/orders', icon: FiSearch },
     { key: 'myApplications', to: '/influencer/applications', icon: FiSend },
-    { key: 'deals', to: '/influencer/matches', icon: FiCheckCircle },
+    { key: 'deals', to: '/influencer/deals', icon: FiCheckCircle },
     { key: 'messages', to: '/influencer/messages', icon: FiMessageSquare },
     { key: 'profile', to: '/influencer/profile', icon: FiUser },
   ],

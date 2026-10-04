@@ -1,0 +1,101 @@
+{
+  "title": "Deals",
+  "subtitle": {
+    "brand": "Creators you accepted and how each deal is going",
+    "influencer": "Briefs you were accepted for and what is next"
+  },
+  "filter": {
+    "label": "Show deals",
+    "all": "All",
+    "active": "In progress",
+    "completed": "Completed"
+  },
+  "status": {
+    "active": "In progress",
+    "proof_submitted": "Proof sent",
+    "completed": "Completed",
+    "disputed": "Problem reported",
+    "cancelled": "Cancelled"
+  },
+  "card": {
+    "open": "Open",
+    "openLabel": "Open the deal “{{title}}”",
+    "postBy": "Post by {{date}}",
+    "noDate": "No post-by date"
+  },
+  "more": "Show more",
+  "count": "{{shown}} of {{total}}",
+  "loadError": "Couldn't load your deals. Try again.",
+  "retry": "Try again",
+  "recent": "Recent deals",
+  "allDeals": "All deals",
+  "empty": {
+    "title": "No deals yet",
+    "brand": "Accept an applicant on one of your briefs and the deal appears here.",
+    "influencer": "When a brand accepts your application, the deal appears here.",
+    "brandAction": "Go to my briefs",
+    "influencerAction": "Find briefs"
+  },
+  "detail": {
+    "crumb": "Deals",
+    "heading": "Deal with {{name}}",
+    "stepsLabel": "Deal progress",
+    "steps": {
+      "accepted": "Accepted",
+      "creating": "Creating",
+      "proofSent": "Proof sent",
+      "completed": "Completed"
+    },
+    "by": "by {{date}}",
+    "facts": {
+      "label": "Deal terms",
+      "price": "Agreed price",
+      "payment": "Payment",
+      "paymentValue": "Direct, off-platform",
+      "deliverables": "Deliverables",
+      "postBy": "Post by",
+      "none": "Not set"
+    },
+    "message": "Message {{name}}",
+    "messageError": "Couldn't open the chat",
+    "state": {
+      "active": {
+        "brand": {
+          "title": "Waiting for {{name}} to post",
+          "body": "{{name}} is creating the content. Pay {{name}} directly, as agreed; the platform does not handle payments."
+        },
+        "influencer": {
+          "title": "Create and post the content",
+          "body": "Post what you agreed with {{name}}. Payment comes from {{name}} directly, as agreed. Proof submission opens on this page soon; until then, send the link in messages."
+        }
+      },
+      "proof_submitted": {
+        "brand": {
+          "title": "Proof submitted",
+          "body": "{{name}} has sent the proof. Check the post and settle payment directly."
+        },
+        "influencer": {
+          "title": "Proof sent",
+          "body": "{{name}} is checking your post."
+        }
+      },
+      "completed": {
+        "title": "Deal complete",
+        "body": "This deal is finished. Ratings arrive in a later update."
+      },
+      "disputed": {
+        "title": "Problem reported",
+        "body": "A problem was reported on this deal. The AdPartners team will contact both sides."
+      },
+      "cancelled": {
+        "title": "Deal cancelled",
+        "body": "This deal was cancelled and needs nothing more from you."
+      }
+    },
+    "notFound": {
+      "title": "Deal not found",
+      "description": "It does not exist, or you are not part of it.",
+      "action": "All deals"
+    }
+  }
+}

@@ -22,14 +22,11 @@ const BrandOrders = page(() => import('./pages/brand/Orders'), 'default');
 const MyApplications = page(() => import('./pages/influencer/MyApplications'), 'MyApplications');
 const Profile = page(() => import('./pages/Profile'), 'Profile');
 const EditProfile = page(() => import('./pages/EditProfile'), 'EditProfile');
-const InfluencerList = page(() => import('./pages/brand/InfluencerList'), 'InfluencerList');
-const BrandList = page(() => import('./pages/influencer/BrandList'), 'default');
-const BrandRecommendations = page(() => import('./pages/influencer/BrandRecommendations'), 'default');
 const Messages = page(() => import('./pages/Messages'), 'Messages');
 const Settings = page(() => import('./pages/Settings'), 'Settings');
-const Matches = page(() => import('./pages/Matches'), 'Matches');
+const Deals = page(() => import('./pages/Deals'), 'Deals');
+const Deal = page(() => import('./pages/Deal'), 'Deal');
 const OrderDetail = page(() => import('./pages/influencer/OrderDetail'), 'OrderDetail');
-const MatchDetail = page(() => import('./pages/MatchDetail'), 'MatchDetail');
 const NotFound = page(() => import('./pages/NotFound'), 'NotFound');
 
 /** Where each role lands after login. */
@@ -111,8 +108,8 @@ function AppRoutes() {
           <Routes>
             {routes}
             <Route path="messages" element={<Messages />} />
-            <Route path="matches" element={<Matches />} />
-            <Route path="matches/:matchId" element={<MatchDetail />} />
+            <Route path="deals" element={<Deals />} />
+            <Route path="deals/:dealId" element={<Deal />} />
             <Route path="profile/:userId" element={<Profile isViewMode={true} />} />
             <Route path="profile" element={<Profile />} />
             <Route path="profile/edit" element={<EditProfile />} />
@@ -148,7 +145,6 @@ function AppRoutes() {
             <Route path="dashboard" element={<BrandDashboard />} />
             <Route path="orders" element={<BrandOrders />} />
             <Route path="orders/create" element={<CreateOrder />} />
-            <Route path="influencers" element={<InfluencerList />} />
           </>,
         )}
       />
@@ -163,8 +159,6 @@ function AppRoutes() {
             <Route path="orders" element={<InfluencerOrders />} />
             <Route path="orders/:orderId" element={<OrderDetail />} />
             <Route path="applications" element={<MyApplications />} />
-            <Route path="brands" element={<BrandList />} />
-            <Route path="recommendations" element={<BrandRecommendations />} />
           </>,
         )}
       />

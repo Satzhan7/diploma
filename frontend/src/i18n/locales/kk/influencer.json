@@ -15,59 +15,15 @@
     "travel": "Саяхат"
   },
   "dashboard": {
-    "title": "Менің статистикам",
-    "subtitle": "Өтінімдеріңіз бен ынтымақтастық нәтижелері",
-    "errors": {
-      "brands": "Брендтерді жүктеу мүмкін болмады",
-      "categories": "Санаттарды жүктеу мүмкін болмады",
-      "stats": "Статистиканы жүктеу мүмкін болмады"
-    },
-    "filters": {
-      "title": "Сүзгілер",
-      "startDate": "Басталу күні",
-      "endDate": "Аяқталу күні",
-      "brand": "Бренд",
-      "allBrands": "Барлық брендтер",
-      "category": "Санат",
-      "allCategories": "Барлық санаттар",
-      "reset": "Тазалау"
-    },
+    "title": "Шолу",
+    "subtitle": "Өтінімдеріңіз бен мәмілелеріңіз",
+    "loadError": "Өтінімдер жүктелмеді. Кейінірек қайталаңыз.",
     "overview": {
       "title": "Шолу",
       "applicationsSent": "Жіберілген өтінімдер",
-      "activeApplications": "Белсенді өтінімдер",
-      "acceptedRejected": "Қабылданды / Қабылданбады",
-      "withdrawn": "Кері қайтарылды: {{value}}",
-      "collaborations": "Ынтымақтастықтар",
-      "completed": "Аяқталды: {{value}}"
-    },
-    "metrics": {
-      "title": "Тиімділік көрсеткіштері",
-      "totalClicks": "Жалпы басулар",
-      "totalImpressions": "Жалпы көрсетілімдер",
-      "avgEngagementRate": "Орташа тартылым деңгейі",
-      "followerGrowth": "Жазылушылар өсімі"
-    },
-    "details": {
-      "title": "Толығырақ",
-      "performanceOverTime": "Көрсеткіштер динамикасы",
-      "noDailyData": "Графикті құру үшін күндік деректер жоқ.",
-      "impressionsByCategory": "Санаттар бойынша көрсетілімдер",
-      "noCampaignData": "Науқандар бойынша деректер жоқ.",
-      "collaborationPerformance": "Ынтымақтастық нәтижелері",
-      "emptyTitle": "Ынтымақтастық деректері әзірге жоқ",
-      "emptyDescription": "Ынтымақтастықтарыңыз бойынша статистика түскенде, көрсеткіштер осында көрсетіледі."
-    },
-    "table": {
-      "campaign": "Науқан",
-      "category": "Санат",
-      "brand": "Бренд",
-      "clicks": "Басулар",
-      "impressions": "Көрсетілімдер",
-      "engagement": "Тартылым",
-      "status": "Күйі",
-      "startDate": "Басталу күні",
-      "endDate": "Аяқталу күні"
+      "pending": "Жауап күтуде",
+      "accepted": "Қабылданған",
+      "activeDeals": "Орындалып жатқан мәмілелер"
     }
   },
   "orders": {

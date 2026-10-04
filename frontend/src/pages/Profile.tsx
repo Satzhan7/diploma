@@ -26,14 +26,12 @@ import {
   Spinner,
   Flex,
 } from '@chakra-ui/react';
-import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import { FaInstagram, FaTiktok, FaFacebook, FaTwitter, FaLinkedin, FaEnvelope } from 'react-icons/fa';
 import { SiThreads } from 'react-icons/si';
 import { IconWrapper } from '../components/IconWrapper';
-import { User, Profile as ProfileType, UserRole } from '../types/user';
-import { matchingService } from '../services/matching';
+import { User, Profile as ProfileType } from '../types/user';
 import { formatDate, formatNumber } from '../i18n';
 import { getErrorMessage } from '../i18n/errors';
 
@@ -53,45 +51,8 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
   const [profileData, setProfileData] = useState<ProfileType | null>(null);
   const [loading, setLoading] = useState(true);
   const [targetUser, setTargetUser] = useState<User | null>(null);
-  const queryClient = useQueryClient();
 
   const displayUserId = isViewMode ? userId : user?.id;
-
-  const isBrandViewingInfluencer = user?.role === UserRole.BRAND && 
-                                   targetUser?.role === UserRole.INFLUENCER && 
-                                   isViewMode &&
-                                   user?.id !== targetUser?.id;
-
-  const createMatchMutation = useMutation({
-    mutationFn: async () => {
-      if (!user?.id || !targetUser?.id) {
-        throw new Error("User IDs are missing");
-      }
-      return matchingService.createMatch({ brandId: user.id, influencerId: targetUser.id });
-    },
-    onSuccess: (newMatch) => {
-      toast({
-        title: t('view.toast.requestSent.title'),
-        description: t('view.toast.requestSent.description', {
-          name: targetUser?.name || t('common:role.influencer'),
-          id: newMatch.id,
-        }),
-        status: "success",
-        duration: 5000,
-        isClosable: true,
-      });
-      queryClient.invalidateQueries({ queryKey: ['userMatches'] }); 
-    },
-    onError: (error) => {
-      toast({
-        title: t('view.toast.requestError.title'),
-        description: getErrorMessage(error, t('view.toast.requestError.description')),
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
-    },
-  });
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -254,15 +215,6 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
                 {!isViewMode && user && (
                     <Button colorScheme="brand" onClick={() => navigate(`/${user.role}/profile/edit`)}>
                         {t('view.editProfile')}
-                    </Button>
-                )}
-                {isBrandViewingInfluencer && (
-                    <Button 
-                        colorScheme="brand" 
-                        onClick={() => createMatchMutation.mutate()}
-                        isLoading={createMatchMutation.isPending}
-                    >
-                        {t('view.sendRequest')}
                     </Button>
                 )}
                 {isViewMode && user?.id !== targetUser?.id && (

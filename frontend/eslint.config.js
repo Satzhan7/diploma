@@ -38,11 +38,8 @@ export default tseslint.config(
     files: ['src/pages/**/*.tsx', 'src/components/**/*.tsx'],
     ignores: [
       'src/components/Logo.tsx', // brand artwork
-      // Removed with Match/Collaboration in R2 and the old pages in R3.
-      'src/components/statistics/**',
+      // Rebuilt in R6.
       'src/pages/brand/Messages.tsx',
-      'src/pages/influencer/BrandRecommendations.tsx',
-      'src/pages/MatchDetail.tsx',
     ],
     rules: {
       'no-restricted-syntax': [

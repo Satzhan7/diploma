@@ -16,61 +16,20 @@
     "health": "Здоровье"
   },
   "dashboard": {
-    "title": "Панель бренда",
-    "subtitle": "Эффективность кампаний в одном месте",
-    "errors": {
-      "loadInfluencers": "Не удалось загрузить инфлюенсеров",
-      "loadCategories": "Не удалось загрузить категории",
-      "loadStats": "Не удалось загрузить статистику"
-    },
-    "filters": {
-      "title": "Фильтры",
-      "startDate": "Дата начала",
-      "endDate": "Дата окончания",
-      "influencer": "Инфлюенсер",
-      "allInfluencers": "Все инфлюенсеры",
-      "category": "Категория",
-      "allCategories": "Все категории",
-      "reset": "Сбросить"
-    },
+    "title": "Главная",
+    "subtitle": "Ваши брифы и сделки",
+    "newBrief": "Новый бриф",
+    "loadError": "Не удалось загрузить брифы. Попробуйте позже.",
     "overview": {
       "title": "Обзор",
-      "ordersCreated": "Создано заказов",
-      "activeOrders": "Активные заказы",
-      "activeOrdersHelp": "Открыты: {{open}} · В работе: {{inProgress}}",
-      "applicationsReceived": "Получено откликов",
-      "applicationsHelp": "На рассмотрении: {{pending}} · Приняты: {{accepted}}",
-      "activeCollaborations": "Активные сотрудничества",
-      "collaborationsHelp": "Завершены: {{completed}}"
-    },
-    "performance": {
-      "title": "Показатели эффективности",
-      "totalClicks": "Всего кликов",
-      "totalImpressions": "Всего показов",
-      "avgEngagement": "Средняя вовлечённость"
-    },
-    "details": {
-      "title": "Подробности",
-      "overTime": "Динамика показателей",
-      "noDailyData": "Нет данных по дням для построения графика.",
-      "byCategory": "Вовлечённость по категориям",
-      "noCampaignData": "Нет данных по кампаниям.",
-      "campaigns": "Эффективность кампаний"
-    },
-    "table": {
-      "campaign": "Кампания",
-      "category": "Категория",
-      "influencer": "Инфлюенсер",
-      "clicks": "Клики",
-      "impressions": "Показы",
-      "engagement": "Вовлечённость",
-      "status": "Статус",
-      "startDate": "Дата начала",
-      "endDate": "Дата окончания"
-    },
-    "empty": {
-      "title": "Данных по кампаниям пока нет",
-      "description": "Показатели появятся здесь, когда по вашим сотрудничествам поступит статистика."
+      "briefs": "Опубликовано брифов",
+      "openBriefs": "Открытые брифы",
+      "applications": "Получено откликов",
+      "pending_one": "{{count}} ждёт ответа",
+      "pending_few": "{{count}} ждут ответа",
+      "pending_many": "{{count}} ждут ответа",
+      "pending_other": "{{count}} ждут ответа",
+      "activeDeals": "Сделки в работе"
     }
   },
   "orders": {

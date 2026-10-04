@@ -4,7 +4,6 @@
     "notFound": "Profile not found or couldn't be loaded.",
     "unknownUser": "User",
     "editProfile": "Edit profile",
-    "sendRequest": "Send collaboration request",
     "startChat": "Start chat",
     "writeMessage": "Write a message",
     "deleteAccount": "Delete account",
@@ -25,14 +24,6 @@
     },
     "toast": {
       "loadError": "Couldn't load profile data.",
-      "requestSent": {
-        "title": "Collaboration request sent",
-        "description": "Request sent to {{name}}. Match ID: {{id}}"
-      },
-      "requestError": {
-        "title": "Couldn't send request",
-        "description": "Couldn't send the collaboration request."
-      },
       "chatWithSelf": "You can't start a chat with yourself",
       "chatError": "Couldn't create or open the chat.",
       "accountDeleted": {
