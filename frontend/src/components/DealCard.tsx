@@ -16,6 +16,7 @@ interface DealCardProps {
 export const DealCard: React.FC<DealCardProps> = ({ deal, viewer }) => {
   const { t } = useTranslation('deals');
   const other = viewer === 'brand' ? deal.creator : deal.brand;
+  const category = deal.order.category;
   return (
     <BriefCard
       partyName={other.name}
@@ -23,7 +24,7 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, viewer }) => {
       partyCaption={other.location}
       badge={<StatusPill tone={DEAL_TONE[deal.status]}>{t(`status.${deal.status}`)}</StatusPill>}
       title={deal.order.title}
-      chips={deal.order.category ? [deal.order.category] : []}
+      chips={category ? [t(`brand:categories.${category.toLowerCase()}`, { defaultValue: category })] : []}
       amount={formatMoney(deal.agreedPrice)}
       amountCaption={deal.postBy ? t('card.postBy', { date: formatDate(deal.postBy) }) : t('card.noDate')}
       action={

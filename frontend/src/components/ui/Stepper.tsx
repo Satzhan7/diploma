@@ -23,7 +23,7 @@ export const Stepper: React.FC<StepperProps> = ({ steps, current, label }) => (
         <ListItem key={step.label} aria-current={i === current ? 'step' : undefined} minW={0}>
           <Box h="6px" borderRadius="full" bg={done ? 'success' : 'bg.subtle'} mb={2} />
           <Text
-            fontSize="sm"
+            fontSize={{ base: 'xs', md: 'sm' }}
             fontWeight={i === current ? 700 : 500}
             color={done ? 'fg.default' : 'fg.muted'}
             lineHeight="short"
