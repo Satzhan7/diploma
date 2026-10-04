@@ -1,5 +1,5 @@
 import i18n from '.';
-import { getErrorMessage } from './errors';
+import { getErrorMessage, getFieldErrors } from './errors';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -44,5 +44,34 @@ describe('getErrorMessage', () => {
     for (const code of backendCodes) {
       expect(i18n.exists(code, { ns: 'errors', lng: 'en' }), code).toBe(true);
     }
+  });
+});
+
+describe('getFieldErrors', () => {
+  it('maps VALIDATION_FAILED details to one translated message per field', async () => {
+    await i18n.changeLanguage('en');
+    const error = {
+      response: {
+        data: {
+          code: 'VALIDATION_FAILED',
+          details: [
+            { field: 'email', rule: 'isEmail', message: 'email must be an email' },
+            { field: 'password', rule: 'minLength', message: 'too short' },
+            { field: 'password', rule: 'isString', message: 'not a string' },
+            { field: 'name', rule: 'someNewRule', message: 'x' },
+          ],
+        },
+      },
+    };
+    expect(getFieldErrors(error)).toEqual({
+      email: 'Enter a valid email.',
+      password: 'Too short.',
+      name: 'Check this field.',
+    });
+  });
+
+  it('returns no field errors for other failures or old string details', () => {
+    expect(getFieldErrors({ request: {} })).toEqual({});
+    expect(getFieldErrors({ response: { data: { details: ['email must be an email'] } } })).toEqual({});
   });
 });

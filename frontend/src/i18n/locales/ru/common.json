@@ -39,24 +39,26 @@
   },
   "nav": {
     "main": "Основная навигация",
-    "openMenu": "Открыть меню",
-    "groups": {
-      "work": "Работа",
-      "discover": "Поиск",
-      "communication": "Общение",
-      "account": "Аккаунт"
-    },
-    "dashboard": "Главная",
-    "orders": "Заказы",
-    "createOrder": "Создать заказ",
+    "account": "Аккаунт",
+    "skipToContent": "Перейти к содержимому",
+    "home": "Главная",
+    "newBrief": "Новый бриф",
+    "briefs": "Брифы",
+    "deals": "Сделки",
+    "findBriefs": "Найти брифы",
     "myApplications": "Мои отклики",
-    "matches": "Совпадения",
-    "influencers": "Инфлюенсеры",
-    "brands": "Бренды",
-    "recommendations": "Рекомендации",
     "messages": "Сообщения",
     "profile": "Профиль",
-    "settings": "Настройки"
+    "settings": "Настройки",
+    "short": {
+      "home": "Главная",
+      "briefs": "Брифы",
+      "deals": "Сделки",
+      "messages": "Чаты",
+      "findBriefs": "Брифы",
+      "myApplications": "Отклики",
+      "profile": "Профиль"
+    }
   },
   "status": {
     "open": "Открыт",
@@ -78,5 +80,8 @@
     "brand": "Бренд",
     "influencer": "Инфлюенсер",
     "admin": "Администратор"
+  },
+  "badge": {
+    "verified": "Проверен"
   }
 }

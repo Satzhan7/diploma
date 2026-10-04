@@ -32,4 +32,34 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Colours come from semantic tokens (theme.ts / index.css) so light, dark
+    // and the contrast/transparency preferences work on every page.
+    files: ['src/pages/**/*.tsx', 'src/components/**/*.tsx'],
+    ignores: [
+      'src/components/Logo.tsx', // brand artwork
+      // Removed with Match/Collaboration in R2 and the old pages in R3.
+      'src/components/statistics/**',
+      'src/pages/brand/Messages.tsx',
+      'src/pages/influencer/BrandRecommendations.tsx',
+      'src/pages/MatchDetail.tsx',
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'Literal[value=/#[0-9a-fA-F]{3,8}\\b/]',
+          message: 'Use a semantic colour token instead of a hex colour.',
+        },
+        {
+          selector: 'Literal[value=/^(gray|red|green|blue|purple|teal|orange|yellow|pink|cyan|brand|accent)\\.[0-9]{2,3}$/]',
+          message: 'Use a semantic colour token (bg.*, fg.*, primary, success, warn, danger, …) instead of a palette shade.',
+        },
+        {
+          selector: "JSXAttribute[name.name='colorScheme'] Literal[value=/^(purple|teal|green|blue)$/]",
+          message: 'Use colorScheme "brand", "accent", "gray" or "red".',
+        },
+      ],
+    },
+  },
 );

@@ -74,6 +74,10 @@ export const formatTime = (value: string | number | Date) =>
 export const formatNumber = (value: number) =>
   new Intl.NumberFormat(intlLocale()).format(value);
 
+// 0.068 → "6.8%" / "6,8 %".
+export const formatPercent = (value: number) =>
+  new Intl.NumberFormat(intlLocale(), { style: 'percent', maximumFractionDigits: 1 }).format(value);
+
 // Deals are priced in tenge.
 export const formatMoney = (value: number) =>
   new Intl.NumberFormat(intlLocale(), {

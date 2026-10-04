@@ -39,24 +39,26 @@
   },
   "nav": {
     "main": "Негізгі навигация",
-    "openMenu": "Мәзірді ашу",
-    "groups": {
-      "work": "Жұмыс",
-      "discover": "Іздеу",
-      "communication": "Байланыс",
-      "account": "Аккаунт"
-    },
-    "dashboard": "Басты бет",
-    "orders": "Тапсырыстар",
-    "createOrder": "Тапсырыс жасау",
+    "account": "Аккаунт",
+    "skipToContent": "Мазмұнға өту",
+    "home": "Басты бет",
+    "newBrief": "Жаңа бриф",
+    "briefs": "Брифтер",
+    "deals": "Мәмілелер",
+    "findBriefs": "Бриф іздеу",
     "myApplications": "Менің өтінімдерім",
-    "matches": "Сәйкестіктер",
-    "influencers": "Инфлюенсерлер",
-    "brands": "Брендтер",
-    "recommendations": "Ұсыныстар",
     "messages": "Хабарламалар",
     "profile": "Профиль",
-    "settings": "Баптаулар"
+    "settings": "Баптаулар",
+    "short": {
+      "home": "Басты",
+      "briefs": "Брифтер",
+      "deals": "Мәмілелер",
+      "messages": "Чаттар",
+      "findBriefs": "Брифтер",
+      "myApplications": "Өтінімдер",
+      "profile": "Профиль"
+    }
   },
   "status": {
     "open": "Ашық",
@@ -78,5 +80,8 @@
     "brand": "Бренд",
     "influencer": "Инфлюенсер",
     "admin": "Әкімші"
+  },
+  "badge": {
+    "verified": "Тексерілген"
   }
 }

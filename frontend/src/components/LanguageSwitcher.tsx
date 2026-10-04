@@ -1,32 +1,26 @@
 import React from 'react';
-import { Button, ButtonGroup, ButtonGroupProps } from '@chakra-ui/react';
+import { StackProps } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
-import { LANGUAGES } from '../i18n';
+import { Language, LANGUAGES } from '../i18n';
+import { SegmentedControl } from './ui/SegmentedControl';
 
-// Segmented RU / KZ / EN control. The choice is stored in localStorage.
-export const LanguageSwitcher: React.FC<ButtonGroupProps> = (props) => {
+// RU / KZ / EN. The choice is stored in localStorage.
+export const LanguageSwitcher: React.FC<Omit<StackProps, 'onChange'>> = (props) => {
   const { t, i18n } = useTranslation();
-
   return (
-    <ButtonGroup size="xs" isAttached variant="outline" role="group" aria-label={t('language.label')} {...props}>
-      {LANGUAGES.map((lng) => {
-        const isActive = i18n.resolvedLanguage === lng;
-        return (
-          <Button
-            key={lng}
-            lang={lng}
-            title={t(`language.${lng}`)}
-            aria-label={t(`language.${lng}`)}
-            aria-pressed={isActive}
-            variant={isActive ? 'solid' : 'outline'}
-            colorScheme={isActive ? 'brand' : 'gray'}
-            onClick={() => i18n.changeLanguage(lng)}
-          >
-            {t(`language.short.${lng}`)}
-          </Button>
-        );
-      })}
-    </ButtonGroup>
+    <SegmentedControl<Language>
+      label={t('language.label')}
+      size="sm"
+      value={(i18n.resolvedLanguage as Language) ?? 'ru'}
+      onChange={(lng) => i18n.changeLanguage(lng)}
+      segments={LANGUAGES.map((lng) => ({
+        value: lng,
+        lang: lng,
+        label: t(`language.short.${lng}`),
+        ariaLabel: t(`language.${lng}`),
+      }))}
+      {...props}
+    />
   );
 };
 

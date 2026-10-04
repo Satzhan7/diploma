@@ -35,7 +35,7 @@ import { Application, applicationsService } from '../../services/applications';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { formatDate, formatMoney } from '../../i18n';
-import { StatusBadge } from '../../components/ui';
+import { StatusBadge, StatusPill } from '../../components/ui';
 import { getErrorMessage } from '../../i18n/errors';
 
 interface FilterState {
@@ -256,17 +256,17 @@ export const Orders: React.FC = () => {
                   <CardFooter>
                     {myApplication ? (
                       <VStack align="stretch" spacing={1} width="full">
-                        <Badge 
-                          colorScheme={myApplication.status === 'pending' ? 'yellow' : 
-                                       myApplication.status === 'accepted' ? 'green' : 
-                                       myApplication.status === 'rejected' ? 'red' : 
-                                       'purple'} 
-                          textAlign="center"
+                        <StatusPill
+                          tone={myApplication.status === 'pending' ? 'warn' :
+                                myApplication.status === 'accepted' ? 'success' :
+                                myApplication.status === 'rejected' ? 'danger' :
+                                'neutral'}
+                          justifyContent="center"
                         >
                           {t('orders.card.applied', {
                             status: t(`common:status.${myApplication.status}`, { defaultValue: myApplication.status }),
                           })}
-                        </Badge>
+                        </StatusPill>
                         {myApplication.message && (
                           <Text fontSize="xs" fontStyle="italic" noOfLines={1} title={myApplication.message}>
                             {t('shared.yourMessage', { message: myApplication.message })}
@@ -318,7 +318,7 @@ export const Orders: React.FC = () => {
                     value={applicationForm.proposedPrice}
                     onChange={handleInputChange}
                   />
-                  <Text fontSize="sm" color="gray.500" mt={1}>
+                  <Text fontSize="sm" color="fg.muted" mt={1}>
                     {t('orders.applyModal.originalBudget', { amount: formatMoney(selectedOrder?.budget ?? 0) })}
                   </Text>
                 </FormControl>

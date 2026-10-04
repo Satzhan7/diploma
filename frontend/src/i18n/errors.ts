@@ -1,7 +1,7 @@
 import i18n from '.';
 
 interface ApiErrorLike {
-  response?: { data?: { code?: unknown } };
+  response?: { data?: { code?: unknown; details?: unknown } };
   request?: unknown;
 }
 
@@ -20,4 +20,21 @@ export function getErrorMessage(error: unknown, fallback?: string): string {
     return i18n.t('NETWORK', { ns: 'errors' });
   }
   return fallback ?? i18n.t('UNKNOWN', { ns: 'errors' });
+}
+
+/**
+ * Translated message per field from a VALIDATION_FAILED response
+ * (`details: [{ field, rule }]`); the first failed rule of each field wins.
+ */
+export function getFieldErrors(error: unknown): Record<string, string> {
+  const details = ((error ?? {}) as ApiErrorLike).response?.data?.details;
+  const out: Record<string, string> = {};
+  if (!Array.isArray(details)) return out;
+  for (const detail of details as { field?: unknown; rule?: unknown }[]) {
+    const { field, rule } = detail ?? {};
+    if (typeof field !== 'string' || typeof rule !== 'string' || field in out) continue;
+    const key = `validation.${rule}`;
+    out[field] = i18n.t(i18n.exists(key, { ns: 'errors' }) ? key : 'validation.default', { ns: 'errors' });
+  }
+  return out;
 }

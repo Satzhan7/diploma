@@ -49,7 +49,7 @@ export const OrderDetail: React.FC = () => {
       duration: 5000,
       isClosable: true,
     });
-    return <Center p={10}><Text color="red.500">{t('orderDetail.loadError')}</Text></Center>;
+    return <Center p={10}><Text color="danger">{t('orderDetail.loadError')}</Text></Center>;
   }
 
   if (!order) {
@@ -78,7 +78,7 @@ export const OrderDetail: React.FC = () => {
               <StatusBadge status={order.status} />
             </HStack>
             
-            <Text color="gray.600">
+            <Text color="fg.muted">
               {t('orderDetail.postedBy')}
               <Avatar size="sm" name={order.brand?.displayName || 'B'} src={order.brand?.avatarUrl} />
               <ChakraLink 
@@ -86,7 +86,7 @@ export const OrderDetail: React.FC = () => {
                 as={RouterLink} 
                 fontWeight="medium" 
                 ml={1} 
-                color="brand.500" 
+                color="primary.ink" 
                 onClick={(e) => !order.brand?.user?.id && e.preventDefault()}
               >
                 {order.brand?.displayName || t('shared.brandNameMissing')} <IconWrapper icon={FiExternalLink} />

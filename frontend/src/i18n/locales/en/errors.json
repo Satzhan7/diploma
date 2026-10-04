@@ -29,5 +29,17 @@
   "APPLICATION_INVALID_TRANSITION": "This application cannot be moved to that status.",
   "APPLICATION_STALE": "The application has changed. Reload and try again.",
   "CHAT_NOT_FOUND": "Chat not found.",
-  "MESSAGE_EMPTY": "The message cannot be empty."
+  "MESSAGE_EMPTY": "The message cannot be empty.",
+  "validation": {
+    "default": "Check this field.",
+    "isNotEmpty": "Required.",
+    "isString": "Required.",
+    "isEmail": "Enter a valid email.",
+    "minLength": "Too short.",
+    "maxLength": "Too long.",
+    "isIn": "Choose one of the options.",
+    "isInt": "Enter a whole number.",
+    "min": "The value is too small.",
+    "max": "The value is too large."
+  }
 }

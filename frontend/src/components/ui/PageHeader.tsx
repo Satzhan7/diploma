@@ -17,7 +17,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, actions
     mb={8}
   >
     <Box>
-      <Heading as="h1" size={{ base: 'lg', md: 'xl' }} fontWeight="700">
+      <Heading as="h1" textStyle="display" fontSize={{ base: "28px", md: "34px" }}>
         {title}
       </Heading>
       {subtitle && (

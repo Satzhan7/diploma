@@ -134,7 +134,7 @@ export const Settings: React.FC = () => {
                 {/* Applies immediately; not saved with the form. */}
                 <Box>
                   <Text fontWeight="medium" mb={2}>{t('common:language.label')}</Text>
-                  <LanguageSwitcher size="sm" />
+                  <LanguageSwitcher />
                 </Box>
                 <FormControl>
                   <FormLabel>{t('preferences.timezone')}</FormLabel>

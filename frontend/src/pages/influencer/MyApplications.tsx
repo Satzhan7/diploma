@@ -106,7 +106,7 @@ export const MyApplications: React.FC = () => {
         <VStack align="start" spacing={1}>
           <Text fontSize="sm">
             {t('applications.card.brand')}
-            <ChakraLink ml={1} color="brand.500" onClick={() => application.order.brand?.user?.id && handleViewBrand(application.order.brand.user.id)}>
+            <ChakraLink ml={1} color="primary.ink" onClick={() => application.order.brand?.user?.id && handleViewBrand(application.order.brand.user.id)}>
               {application.order.brand?.displayName || t('shared.brandNameMissing')} <IconWrapper icon={FiExternalLink} />
             </ChakraLink>
           </Text>
@@ -142,7 +142,7 @@ export const MyApplications: React.FC = () => {
   );
 
   if (isLoading) return <Center p={10}><Spinner /></Center>;
-  if (error) return <Center p={10}><Text color="red.500">{t('applications.loadError', { message: getErrorMessage(error) })}</Text></Center>;
+  if (error) return <Center p={10}><Text color="danger">{t('applications.loadError', { message: getErrorMessage(error) })}</Text></Center>;
   // Now explicitly check if applications is defined *before* rendering tabs
   // This handles the case where the query finishes but returns undefined/null
   if (!applications) return <Center p={10}><Text>{t('applications.empty.all')}</Text></Center>; 
@@ -177,7 +177,7 @@ export const MyApplications: React.FC = () => {
             ) : (
               <Box textAlign="center" p={8}>
                 <Text fontSize="xl">{t('applications.empty.all')}</Text>
-                <Text color="gray.500">{t('applications.empty.allHint')}</Text>
+                <Text color="fg.muted">{t('applications.empty.allHint')}</Text>
                 <Button mt={4} colorScheme="brand" as={RouterLink} to="/influencer/orders">{t('applications.empty.browseOrders')}</Button>
               </Box>
             )}
@@ -192,7 +192,7 @@ export const MyApplications: React.FC = () => {
             ) : (
               <Box textAlign="center" p={8}>
                 <Text fontSize="xl">{t('applications.empty.pending')}</Text>
-                <Text color="gray.500">{t('applications.empty.pendingHint')}</Text>
+                <Text color="fg.muted">{t('applications.empty.pendingHint')}</Text>
               </Box>
             )}
           </TabPanel>
@@ -206,7 +206,7 @@ export const MyApplications: React.FC = () => {
             ) : (
               <Box textAlign="center" p={8}>
                 <Text fontSize="xl">{t('applications.empty.accepted')}</Text>
-                <Text color="gray.500">{t('applications.empty.acceptedHint')}</Text>
+                <Text color="fg.muted">{t('applications.empty.acceptedHint')}</Text>
               </Box>
             )}
           </TabPanel>

@@ -39,24 +39,26 @@
   },
   "nav": {
     "main": "Main navigation",
-    "openMenu": "Open navigation menu",
-    "groups": {
-      "work": "Work",
-      "discover": "Discover",
-      "communication": "Communication",
-      "account": "Account"
-    },
-    "dashboard": "Dashboard",
-    "orders": "Orders",
-    "createOrder": "Create order",
+    "account": "Account",
+    "skipToContent": "Skip to content",
+    "home": "Home",
+    "newBrief": "New brief",
+    "briefs": "Briefs",
+    "deals": "Deals",
+    "findBriefs": "Find briefs",
     "myApplications": "My applications",
-    "matches": "Matches",
-    "influencers": "Influencers",
-    "brands": "Brands",
-    "recommendations": "Recommendations",
     "messages": "Messages",
     "profile": "Profile",
-    "settings": "Settings"
+    "settings": "Settings",
+    "short": {
+      "home": "Home",
+      "briefs": "Briefs",
+      "deals": "Deals",
+      "messages": "Messages",
+      "findBriefs": "Briefs",
+      "myApplications": "Applied",
+      "profile": "Profile"
+    }
   },
   "status": {
     "open": "Open",
@@ -78,5 +80,8 @@
     "brand": "Brand",
     "influencer": "Influencer",
     "admin": "Admin"
+  },
+  "badge": {
+    "verified": "Verified"
   }
 }

@@ -258,7 +258,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
                 )}
                 {isBrandViewingInfluencer && (
                     <Button 
-                        colorScheme="teal" 
+                        colorScheme="brand" 
                         onClick={() => createMatchMutation.mutate()}
                         isLoading={createMatchMutation.isPending}
                     >
@@ -326,7 +326,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
                   <Text fontSize="sm" color="fg.subtle">
                     {t('view.fields.website')}
                   </Text>
-                  <Link href={profileData.websiteUrl} isExternal color="brand.500">
+                  <Link href={profileData.websiteUrl} isExternal color="primary.ink">
                     {profileData.websiteUrl}
                   </Link>
                 </Box>
@@ -340,7 +340,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
                     {profileData.socialMedia.map((social) => (
                       <HStack key={social.id}>
                         {getSocialMediaIcon(social.type)}
-                        <Link href={social.url} isExternal color="brand.500">
+                        <Link href={social.url} isExternal color="primary.ink">
                           {social.username || social.url}
                         </Link>
                         {social.followers && (

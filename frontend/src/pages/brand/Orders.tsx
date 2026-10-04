@@ -99,7 +99,7 @@ const BrandOrders: React.FC = () => {
 
   if (!user) return <Center p={10}><Text>{t('orders.loadingUser')}</Text></Center>;
   if (isLoading) return <Center p={10}><Spinner /></Center>;
-  if (error) return <Center p={10}><Text color="red.500">{t('orders.loadError', { message: getErrorMessage(error) })}</Text></Center>;
+  if (error) return <Center p={10}><Text color="danger">{t('orders.loadError', { message: getErrorMessage(error) })}</Text></Center>;
 
   return (
     <Box p={4}>
@@ -190,7 +190,7 @@ const BrandOrders: React.FC = () => {
                           <HStack>
                             {app.status === 'pending' && (
                               <>
-                                <Button size="xs" colorScheme="green" onClick={() => handleAcceptApplication(app)} isLoading={acceptMutation.isPending}>
+                                <Button size="xs" colorScheme="accent" onClick={() => handleAcceptApplication(app)} isLoading={acceptMutation.isPending}>
                                   {t('orders.applicants.accept')}
                                 </Button>
                                 <Button size="xs" colorScheme="red" onClick={() => handleRejectApplication(app)} isLoading={rejectMutation.isPending}>
