@@ -108,6 +108,19 @@ describe('AuthService token boundaries', () => {
     );
   });
 
+  it('lets database errors through instead of reporting an invalid token', async () => {
+    const tokens = await service.login({
+      email: user.email,
+      password: 'correct-password',
+    });
+    const dbError = new Error('connection terminated');
+    usersService.findById.mockRejectedValueOnce(dbError);
+
+    await expect(service.refreshTokens(tokens.refreshToken)).rejects.toBe(
+      dbError,
+    );
+  });
+
   it('rejects a refresh token once it has been rotated out', async () => {
     const now = jest.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000);
     try {
