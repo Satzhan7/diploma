@@ -36,8 +36,8 @@ export class UsersService {
       where.profile = {
         categories: Raw(
           (column) =>
-            `:category = ANY(string_to_array(COALESCE(${column}, ''), ','))`,
-          { category },
+            `:profileCategory = ANY(string_to_array(COALESCE(${column}, ''), ','))`,
+          { profileCategory: category.trim() },
         ),
       };
     }
