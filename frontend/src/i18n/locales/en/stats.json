@@ -27,7 +27,8 @@
     "resubmitNote": "A new claim removes the Verified badge until an admin approves it.",
     "required": "Attach a screenshot.",
     "tooLarge": "The file is larger than 5 MB.",
-    "wrongType": "Choose a JPEG, PNG or WebP image."
+    "wrongType": "Choose a JPEG, PNG or WebP image.",
+    "newClaim": "Send a new claim"
   },
   "portfolio": {
     "title": "Portfolio",

@@ -65,6 +65,8 @@ const VerificationCard: React.FC = () => {
   const [rate, setRate] = useState('');
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // A verified creator opens the form on purpose: a new claim drops the badge.
+  const [reopened, setReopened] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const submit = useMutation({
@@ -75,6 +77,7 @@ const VerificationCard: React.FC = () => {
       setRate('');
       setScreenshot(null);
       setErrors({});
+      setReopened(false);
       toast({ status: 'success', title: t('toasts.submitted') });
     },
     onError: (error) => {
@@ -120,7 +123,15 @@ const VerificationCard: React.FC = () => {
 
       {mine.isError ? <Text color="danger">{getErrorMessage(mine.error)}</Text> : data && <StatusText data={data} />}
 
-      {status !== 'pending' && !mine.isPending && (
+      {status === 'approved' && !reopened && (
+        <Box>
+          <Button variant="outline" onClick={() => setReopened(true)}>
+            {t('form.newClaim')}
+          </Button>
+        </Box>
+      )}
+
+      {(status === 'none' || status === 'rejected' || reopened) && !mine.isPending && (
         <Stack as="form" noValidate onSubmit={onSubmit} spacing={4} aria-labelledby="verification-title">
           <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={4}>
             <FormControl isRequired isInvalid={!!errors.followers}>
@@ -129,13 +140,12 @@ const VerificationCard: React.FC = () => {
                 inputMode="numeric"
                 value={followers}
                 onChange={(e) => setFollowers(e.target.value.replace(/\D/g, ''))}
-                placeholder="48000"
               />
               <FormErrorMessage>{errors.followers}</FormErrorMessage>
             </FormControl>
             <FormControl isRequired isInvalid={!!errors.engagementRate}>
               <FormLabel>{t('form.engagementRate')}</FormLabel>
-              <Input inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="6.8" />
+              <Input inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} />
               <FormErrorMessage>{errors.engagementRate}</FormErrorMessage>
             </FormControl>
           </SimpleGrid>
@@ -318,6 +328,7 @@ const PortfolioCard: React.FC = () => {
                 h="full"
                 variant="outline"
                 borderStyle="dashed"
+                borderRadius="md"
                 flexDirection="column"
                 gap={2}
                 whiteSpace="normal"
