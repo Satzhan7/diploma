@@ -59,6 +59,11 @@ export default () => ({
     process.env.FREE_TEST_PERIOD,
     true,
   ),
+  // Where brands send the Pro fee (Plan page) once the test period ends.
+  kaspi: {
+    phone: process.env.KASPI_PHONE?.trim() || null,
+    recipient: process.env.KASPI_RECIPIENT?.trim() || 'AdPartners',
+  },
   // Private uploads (decision D4): a local disk volume behind StorageService.
   uploadDir: process.env.UPLOAD_DIR || join(process.cwd(), 'uploads'),
   mail: {

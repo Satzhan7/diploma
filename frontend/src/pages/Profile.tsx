@@ -217,6 +217,11 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
                         {t('view.editProfile')}
                     </Button>
                 )}
+                {!isViewMode && user?.role === 'influencer' && (
+                    <Button variant="outline" onClick={() => navigate('/influencer/stats')}>
+                        {t('common:nav.stats')}
+                    </Button>
+                )}
                 {isViewMode && user?.id !== targetUser?.id && (
                     <Button colorScheme="gray" onClick={handleCreateChat}>
                         {t('view.startChat')}

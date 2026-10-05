@@ -26,6 +26,8 @@ export interface ApplicantCreator {
   /** Percent, e.g. 6.8. */
   engagementRate: number | null;
   verified: boolean;
+  /** Portfolio image ids (public; `publicFileUrl`), at most 6. */
+  portfolio: string[];
 }
 
 export interface Applicant {
@@ -52,6 +54,8 @@ export interface MyApplication {
 
 export interface ApplicantParams extends PageParams {
   shortlisted?: boolean;
+  /** Pro only; a Free brand gets PLAN_PRO_REQUIRED. */
+  verifiedOnly?: boolean;
 }
 
 export const applicationsService = {

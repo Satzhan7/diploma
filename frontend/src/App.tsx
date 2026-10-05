@@ -30,9 +30,18 @@ const Settings = page(() => import('./pages/Settings'), 'Settings');
 const Deals = page(() => import('./pages/Deals'), 'Deals');
 const Deal = page(() => import('./pages/Deal'), 'Deal');
 const NotFound = page(() => import('./pages/NotFound'), 'NotFound');
+const Plan = page(() => import('./pages/brand/Plan'), 'Plan');
+const Stats = page(() => import('./pages/influencer/Stats'), 'Stats');
+const Verifications = page(() => import('./pages/admin/Verifications'), 'Verifications');
+const AdminBrands = page(() => import('./pages/admin/Brands'), 'Brands');
 
 /** Where each role lands after login. */
-const homeFor = (role?: UserRole) => (role === UserRole.BRAND ? '/brand/dashboard' : '/influencer/briefs');
+const homeFor = (role?: UserRole) =>
+  role === UserRole.BRAND
+    ? '/brand/dashboard'
+    : role === UserRole.ADMIN
+      ? '/admin/verifications'
+      : '/influencer/briefs';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -102,19 +111,24 @@ function AppRoutes() {
     return <FullScreenLoader />;
   }
 
+  // Brands and creators share the deal, chat and account pages; admins do not.
   const shell = (role: UserRole, routes: React.ReactNode) => (
     <ProtectedRoute roles={[role]}>
       <AppShell role={user?.role}>
         <Suspense fallback={<FullScreenLoader minH="60vh" />}>
           <Routes>
             {routes}
-            <Route path="messages" element={<Messages />} />
-            <Route path="deals" element={<Deals />} />
-            <Route path="deals/:dealId" element={<Deal />} />
-            <Route path="profile/:userId" element={<Profile isViewMode={true} />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="profile/edit" element={<EditProfile />} />
-            <Route path="settings" element={<Settings />} />
+            {role !== UserRole.ADMIN && (
+              <>
+                <Route path="messages" element={<Messages />} />
+                <Route path="deals" element={<Deals />} />
+                <Route path="deals/:dealId" element={<Deal />} />
+                <Route path="profile/:userId" element={<Profile isViewMode={true} />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="profile/edit" element={<EditProfile />} />
+                <Route path="settings" element={<Settings />} />
+              </>
+            )}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
@@ -140,6 +154,7 @@ function AppRoutes() {
             <Route path="briefs/:id/edit" element={<BriefWizard />} />
             <Route path="briefs/:id/applicants" element={<Applicants />} />
             <Route path="applicants" element={<LatestApplicants />} />
+            <Route path="plan" element={<Plan />} />
           </>,
         )}
       />
@@ -154,6 +169,19 @@ function AppRoutes() {
             <Route path="briefs" element={<Feed />} />
             <Route path="briefs/:id" element={<Apply />} />
             <Route path="applications" element={<MyApplications />} />
+            <Route path="stats" element={<Stats />} />
+          </>,
+        )}
+      />
+
+      <Route
+        path="/admin/*"
+        element={shell(
+          UserRole.ADMIN,
+          <>
+            <Route index element={<Navigate to="verifications" replace />} />
+            <Route path="verifications" element={<Verifications />} />
+            <Route path="brands" element={<AdminBrands />} />
           </>,
         )}
       />

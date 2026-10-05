@@ -90,6 +90,8 @@ services:
       # The dev build calls the API cross-origin on :3005, so the CSP must
       # allow it. Production keeps the Dockerfile default ('self' https: wss:).
       - CSP_CONNECT_SRC='self' http://localhost:3005 http://127.0.0.1:3005 ws://localhost:3005 ws://127.0.0.1:3005
+      # Portfolio images come from the API origin too.
+      - "CSP_IMG_SRC='self' data: blob: http://localhost:3005 http://127.0.0.1:3005"
     restart: always
     ports:
       - "3000:80"

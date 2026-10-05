@@ -45,6 +45,8 @@ services:
       - SMTP_PASS=${SMTP_PASS}
       - MAIL_FROM=${MAIL_FROM}
       - FREE_TEST_PERIOD=${FREE_TEST_PERIOD:-true}
+      - KASPI_PHONE=${KASPI_PHONE:-}
+      - KASPI_RECIPIENT=${KASPI_RECIPIENT:-}
       - UPLOAD_DIR=/data/uploads
     volumes:
       # Private uploads (portfolio images, stats screenshots); back it up

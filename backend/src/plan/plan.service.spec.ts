@@ -3,8 +3,13 @@ import { Plan } from './plan';
 
 describe('PlanService', () => {
   const config = (freeTestPeriod: boolean) => ({
-    get: jest.fn((key: string) =>
-      key === 'freeTestPeriod' ? freeTestPeriod : undefined,
+    get: jest.fn(
+      (key: string) =>
+        ({
+          freeTestPeriod,
+          'kaspi.phone': '+7 700 000 00 00',
+          'kaspi.recipient': 'AdPartners',
+        })[key],
     ),
   });
 
@@ -43,6 +48,8 @@ describe('PlanService', () => {
         proExpiresAt: null,
         freeTestPeriod: flag,
         priceKzt: 19900,
+        kaspiPhone: '+7 700 000 00 00',
+        kaspiRecipient: 'AdPartners',
       });
     },
   );

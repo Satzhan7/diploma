@@ -15,6 +15,9 @@ export interface PlanView {
   proExpiresAt: Date | null;
   freeTestPeriod: boolean;
   priceKzt: number;
+  /** Kaspi transfer details for the Plan page; phone null until configured. */
+  kaspiPhone: string | null;
+  kaspiRecipient: string;
 }
 
 @Injectable()
@@ -50,6 +53,9 @@ export class PlanService {
       proExpiresAt: profile.proExpiresAt,
       freeTestPeriod: this.freeTestPeriod,
       priceKzt: PRO_PRICE_KZT,
+      kaspiPhone: this.config.get<string | null>('kaspi.phone') ?? null,
+      kaspiRecipient:
+        this.config.get<string>('kaspi.recipient') ?? 'AdPartners',
     };
   }
 }
