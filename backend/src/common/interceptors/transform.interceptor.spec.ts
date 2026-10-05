@@ -1,4 +1,4 @@
-import { InternalServerErrorException } from '@nestjs/common';
+import { InternalServerErrorException, StreamableFile } from '@nestjs/common';
 import { lastValueFrom, of } from 'rxjs';
 import * as classTransformer from 'class-transformer';
 import { TransformInterceptor } from './transform.interceptor';
@@ -17,5 +17,16 @@ describe('TransformInterceptor', () => {
         }),
       ),
     ).rejects.toBeInstanceOf(InternalServerErrorException);
+  });
+
+  it('passes a StreamableFile through untouched', async () => {
+    const file = new StreamableFile(Buffer.from('x'));
+    await expect(
+      lastValueFrom(
+        new TransformInterceptor().intercept({} as any, {
+          handle: () => of(file),
+        }),
+      ),
+    ).resolves.toBe(file);
   });
 });

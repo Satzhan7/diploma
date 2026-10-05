@@ -44,6 +44,12 @@ services:
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASS=${SMTP_PASS}
       - MAIL_FROM=${MAIL_FROM}
+      - FREE_TEST_PERIOD=${FREE_TEST_PERIOD:-true}
+      - UPLOAD_DIR=/data/uploads
+    volumes:
+      # Private uploads (portfolio images, stats screenshots); back it up
+      # together with the database.
+      - uploads_data:/data/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -87,3 +93,4 @@ networks:
 
 volumes:
   postgres_data:
+  uploads_data:

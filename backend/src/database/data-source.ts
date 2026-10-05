@@ -8,6 +8,9 @@ import { OrderApplication } from '../orders/entities/order-application.entity';
 import { Deal } from '../deals/entities/deal.entity';
 import { Chat } from '../chats/entities/chat.entity';
 import { Message } from '../chats/entities/message.entity';
+import { StoredFile } from '../files/entities/stored-file.entity';
+import { CreatorVerification } from '../verification/entities/creator-verification.entity';
+import { AuditLog } from '../admin/entities/audit-log.entity';
 import { EmailVerification } from '../auth/entities/email-verification.entity';
 
 // CLI-only datasource for reviewed migrations. Runtime configuration remains in
@@ -29,6 +32,9 @@ export default new DataSource({
     Message,
     Deal,
     EmailVerification,
+    StoredFile,
+    CreatorVerification,
+    AuditLog,
   ],
   // ts-node runs the .ts sources; dist only loads .js (not the emitted .d.ts).
   migrations: [

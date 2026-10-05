@@ -1,4 +1,4 @@
-import configuration, { parseMigrationsRun } from './configuration';
+import configuration, { parseBooleanEnv } from './configuration';
 
 describe('DB_MIGRATIONS_RUN', () => {
   const env = { ...process.env };
@@ -24,7 +24,30 @@ describe('DB_MIGRATIONS_RUN', () => {
   });
 
   it('treats an empty value as unset and refuses anything else', () => {
-    expect(parseMigrationsRun('', true)).toBe(true);
-    expect(() => parseMigrationsRun('0', true)).toThrow('DB_MIGRATIONS_RUN');
+    expect(parseBooleanEnv('DB_MIGRATIONS_RUN', '', true)).toBe(true);
+    expect(() => parseBooleanEnv('DB_MIGRATIONS_RUN', '0', true)).toThrow(
+      'DB_MIGRATIONS_RUN',
+    );
+  });
+});
+
+describe('FREE_TEST_PERIOD', () => {
+  const env = { ...process.env };
+  afterEach(() => {
+    process.env = { ...env };
+  });
+
+  it('is on unless set to false', () => {
+    delete process.env.FREE_TEST_PERIOD;
+    expect(configuration().freeTestPeriod).toBe(true);
+    process.env.FREE_TEST_PERIOD = 'false';
+    expect(configuration().freeTestPeriod).toBe(false);
+    process.env.FREE_TEST_PERIOD = 'True';
+    expect(configuration().freeTestPeriod).toBe(true);
+  });
+
+  it('refuses a value that is not true or false', () => {
+    process.env.FREE_TEST_PERIOD = 'yes';
+    expect(() => configuration()).toThrow('FREE_TEST_PERIOD');
   });
 });

@@ -46,9 +46,14 @@ services:
       - SMTP_HOST=mailpit
       - SMTP_PORT=1025
       - MAIL_FROM=AdPartners <no-reply@adpartners.kz>
+      # Test period on by default; FREE_TEST_PERIOD=false docker compose up
+      # turns the paywall back on.
+      - FREE_TEST_PERIOD=${FREE_TEST_PERIOD:-true}
+      - UPLOAD_DIR=/data/uploads
     volumes:
       - ./backend:/usr/src/app
       - /usr/src/app/node_modules
+      - uploads_data:/data/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -99,3 +104,4 @@ networks:
 
 volumes:
   postgres_data:
+  uploads_data:

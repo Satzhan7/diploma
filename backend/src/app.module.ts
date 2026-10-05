@@ -20,7 +20,14 @@ import { Order } from './orders/entities/order.entity';
 import { OrderApplication } from './orders/entities/order-application.entity';
 import { Deal } from './deals/entities/deal.entity';
 import { DealsModule } from './deals/deals.module';
+import { FilesModule } from './files/files.module';
+import { PlanModule } from './plan/plan.module';
+import { VerificationModule } from './verification/verification.module';
+import { AdminModule } from './admin/admin.module';
 import configuration from './config/configuration';
+import { StoredFile } from './files/entities/stored-file.entity';
+import { CreatorVerification } from './verification/entities/creator-verification.entity';
+import { AuditLog } from './admin/entities/audit-log.entity';
 import { EmailVerification } from './auth/entities/email-verification.entity';
 
 @Module({
@@ -56,6 +63,9 @@ import { EmailVerification } from './auth/entities/email-verification.entity';
           OrderApplication,
           Deal,
           EmailVerification,
+          StoredFile,
+          CreatorVerification,
+          AuditLog,
         ],
         synchronize: configService.get('database.synchronize'),
         migrationsRun: configService.get('database.migrationsRun'),
@@ -72,6 +82,10 @@ import { EmailVerification } from './auth/entities/email-verification.entity';
     ChatsModule,
     DealsModule,
     CategoriesModule,
+    FilesModule,
+    PlanModule,
+    VerificationModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [

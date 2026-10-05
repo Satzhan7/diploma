@@ -9,6 +9,8 @@ import { OrderApplicationsService } from './order-applications.service';
 import { ProfilesModule } from '../profiles/profiles.module';
 import { ChatsModule } from '../chats/chats.module';
 import { DealsModule } from '../deals/deals.module';
+import { PlanModule } from '../plan/plan.module';
+import { FilesModule } from '../files/files.module';
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { DealsModule } from '../deals/deals.module';
     ProfilesModule,
     DealsModule,
     ChatsModule,
+    PlanModule,
+    FilesModule,
   ],
   controllers: [OrdersController, OrderApplicationsController],
   providers: [OrdersService, OrderApplicationsService],

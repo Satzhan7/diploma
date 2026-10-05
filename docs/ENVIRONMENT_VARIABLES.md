@@ -14,7 +14,9 @@
 | `DB_PASSWORD` | yes (prod) | `configuration.ts:7` | ✅ `postgres` | ✅ `${DB_PASSWORD}` | `postgres` | Aligned |
 | `DB_NAME` | yes | `configuration.ts:8` | ✅ `influencer_platform` | ✅ `${DB_NAME}` | `diploma` | OK |
 | `DB_SYNCHRONIZE` | no (dev), forced false (prod) | `configuration.ts:9-14` | ❌ (non-production defaults true) | ✅ literal `false` | `true` only outside production | Production synchronization is never enabled. |
-| `DB_MIGRATIONS_RUN` | no | `configuration.ts` (`parseMigrationsRun`), `app.module.ts` | ❌ | ✅ `${DB_MIGRATIONS_RUN:-}` | on when `NODE_ENV=production`, else off | `true` / `false` (case-insensitive); empty = default; anything else stops startup. Kill switch for applying migrations on boot; with `false`, apply them with `npm run migration:run:prod`. |
+| `DB_MIGRATIONS_RUN` | no | `configuration.ts` (`parseBooleanEnv`), `app.module.ts` | ❌ | ✅ `${DB_MIGRATIONS_RUN:-}` | on when `NODE_ENV=production`, else off | `true` / `false` (case-insensitive); empty = default; anything else stops startup. Kill switch for applying migrations on boot; with `false`, apply them with `npm run migration:run:prod`. |
+| `FREE_TEST_PERIOD` | no | `configuration.ts` (`parseBooleanEnv`), `plan/plan.service.ts` | ✅ `${FREE_TEST_PERIOD:-true}` | ✅ `${FREE_TEST_PERIOD:-true}` | `true` | Test period (D3): `true` gives every brand the Pro plan at no cost and the Plan page shows no payment step; `false` restores the paywall (stored plan + `proExpiresAt`). Anything other than `true`/`false` stops startup. |
+| `UPLOAD_DIR` | no | `configuration.ts`, `files/storage/local-disk.storage.ts` | ✅ `/data/uploads` (volume `uploads_data`) | ✅ `/data/uploads` (volume `uploads_data`) | `./uploads` under the working directory | Private directory for uploaded images (D4). Back the volume up with the database. |
 | `ADMIN_PASSWORD` | no | `scripts/create-admin.ts` only | ❌ | ❌ (pass with `-e` when running the script) | generated and printed once | Password for `admin:create`, at least 12 characters. Not read by the server. |
 | `JWT_SECRET` | **yes (prod)** | `configuration.ts`, `auth.module.ts`, `jwt.strategy.ts` | ✅ placeholder | ✅ `${JWT_SECRET}` | development fallback | Access-token signing key; production startup fails if missing. |
 | `JWT_REFRESH_SECRET` | **yes (prod)** | `configuration.ts`, `auth.service.ts` | ❌ (falls back to JWT secret in dev only) | ✅ `${JWT_REFRESH_SECRET}` | development fallback | Refresh-token signing key; use a different random value from `JWT_SECRET`. |
@@ -46,6 +48,7 @@
 | `JWT_REFRESH_SECRET` | yes | backend | `CHANGE_ME_A_DIFFERENT_64_RANDOM_CHARS` | Placeholder ✅; must differ from access secret. |
 | `DB_SYNCHRONIZE` | no | backend | `false` | Forced false by production compose. |
 | `DB_MIGRATIONS_RUN` | no | backend | `true` | Passed through by production compose; `false` skips migrations on boot. |
+| `FREE_TEST_PERIOD` | no | backend | `true` | `false` ends the test period: Free brands lose "Verified only" until an admin sets Pro. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | `SMTP_HOST`, `MAIL_FROM` yes | backend | `smtp.example.kz`, `587`, `false`, `CHANGE_ME`, `CHANGE_ME`, `AdPartners <no-reply@adpartners.kz>` | Provider chosen with D2 (KZ data residency). |
 
 ## Findings summary

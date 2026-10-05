@@ -7,7 +7,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not, In, DataSource } from 'typeorm';
+import { Repository, Not, In, DataSource, IsNull } from 'typeorm';
 import {
   OrderApplication,
   ApplicationStatus,
@@ -32,6 +32,9 @@ import {
   toMyApplicationView,
 } from './applicant-view';
 import { apiError, ErrorCode } from '../common/errors/error-codes';
+import { PlanService } from '../plan/plan.service';
+import { Plan } from '../plan/plan';
+import { FilesService } from '../files/files.service';
 
 // Allowed application status changes. Every role, admin included, goes
 // through this table. An accepted application becomes a Deal, which has its
@@ -100,6 +103,8 @@ export class OrderApplicationsService {
     private readonly dealsService: DealsService,
     private readonly profilesService: ProfilesService,
     private readonly chatsService: ChatsService,
+    private readonly planService: PlanService,
+    private readonly filesService: FilesService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -537,22 +542,41 @@ export class OrderApplicationsService {
   // Applicants best match first: matchScore of the brief's targeting against
   // the creator profile, ties oldest first. A brief has tens of applicants,
   // so ranking and paging happen in memory after one query.
+  // "Verified only" is the Pro feature: the effective plan is checked here,
+  // on the server, before any applicant is read.
   async findByOrder(
     orderId: string,
     userId: string,
     query: ListOrderApplicationsQueryDto,
   ): Promise<Page<ApplicantView>> {
-    const { take, skip, shortlisted } = query;
+    const { take, skip, shortlisted, verifiedOnly } = query;
     const order = await this.ownedOrder(orderId, userId);
+    if (verifiedOnly) {
+      const { plan } = await this.planService.forUser(userId);
+      if (plan !== Plan.PRO) {
+        throw new ForbiddenException(
+          apiError(
+            ErrorCode.PLAN_PRO_REQUIRED,
+            'Filtering by verified creators needs the Pro plan',
+          ),
+        );
+      }
+    }
     const applications = await this.orderApplicationRepository.find({
       where: {
         order: { id: orderId },
         status: Not(ApplicationStatus.WITHDRAWN),
         ...(shortlisted !== undefined && { shortlisted }),
+        ...(verifiedOnly && {
+          applicant: { profile: { verifiedAt: Not(IsNull()) } },
+        }),
       },
       relations: { applicant: { profile: true } },
     });
 
+    const portfolios = await this.filesService.portfolioIdsFor(
+      applications.map((application) => application.applicant.id),
+    );
     const target = briefProfile(order, order.brand);
     const ranked = applications
       .map((application) =>
@@ -562,6 +586,7 @@ export class OrderApplicationsService {
             target,
             application.applicant.profile ?? ({} as MatchProfile),
           ),
+          portfolios.get(application.applicant.id) ?? [],
         ),
       )
       .sort(
