@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertDialog,
   AlertDialogBody,
@@ -17,6 +17,7 @@ import {
   Text,
   Tooltip,
   useToast,
+  VisuallyHidden,
 } from '@chakra-ui/react';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink, Navigate, useNavigate, useParams } from 'react-router-dom';
@@ -78,7 +79,7 @@ export const Applicants: React.FC = () => {
   const [accepting, setAccepting] = useState<Applicant | null>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
 
-  const brief = useQuery({ queryKey: ['brief', id], queryFn: () => briefsService.get(id) });
+  const brief = useQuery({ queryKey: ['briefs', 'detail', id], queryFn: () => briefsService.get(id) });
   const feed = useInfiniteQuery({
     queryKey: ['applicants', id, 'all'],
     queryFn: ({ pageParam }) => applicationsService.forBrief(id, { take: PAGE_SIZE, skip: pageParam }),
@@ -91,7 +92,11 @@ export const Applicants: React.FC = () => {
     enabled: view === 'compare',
   });
 
-  const applicants = feed.data?.pages.flatMap((p) => p.items) ?? [];
+  // Offset paging can repeat a row when ranks shift between pages; keep the first copy.
+  const applicants = useMemo(() => {
+    const seen = new Set<string>();
+    return (feed.data?.pages.flatMap((p) => p.items) ?? []).filter((a) => !seen.has(a.id) && !!seen.add(a.id));
+  }, [feed.data]);
   const total = feed.data?.pages[0]?.total ?? 0;
   const isOpen = brief.data?.status === 'open';
 
@@ -117,7 +122,6 @@ export const Applicants: React.FC = () => {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['applicants', id] });
       queryClient.invalidateQueries({ queryKey: ['briefs'] });
-      queryClient.invalidateQueries({ queryKey: ['brief', id] });
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       toast({ status: 'success', title: t('applicants.toasts.accepted') });
       navigate(result.dealId ? `/brand/deals/${result.dealId}` : '/brand/deals');
@@ -316,7 +320,9 @@ export const Applicants: React.FC = () => {
           </Box>
           <Box as="thead">
             <Box as="tr">
-              <Box as="td" w="160px" />
+              <Box as="th" scope="col" w="160px">
+                <VisuallyHidden>{t('applicants.compareMetric')}</VisuallyHidden>
+              </Box>
               {list.map((a) => (
                 <Box as="th" key={a.id} scope="col" p={4} textAlign="left" verticalAlign="top">
                   <Text fontWeight="700" noOfLines={1}>

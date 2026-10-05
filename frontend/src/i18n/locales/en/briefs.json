@@ -186,6 +186,7 @@
     "no": "No",
     "compareEmpty": "Shortlist creators in the feed to compare them here.",
     "compareCaption": "Shortlisted creators side by side; the best value in each row is highlighted.",
+    "compareMetric": "Metric",
     "position": "{{n}} of {{total}}",
     "closed": "This brief is {{status}}: applicants can no longer be accepted.",
     "empty": {

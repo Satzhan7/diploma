@@ -39,7 +39,7 @@ export const Apply: React.FC = () => {
   const [price, setPrice] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const brief = useQuery({ queryKey: ['brief', id], queryFn: () => briefsService.get(id) });
+  const brief = useQuery({ queryKey: ['briefs', 'detail', id], queryFn: () => briefsService.get(id) });
 
   const send = useMutation({
     mutationFn: () =>
@@ -48,7 +48,7 @@ export const Apply: React.FC = () => {
         ...(price ? { proposedPrice: Math.round(Number(price)) } : {}),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['brief', id] });
+      queryClient.invalidateQueries({ queryKey: ['briefs', 'detail', id] });
       queryClient.invalidateQueries({ queryKey: ['briefs', 'feed'] });
       queryClient.invalidateQueries({ queryKey: ['applications'] });
     },

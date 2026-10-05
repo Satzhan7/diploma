@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import {
   Box,
   Button,
@@ -170,12 +170,17 @@ export const BriefWizard: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const existing = useQuery({
-    queryKey: ['brief', routeId],
+    queryKey: ['briefs', 'detail', routeId],
     queryFn: () => briefsService.get(routeId!),
     enabled: !!routeId,
   });
+  // Fill the form once: a later refetch must not overwrite what is being typed.
+  const filled = useRef(false);
   useEffect(() => {
-    if (existing.data) setFields(fieldsOf(existing.data));
+    if (existing.data && !filled.current) {
+      filled.current = true;
+      setFields(fieldsOf(existing.data));
+    }
   }, [existing.data]);
 
   const status = existing.data?.status ?? 'draft';
@@ -199,7 +204,7 @@ export const BriefWizard: React.FC = () => {
     // The URL stays /new: switching routes would remount the wizard mid-way.
     if (!briefId) setBriefId(saved.id);
     queryClient.invalidateQueries({ queryKey: ['briefs'] });
-    queryClient.setQueryData(['brief', saved.id], saved);
+    queryClient.setQueryData(['briefs', 'detail', saved.id], saved);
     return saved;
   };
 
