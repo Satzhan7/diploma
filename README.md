@@ -8,7 +8,7 @@
 
 AdPartners.kz is a full-stack web application that brings influencer-marketing discovery, negotiation, collaboration, and analytics into a single product targeted at the Kazakh and CIS markets. Brands publish campaigns ("orders"), influencers apply, and both sides chat in real time, sign collaborations, and track performance on role-specific dashboards.
 
-Product decisions for the post-diploma launch are in [docs/PRODUCT-BRIEF.md](docs/PRODUCT-BRIEF.md); the build plan is in [tasks/todo.md](tasks/todo.md).
+Product decisions, the UI system and the architecture are in [docs/PROJECT.md](docs/PROJECT.md); the build plan is in [tasks/todo.md](tasks/todo.md).
 
 ## Tech stack
 
@@ -189,13 +189,11 @@ SQL
 
 | File | Purpose |
 |---|---|
-| [docs/PRODUCT-BRIEF.md](docs/PRODUCT-BRIEF.md) | Product decisions for the Kazakhstan launch |
+| [docs/PROJECT.md](docs/PROJECT.md) | Product decisions, design direction, UI system, rules and architecture |
 | [tasks/todo.md](tasks/todo.md) | Productization plan, phase by phase |
 | [docs/adr/](docs/adr/) | Architecture decisions (0001: the Brief → Application → Deal pipeline) |
 | [DEPLOY.md](DEPLOY.md) | Production deployment with Docker Compose and nginx |
 | [docs/ENVIRONMENT_VARIABLES.md](docs/ENVIRONMENT_VARIABLES.md) | Every environment variable and where it is read |
-| [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) | Theme tokens and shared UI components |
-| [docs/audits/](docs/audits/) | Project audits |
 
 ## License
 

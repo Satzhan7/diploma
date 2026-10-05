@@ -229,7 +229,7 @@ export class OrderApplicationsService {
       );
     }
 
-    // Read ownership (SECURITY_AUDIT H3): only the applicant, the brand that
+    // Read ownership: only the applicant, the brand that
     // owns the order, or an admin may view an application.
     if (
       requester &&
@@ -347,7 +347,7 @@ export class OrderApplicationsService {
 
     // Acceptance (owning brand or admin): order assignment, application save,
     // deal creation and reject-others are one atomic transaction with a row
-    // lock on the order (SECURITY_AUDIT M2). The chat seed stays outside the
+    // lock on the order. The chat seed stays outside the
     // transaction — it is best-effort and must not roll back an acceptance.
     if (nextStatus === ApplicationStatus.ACCEPTED) {
       const applicantProfile = await this.profilesService.findByUserId(

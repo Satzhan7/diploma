@@ -18,7 +18,7 @@ import { toChatEvent, toMessageEvent } from './chat-events';
 
 @WebSocketGateway({
   cors: {
-    // Same origin policy as the HTTP API (SECURITY_AUDIT H1).
+    // Same origin policy as the HTTP API.
     origin: process.env.CORS_ORIGIN
       ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
       : 'http://localhost:3000',
@@ -96,7 +96,7 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() chatId: string,
   ): Promise<void> {
-    // Membership check (SECURITY_AUDIT H1): only chat participants may join
+    // Membership check: only chat participants may join
     // the room. ChatsService.findOne throws if userId is not a participant.
     const userId = this.socketUserMap.get(client.id);
     if (!userId) {

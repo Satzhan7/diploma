@@ -36,7 +36,7 @@ import { EmailVerification } from './auth/entities/email-verification.entity';
       isGlobal: true,
       load: [configuration],
     }),
-    // Global rate limit (SECURITY_AUDIT H5); auth routes carry a tighter
+    // Global rate limit; auth routes carry a tighter
     // per-route @Throttle in AuthController.
     ThrottlerModule.forRoot([
       {

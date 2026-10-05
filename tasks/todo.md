@@ -1,6 +1,6 @@
 # Productization Plan — AdPartners.kz v1 (2026-10-01)
 
-Source: [docs/PRODUCT-BRIEF.md](../docs/PRODUCT-BRIEF.md) (from the grilling session) + project audit of 2026-10-01.
+Source: [docs/PROJECT.md](../docs/PROJECT.md) (product brief, from the grilling session) + project audit of 2026-10-01.
 Format: ECC `blueprint`. Each step is about one PR. Dependencies are listed under "Needs". Steps marked ∥ can run in parallel with the other ∥ steps in the same phase.
 Rule: every phase ends with something deployable and usable. Nothing goes to `main` without passing CI.
 
@@ -276,14 +276,14 @@ P0 → P1 → R1 → R1b → R2 → R3 → R4 → R5 → R6 → P7 → P8 (D2)
 ```
 
 ## Review gate (blueprint adversarial check)
-- Before starting each phase: re-read PRODUCT-BRIEF anti-goals; cut any step that serves agencies, in-app payments, or social APIs.
+- Before starting each phase: re-read the anti-goals in docs/PROJECT.md; cut any step that serves agencies, in-app payments, or social APIs.
 - After each phase or redesign PR: run `code-review` on the diff; `security-review` on P0, R2 (D5 email paths), R4 (uploads, paywall) and P7; record the result here.
 
 ---
 
 # Audit Remediation — Approved Implementation Plan (2026-07-14)
 
-Scope approved after `docs/audits/PROJECT_FULL_AUDIT_AND_IMPROVEMENT_REVIEW.md` Phase 0 review. Preserve pre-existing UI/UX work; this plan owns only audit remediation.
+Scope approved after the full project audit's Phase 0 review (audit since consolidated into `docs/PROJECT.md`). Preserve pre-existing UI/UX work; this plan owns only audit remediation.
 
 ## Phase 1 — Token boundary (P0)
 - [x] Add explicit access/refresh JWT token types and enforce them for REST, refresh, and Socket.IO.
@@ -343,14 +343,14 @@ Verification: after recreating the backend, CORS preflight returned the matching
 Prior audit-fix plan complete — see git history (fa98eed and earlier).
 
 ## Phase A — Documentation
-- [ ] docs/UI_UX_AUDIT.md — full audit with severity
-- [ ] docs/PRODUCT_STRUCTURE.md — personas, IA, navigation
-- [ ] docs/DESIGN_SYSTEM.md — typography, color, spacing, radius, shadows, motion
-- [ ] docs/THEMING.md — light/dark token strategy
-- [ ] docs/COMPONENT_LIBRARY.md — shared component contracts
-- [ ] docs/RESPONSIVE_STRATEGY.md — breakpoints, adaptive nav
-- [ ] docs/ACCESSIBILITY_AUDIT.md — WCAG AA findings + fixes
-- [ ] docs/UI_PERFORMANCE.md — rendering, bundle, CLS
+- [ ] docs/PROJECT.md — full audit with severity
+- [ ] docs/PROJECT.md — personas, IA, navigation
+- [ ] docs/PROJECT.md — typography, color, spacing, radius, shadows, motion
+- [ ] docs/PROJECT.md — light/dark token strategy
+- [ ] docs/PROJECT.md — shared component contracts
+- [ ] docs/PROJECT.md — breakpoints, adaptive nav
+- [ ] docs/PROJECT.md — WCAG AA findings + fixes
+- [ ] docs/PROJECT.md — rendering, bundle, CLS
 
 ## Phase B — Foundation (code)
 - [ ] theme.ts → Design System 2.0: semantic tokens, dark mode, typography scale, component variants, shadows

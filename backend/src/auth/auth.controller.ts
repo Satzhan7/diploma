@@ -25,7 +25,7 @@ import {
 import { Throttle } from '@nestjs/throttler';
 
 // Tighter rate limit than the global default for login/register/refresh, the
-// brute-force surface (SECURITY_AUDIT H5). Applied per route, not per class:
+// brute-force surface. Applied per route, not per class:
 // GET /auth/profile runs on every page load and must not share this budget.
 export const AUTH_THROTTLE = { default: { limit: 10, ttl: 60000 } };
 // Each resend can send an email, so it gets a smaller budget per IP.

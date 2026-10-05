@@ -11,7 +11,7 @@ Before R2 the app had three overlapping ways to record that a brand and a creato
 2. **Matches.** A "connect" button and the matching recommendations created a `match` row, and accepting an application upserted one too. Matches carried hand-typed statistics (`stats`, `engagementRate`, …) that fed the Statistics dashboards.
 3. **Collaborations.** A third table with its own status (`active`, `completed`, `cancelled`) that nothing in the UI created.
 
-Each had its own status list, and none of them could say what happens after the brand accepts: whether the creator posted, whether the brand confirmed, or who may change what. The core loop in `docs/PRODUCT-BRIEF.md` needs exactly that: *brief → applicants → accept → deal → proof → confirm → ratings*.
+Each had its own status list, and none of them could say what happens after the brand accepts: whether the creator posted, whether the brand confirmed, or who may change what. The core loop in `docs/PROJECT.md` needs exactly that: *brief → applicants → accept → deal → proof → confirm → ratings*.
 
 ## Decision
 

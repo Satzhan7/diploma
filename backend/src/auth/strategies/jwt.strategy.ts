@@ -32,7 +32,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
     // Minimal claim object only — never the full entity. Spreading the entity
     // here strips class-transformer metadata, which previously leaked the
-    // password/refreshToken hashes through serialization (SECURITY_AUDIT C3).
+    // password/refreshToken hashes through serialization.
     return {
       id: user.id,
       sub: payload.sub,
