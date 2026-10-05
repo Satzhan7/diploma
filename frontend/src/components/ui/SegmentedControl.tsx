@@ -27,7 +27,17 @@ export function SegmentedControl<T extends string>({
   ...props
 }: SegmentedControlProps<T>) {
   return (
-    <HStack role="group" aria-label={label} spacing={0} bg="bg.subtle" borderRadius="md" p="3px" w="fit-content" {...props}>
+    <HStack
+      role="group"
+      aria-label={label}
+      spacing={0}
+      bg="bg.subtle"
+      borderRadius="md"
+      p="3px"
+      w="fit-content"
+      maxW="full"
+      {...props}
+    >
       {segments.map((s) => {
         const on = s.value === value;
         return (
@@ -42,6 +52,7 @@ export function SegmentedControl<T extends string>({
             h={size === 'sm' ? '26px' : '34px'}
             px={size === 'sm' ? 2.5 : 4}
             borderRadius="10px"
+            flexShrink={0}
             variant="unstyled"
             fontWeight="600"
             fontSize={size === 'sm' ? 'xs' : 'sm'}
