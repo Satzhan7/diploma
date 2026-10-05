@@ -6,15 +6,19 @@
   "noEnd": "Без даты окончания",
   "expired": "Pro закончился {{date}}",
   "testBadge": "Тестовый период",
-  "testNote": "Бесплатно в тестовый период: у всех брендов Pro без оплаты, никто ничего не платит.",
+  "testNote": "Pro подключается за {{price}} на 30 дней, никто ничего не платит.",
   "perMonth": "в месяц",
   "currentBadge": "Текущий",
   "free": {
-    "name": "Free",
-    "price": "₸0"
+    "name": "Free"
   },
   "pro": {
-    "name": "Pro"
+    "name": "Pro",
+    "afterTest": "{{price}} в месяц после теста"
+  },
+  "checkout": {
+    "button": "Подключить Pro за {{price}}",
+    "done": "Pro подключён до {{date}}"
   },
   "features": {
     "briefs": "Брифы без ограничений",

@@ -71,6 +71,8 @@ export enum ErrorCode {
 
   // Plans
   PLAN_PRO_REQUIRED = 'PLAN_PRO_REQUIRED',
+  PLAN_ALREADY_PRO = 'PLAN_ALREADY_PRO',
+  PLAN_CHECKOUT_UNAVAILABLE = 'PLAN_CHECKOUT_UNAVAILABLE',
 }
 
 /** Exception body for a coded error: `throw new NotFoundException(apiError(...))`. */

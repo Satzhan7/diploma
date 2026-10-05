@@ -52,8 +52,9 @@ export default () => ({
     accessTokenExpiration: process.env.JWT_ACCESS_EXPIRATION || '15m',
     refreshTokenExpiration: process.env.JWT_REFRESH_EXPIRATION || '7d',
   },
-  // Test period (decision D3): every brand gets Pro at no cost while this is
-  // on. Turning it off restores the paywall; nothing else changes.
+  // Test period (decision D3): while this is on, a brand gets Pro for 30 days
+  // through a 0 ₸ checkout (POST /plan/checkout). Off: no checkout; a brand
+  // pays by Kaspi transfer and an admin sets the plan.
   freeTestPeriod: parseBooleanEnv(
     'FREE_TEST_PERIOD',
     process.env.FREE_TEST_PERIOD,

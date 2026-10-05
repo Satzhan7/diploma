@@ -63,5 +63,7 @@
   "PORTFOLIO_FULL": "The portfolio holds up to 6 images. Remove one to add another.",
   "VERIFICATION_NOT_FOUND": "This claim no longer exists.",
   "VERIFICATION_STALE": "The creator sent a new claim, or it was already reviewed. Reload the queue.",
-  "PLAN_PRO_REQUIRED": "This filter comes with the Pro plan."
+  "PLAN_PRO_REQUIRED": "This filter comes with the Pro plan.",
+  "PLAN_ALREADY_PRO": "Pro is already on.",
+  "PLAN_CHECKOUT_UNAVAILABLE": "The ₸0 checkout is only available during the test period."
 }

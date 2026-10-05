@@ -4,6 +4,7 @@ import {
   AlertDescription,
   AlertIcon,
   Box,
+  Button,
   Heading,
   HStack,
   List,
@@ -14,8 +15,9 @@ import {
   Skeleton,
   Stack,
   Text,
+  useToast,
 } from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { FiCheck } from 'react-icons/fi';
 import { useAuth } from '../../contexts/AuthContext';
@@ -29,7 +31,10 @@ const FEATURES: Record<PlanName, string[]> = {
   pro: ['everything', 'verified'],
 };
 
-/** `/brand/plan`: Free vs Pro. No payment step while the test period is on. */
+/**
+ * `/brand/plan`: Free vs Pro. In the test period Pro comes from a 0 ₸ checkout;
+ * after it, from a Kaspi transfer that an admin confirms.
+ */
 export const Plan: React.FC = () => {
   const { t } = useTranslation('plan');
   const plan = useQuery({ queryKey: ['plan', 'me'], queryFn: planService.mine });
@@ -50,7 +55,26 @@ export const Plan: React.FC = () => {
 
 const PlanBody: React.FC<{ info: PlanInfo }> = ({ info }) => {
   const { t } = useTranslation('plan');
+  const toast = useToast();
+  const queryClient = useQueryClient();
   const expired = info.storedPlan === 'pro' && info.proExpiresAt && new Date(info.proExpiresAt).getTime() <= Date.now();
+  const inTest = info.checkoutPriceKzt !== null;
+  const checkout = useMutation({
+    mutationFn: planService.checkout,
+    onSuccess: (next) => {
+      queryClient.setQueryData(['plan', 'me'], next);
+      toast({
+        status: 'success',
+        title: t('checkout.done', { date: next.proExpiresAt ? formatDate(next.proExpiresAt) : '' }),
+      });
+    },
+    onError: (error) => toast({ status: 'error', title: getErrorMessage(error) }),
+    // Everything that read the old plan: the Applicants toggle and its refused queries.
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['plan'] });
+      queryClient.invalidateQueries({ queryKey: ['applicants'] });
+    },
+  });
 
   return (
     <Stack spacing={6}>
@@ -61,7 +85,7 @@ const PlanBody: React.FC<{ info: PlanInfo }> = ({ info }) => {
             <StatusPill tone="success" mr={2}>
               {t('testBadge')}
             </StatusPill>
-            {t('testNote')}
+            {t('testNote', { price: formatMoney(info.checkoutPriceKzt ?? 0) })}
           </AlertDescription>
         </Alert>
       )}
@@ -88,11 +112,16 @@ const PlanBody: React.FC<{ info: PlanInfo }> = ({ info }) => {
               </HStack>
               <Box>
                 <Text as="span" textStyle="display" fontSize="3xl" sx={{ fontVariantNumeric: 'tabular-nums' }}>
-                  {name === 'free' ? t('free.price') : formatMoney(info.priceKzt)}
+                  {formatMoney(name === 'pro' ? (info.checkoutPriceKzt ?? info.priceKzt) : 0)}
                 </Text>{' '}
-                {name === 'pro' && (
+                {name === 'pro' && !inTest && (
                   <Text as="span" color="fg.muted">
                     {t('perMonth')}
+                  </Text>
+                )}
+                {name === 'pro' && inTest && (
+                  <Text fontSize="sm" color="fg.muted" mt={1}>
+                    {t('pro.afterTest', { price: formatMoney(info.priceKzt) })}
                   </Text>
                 )}
               </Box>
@@ -104,15 +133,25 @@ const PlanBody: React.FC<{ info: PlanInfo }> = ({ info }) => {
                   </ListItem>
                 ))}
               </List>
-              {name === 'pro' && current && !info.freeTestPeriod && (
+              {name === 'pro' && current && (
                 <Text fontSize="sm" color="fg.muted">
                   {info.proExpiresAt ? t('until', { date: formatDate(info.proExpiresAt) }) : t('noEnd')}
                 </Text>
               )}
-              {name === 'pro' && expired && !info.freeTestPeriod && (
+              {name === 'pro' && expired && (
                 <Text fontSize="sm" color="warn">
                   {t('expired', { date: formatDate(info.proExpiresAt!) })}
                 </Text>
+              )}
+              {name === 'pro' && inTest && !current && (
+                <Button
+                  colorScheme="brand"
+                  alignSelf="flex-start"
+                  isLoading={checkout.isPending}
+                  onClick={() => checkout.mutate()}
+                >
+                  {t('checkout.button', { price: formatMoney(info.checkoutPriceKzt ?? 0) })}
+                </Button>
               )}
             </Stack>
           );

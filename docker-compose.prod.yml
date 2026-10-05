@@ -44,6 +44,7 @@ services:
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASS=${SMTP_PASS}
       - MAIL_FROM=${MAIL_FROM}
+      # true: brands get Pro through a 0 ₸ checkout; false: Kaspi + admin.
       - FREE_TEST_PERIOD=${FREE_TEST_PERIOD:-true}
       - KASPI_PHONE=${KASPI_PHONE:-}
       - KASPI_RECIPIENT=${KASPI_RECIPIENT:-}

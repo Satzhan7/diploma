@@ -15,7 +15,7 @@
 | `DB_NAME` | yes | `configuration.ts:8` | ✅ `influencer_platform` | ✅ `${DB_NAME}` | `diploma` | OK |
 | `DB_SYNCHRONIZE` | no (dev), forced false (prod) | `configuration.ts:9-14` | ❌ (non-production defaults true) | ✅ literal `false` | `true` only outside production | Production synchronization is never enabled. |
 | `DB_MIGRATIONS_RUN` | no | `configuration.ts` (`parseBooleanEnv`), `app.module.ts` | ❌ | ✅ `${DB_MIGRATIONS_RUN:-}` | on when `NODE_ENV=production`, else off | `true` / `false` (case-insensitive); empty = default; anything else stops startup. Kill switch for applying migrations on boot; with `false`, apply them with `npm run migration:run:prod`. |
-| `FREE_TEST_PERIOD` | no | `configuration.ts` (`parseBooleanEnv`), `plan/plan.service.ts` | ✅ `${FREE_TEST_PERIOD:-true}` | ✅ `${FREE_TEST_PERIOD:-true}` | `true` | Test period (D3): `true` gives every brand the Pro plan at no cost and the Plan page shows no payment step; `false` restores the paywall (stored plan + `proExpiresAt`). Anything other than `true`/`false` stops startup. |
+| `FREE_TEST_PERIOD` | no | `configuration.ts` (`parseBooleanEnv`), `plan/plan.service.ts` | ✅ `${FREE_TEST_PERIOD:-true}` | ✅ `${FREE_TEST_PERIOD:-true}` | `true` | Test period (D3): `true` opens the 0 ₸ Pro checkout (`POST /plan/checkout`, Pro for 30 days; nobody is charged) and the Plan page shows no Kaspi step; `false` closes the checkout (409 `PLAN_CHECKOUT_UNAVAILABLE`): a brand pays by Kaspi transfer and an admin sets Pro. The effective plan always comes from the stored plan + `proExpiresAt`. Anything other than `true`/`false` stops startup. |
 | `KASPI_PHONE`, `KASPI_RECIPIENT` | no | `configuration.ts`, `plan/plan.service.ts` | ❌ | ✅ `${KASPI_PHONE:-}`, `${KASPI_RECIPIENT:-}` | none, `AdPartners` | Kaspi transfer details on the Plan page outside the test period; without a phone the page asks brands to contact support. |
 | `UPLOAD_DIR` | no | `configuration.ts`, `files/storage/local-disk.storage.ts` | ✅ `/data/uploads` (volume `uploads_data`) | ✅ `/data/uploads` (volume `uploads_data`) | `./uploads` under the working directory | Private directory for uploaded images (D4). Back the volume up with the database. |
 | `ADMIN_PASSWORD` | no | `scripts/create-admin.ts` only | ❌ | ❌ (pass with `-e` when running the script) | generated and printed once | Password for `admin:create`, at least 12 characters. Not read by the server. |
@@ -49,7 +49,7 @@
 | `JWT_REFRESH_SECRET` | yes | backend | `CHANGE_ME_A_DIFFERENT_64_RANDOM_CHARS` | Placeholder ✅; must differ from access secret. |
 | `DB_SYNCHRONIZE` | no | backend | `false` | Forced false by production compose. |
 | `DB_MIGRATIONS_RUN` | no | backend | `true` | Passed through by production compose; `false` skips migrations on boot. |
-| `FREE_TEST_PERIOD` | no | backend | `true` | `false` ends the test period: Free brands lose "Verified only" until an admin sets Pro. |
+| `FREE_TEST_PERIOD` | no | backend | `true` | `false` ends the test period: the 0 ₸ checkout closes, and a Free brand gets Pro only after a Kaspi transfer and an admin setting the plan. |
 | `KASPI_PHONE`, `KASPI_RECIPIENT` | no | backend | `+7 700 000 00 00`, `AdPartners` | Replace with the real Kaspi number before the test period ends. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | `SMTP_HOST`, `MAIL_FROM` yes | backend | `smtp.example.kz`, `587`, `false`, `CHANGE_ME`, `CHANGE_ME`, `AdPartners <no-reply@adpartners.kz>` | Provider chosen with D2 (KZ data residency). |
 

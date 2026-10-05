@@ -6,15 +6,19 @@
   "noEnd": "Аяқталу күні жоқ",
   "expired": "Pro {{date}} аяқталды",
   "testBadge": "Сынақ кезеңі",
-  "testNote": "Сынақ кезеңінде тегін: барлық брендте Pro ақысыз, ешкім төлемейді.",
+  "testNote": "Pro 30 күнге {{price}} бағасымен қосылады, ешкім ештеңе төлемейді.",
   "perMonth": "айына",
   "currentBadge": "Ағымдағы",
   "free": {
-    "name": "Free",
-    "price": "₸0"
+    "name": "Free"
   },
   "pro": {
-    "name": "Pro"
+    "name": "Pro",
+    "afterTest": "Сынақтан кейін айына {{price}}"
+  },
+  "checkout": {
+    "button": "Pro қосу: {{price}}",
+    "done": "Pro {{date}} дейін қосылды"
   },
   "features": {
     "briefs": "Шектеусіз брифтер",

@@ -17,6 +17,7 @@ import {
 } from './entities/order-application.entity';
 import { UserRole } from '../users/entities/user.entity';
 import { Plan } from '../plan/plan';
+import { PlanService } from '../plan/plan.service';
 
 // PlanService and FilesService stubs: a Free brand, no portfolios.
 const planStub = (plan = Plan.FREE) => ({
@@ -546,6 +547,44 @@ describe('OrderApplicationsService applicant ranking', () => {
     });
     expect(planService.forUser).toHaveBeenCalledWith('brand-user');
     expect(repository.find).not.toHaveBeenCalled();
+  });
+
+  it('refuses verified-only results to a stored-Free brand in the test period until it checks out', async () => {
+    let stored = { id: 'brand-profile', plan: Plan.FREE, proExpiresAt: null };
+    const config = { get: jest.fn((key: string) => key === 'freeTestPeriod') };
+    const manager = {
+      createQueryBuilder: () => ({
+        setLock: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn(async () => stored),
+      }),
+      update: jest.fn(async (_entity: unknown, _id: string, patch: object) => {
+        stored = { ...stored, ...patch };
+      }),
+      insert: jest.fn(async () => undefined),
+    };
+    const planService = new PlanService(
+      { findOne: jest.fn(async () => stored) } as any,
+      config as any,
+      { transaction: async (work: any) => work(manager) } as any,
+    );
+    const { service, repository } = serviceWith([]);
+    (service as any).planService = planService;
+    const query = { take: 20, skip: 0, verifiedOnly: true };
+
+    await expect(
+      service.findByOrder('order-1', 'brand-user', query),
+    ).rejects.toMatchObject({
+      status: 403,
+      response: expect.objectContaining({
+        code: ErrorCode.PLAN_PRO_REQUIRED,
+      }),
+    });
+    expect(repository.find).not.toHaveBeenCalled();
+
+    await planService.checkout('brand-user');
+    await service.findByOrder('order-1', 'brand-user', query);
+    expect(repository.find).toHaveBeenCalledTimes(1);
   });
 
   it('gives a Pro brand only verified creators', async () => {

@@ -46,8 +46,9 @@ services:
       - SMTP_HOST=mailpit
       - SMTP_PORT=1025
       - MAIL_FROM=AdPartners <no-reply@adpartners.kz>
-      # Test period on by default; FREE_TEST_PERIOD=false docker compose up
-      # turns the paywall back on.
+      # Test period on by default: brands get Pro through a 0 ₸ checkout.
+      # FREE_TEST_PERIOD=false docker compose up closes the checkout (Pro then
+      # only after a Kaspi transfer and an admin setting the plan).
       - FREE_TEST_PERIOD=${FREE_TEST_PERIOD:-true}
       - UPLOAD_DIR=/data/uploads
     volumes:

@@ -154,8 +154,8 @@ export class Profile {
   isSubscribedToOrders: boolean;
 
   // Brand subscription. Never read these directly for access checks: use
-  // effectivePlan() (src/plan/plan.ts), which applies the expiry and the test
-  // period. Excluded from serialization so other users never see them.
+  // effectivePlan() (src/plan/plan.ts), which applies the expiry. Excluded
+  // from serialization so other users never see them.
   @Exclude()
   @Column({ type: 'enum', enum: Plan, default: Plan.FREE })
   plan: Plan;

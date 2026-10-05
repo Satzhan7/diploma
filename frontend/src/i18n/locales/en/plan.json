@@ -6,15 +6,19 @@
   "noEnd": "No end date",
   "expired": "Pro ended on {{date}}",
   "testBadge": "Test period",
-  "testNote": "Free during the test period: every brand has Pro at no cost, and nobody is charged.",
+  "testNote": "Pro costs {{price}} for 30 days, and nobody is charged.",
   "perMonth": "per month",
   "currentBadge": "Current",
   "free": {
-    "name": "Free",
-    "price": "₸0"
+    "name": "Free"
   },
   "pro": {
-    "name": "Pro"
+    "name": "Pro",
+    "afterTest": "{{price}} per month after the test"
+  },
+  "checkout": {
+    "button": "Get Pro for {{price}}",
+    "done": "Pro is on until {{date}}"
   },
   "features": {
     "briefs": "Unlimited briefs",
