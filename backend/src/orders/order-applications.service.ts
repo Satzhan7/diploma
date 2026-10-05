@@ -13,6 +13,7 @@ import {
   ApplicationStatus,
 } from './entities/order-application.entity';
 import { Order, OrderStatus } from './entities/order.entity';
+import { todayInKazakhstan } from './brief-completeness';
 import { CreateOrderApplicationDto } from './dto/create-order-application.dto';
 import { UpdateOrderApplicationDto } from './dto/update-order-application.dto';
 import { ProfilesService } from '../profiles/profiles.service';
@@ -130,6 +131,16 @@ export class OrderApplicationsService {
             apiError(
               ErrorCode.ORDER_NOT_OPEN,
               'This order is not open for applications',
+            ),
+          );
+        }
+        // The feed hides a brief once its post-by date arrives; a stale tab or
+        // a direct link must not get an application in after that either.
+        if (order.postBy && order.postBy <= todayInKazakhstan()) {
+          throw new BadRequestException(
+            apiError(
+              ErrorCode.ORDER_EXPIRED,
+              'The post-by date of this order has passed',
             ),
           );
         }

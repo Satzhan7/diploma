@@ -9,6 +9,8 @@ import {
   assertApplicationTransition,
 } from './order-applications.service';
 import { OrderStatus } from './entities/order.entity';
+import { todayInKazakhstan } from './brief-completeness';
+import { ErrorCode } from '../common/errors/error-codes';
 import {
   ApplicationStatus,
   OrderApplication,
@@ -62,6 +64,21 @@ describe('OrderApplicationsService.create', () => {
     await expect(
       service.create('order-1', 'influencer-1', { message: 'Interested' }),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('rejects applications once the post-by date has arrived', async () => {
+    manager.findOne.mockResolvedValueOnce({
+      id: 'order-1',
+      status: OrderStatus.OPEN,
+      postBy: todayInKazakhstan(),
+    });
+
+    await expect(
+      service.create('order-1', 'influencer-1', { message: 'Interested' }),
+    ).rejects.toMatchObject({
+      response: { code: ErrorCode.ORDER_EXPIRED },
+    });
+    expect(manager.save).not.toHaveBeenCalled();
   });
 
   it('maps a database uniqueness race to a conflict response', async () => {

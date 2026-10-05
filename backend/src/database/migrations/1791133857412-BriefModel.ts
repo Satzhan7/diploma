@@ -36,8 +36,21 @@ export class BriefModel1791133857412 implements MigrationInterface {
     await queryRunner.query(
       `UPDATE "orders" SET "budgetMin" = "budget", "budgetMax" = "budget"`,
     );
+    // Only real calendar days are cast: a day past the month's end (such as
+    // 2026-02-31) would make the cast throw. CASE fixes the evaluation order,
+    // so the arithmetic only ever sees strings the pattern accepted.
     await queryRunner.query(
-      `UPDATE "orders" SET "postBy" = substring("deadline" from 1 for 10)::date WHERE "deadline" ~ '^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])'`,
+      `UPDATE "orders" SET "postBy" = substring("deadline" from 1 for 10)::date WHERE CASE WHEN "deadline" ~ '^[1-9]\\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])' THEN substring("deadline" from 9 for 2)::int <= extract(day from date_trunc('month', (substring("deadline" from 1 for 7) || '-01')::date) + interval '1 month - 1 day') ELSE false END`,
+    );
+    // Old open briefs lack the new required fields: the feed hides them and
+    // the wizard refuses to edit an open brief into shape. Send them back to
+    // draft so the brand can finish and publish them; every other brief was
+    // published when it was created.
+    await queryRunner.query(
+      `UPDATE "orders" SET "status" = 'draft' WHERE "status" = 'open' AND ("goal" IS NULL OR "platform" IS NULL OR COALESCE("formats", '') = '' OR COALESCE(trim("city"), '') = '' OR "budgetMin" IS NULL OR "budgetMin" < 1 OR "budgetMax" IS NULL OR COALESCE(trim("deliverables"), '') = '' OR "postBy" IS NULL OR COALESCE(trim("title"), '') = '' OR COALESCE(trim("description"), '') = '')`,
+    );
+    await queryRunner.query(
+      `UPDATE "orders" SET "publishedAt" = "createdAt" WHERE "status" <> 'draft'`,
     );
     await queryRunner.query(`ALTER TABLE "orders" DROP COLUMN "budget"`);
     await queryRunner.query(`ALTER TABLE "orders" DROP COLUMN "deadline"`);
