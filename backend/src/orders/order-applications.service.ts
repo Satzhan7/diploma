@@ -238,7 +238,7 @@ export class OrderApplicationsService {
     userId: string,
     userRole: UserRole,
     updateOrderApplicationDto: UpdateOrderApplicationDto,
-  ): Promise<OrderApplication> {
+  ): Promise<OrderApplication & { dealId?: string }> {
     const application = await this.findOne(id);
 
     // If user is an influencer, they can only update their own applications and only the message or proposedPrice
@@ -346,7 +346,7 @@ export class OrderApplicationsService {
         );
       }
 
-      const { brandUserId, influencerUserId, orderTitle } =
+      const { dealId, brandUserId, influencerUserId, orderTitle } =
         await this.dataSource.transaction(async (manager) => {
           const order = await manager.findOne(Order, {
             where: { id: application.order.id },
@@ -410,7 +410,7 @@ export class OrderApplicationsService {
 
           // One deal per accepted application, created under the same
           // order lock (docs/adr/0001-deal-pipeline.md).
-          await this.dealsService.createForAcceptedApplication(
+          const deal = await this.dealsService.createForAcceptedApplication(
             manager,
             order,
             current,
@@ -418,6 +418,7 @@ export class OrderApplicationsService {
           );
 
           return {
+            dealId: deal.id,
             brandUserId: application.order.brand.user.id,
             influencerUserId: application.applicant.id,
             orderTitle: order.title,
@@ -443,7 +444,8 @@ export class OrderApplicationsService {
       }
 
       application.status = ApplicationStatus.ACCEPTED;
-      return withPublicUsers(application);
+      // The client opens the new deal from here.
+      return Object.assign(withPublicUsers(application), { dealId });
     }
 
     if (nextStatus) {

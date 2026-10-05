@@ -267,6 +267,7 @@ describe('Application status transitions', () => {
       }),
       'influencer-profile',
     );
+    expect(result.dealId).toBe('deal-1');
   });
 
   it('accept fails if the locked row was withdrawn concurrently', async () => {
