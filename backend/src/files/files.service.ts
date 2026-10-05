@@ -14,6 +14,7 @@ import { FileKind, StoredFile } from './entities/stored-file.entity';
 import { StorageService } from './storage/storage.service';
 import { newStorageKey } from './storage/local-disk.storage';
 import { detectImageType } from './image-type';
+import { stripImageMetadata } from './image-metadata';
 import { Profile } from '../profiles/entities/profile.entity';
 import { UserRole } from '../users/entities/user.entity';
 import { apiError, ErrorCode } from '../common/errors/error-codes';
@@ -55,16 +56,16 @@ export class FilesService {
     upload: UploadedImage | undefined,
     position: number | null = null,
   ): Promise<StoredFile> {
-    const type = this.checkImage(upload);
+    const { type, data } = this.checkImage(upload);
     const storageKey = newStorageKey(type.ext);
-    await this.storage.put(storageKey, upload.buffer);
+    await this.storage.put(storageKey, data);
     try {
       return await manager.save(
         manager.create(StoredFile, {
           ownerId,
           kind,
           mimeType: type.mimeType,
-          size: upload.size,
+          size: data.length,
           storageKey,
           position,
         }),
@@ -75,7 +76,10 @@ export class FilesService {
     }
   }
 
-  /** Throws the client error for a missing or non-image upload. */
+  /**
+   * The image type and the bytes to store (metadata removed). Throws the
+   * client error for a missing, non-image or broken upload.
+   */
   checkImage(upload: UploadedImage | undefined) {
     if (!upload?.buffer?.length) {
       throw new BadRequestException(
@@ -83,7 +87,8 @@ export class FilesService {
       );
     }
     const type = detectImageType(upload.buffer);
-    if (!type) {
+    const data = type && stripImageMetadata(upload.buffer, type);
+    if (!type || !data) {
       throw new UnsupportedMediaTypeException(
         apiError(
           ErrorCode.UPLOAD_UNSUPPORTED_TYPE,
@@ -91,7 +96,7 @@ export class FilesService {
         ),
       );
     }
-    return type;
+    return { type, data };
   }
 
   /** Removes stored bytes; failures are logged, not thrown (cleanup path). */

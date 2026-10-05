@@ -22,10 +22,10 @@ function statsChanged(profile: Profile, patch: UpdateProfileDto): boolean {
   const followersChanged =
     patch.followersCount !== undefined &&
     patch.followersCount !== profile.followersCount;
+  const rate = patch.metrics?.averageEngagementRate;
   const rateChanged =
-    patch.metrics !== undefined &&
-    Number(patch.metrics?.averageEngagementRate) !==
-      Number(profile.metrics?.averageEngagementRate);
+    rate !== undefined &&
+    Number(rate) !== Number(profile.metrics?.averageEngagementRate);
   return followersChanged || rateChanged;
 }
 
@@ -124,6 +124,10 @@ export class ProfilesService {
     // them by hand removes it; the creator resubmits to get it back.
     if (profile.verifiedAt && statsChanged(profile, profileData)) {
       profile.verifiedAt = null;
+    }
+    // A partial metrics patch keeps the other figures (the approved rate too).
+    if (profileData.metrics) {
+      profileData.metrics = { ...profile.metrics, ...profileData.metrics };
     }
 
     // Update profile with new data (except socialMedia)

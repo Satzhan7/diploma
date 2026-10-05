@@ -4,7 +4,11 @@ import { FileKind } from './entities/stored-file.entity';
 import { UserRole } from '../users/entities/user.entity';
 import { ErrorCode } from '../common/errors/error-codes';
 
-const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0]);
+// Signature + an empty IEND chunk: the smallest structure the checks accept.
+const PNG = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0, 0x49, 0x45, 0x4e,
+  0x44, 0xae, 0x42, 0x60, 0x82,
+]);
 
 describe('FilesService', () => {
   const storage = {

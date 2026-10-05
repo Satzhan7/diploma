@@ -74,4 +74,15 @@ describe('ProfilesService.update and the Verified badge', () => {
     });
     expect(profile.verifiedAt).toBeNull();
   });
+
+  it('keeps the badge and the approved rate when metrics come without it', async () => {
+    const profile = await setup().update('p1', {
+      metrics: { averageViews: 5000 } as never,
+    });
+    expect(profile.verifiedAt).toEqual(new Date('2026-10-01'));
+    expect(profile.metrics).toEqual({
+      averageEngagementRate: 6.8,
+      averageViews: 5000,
+    });
+  });
 });

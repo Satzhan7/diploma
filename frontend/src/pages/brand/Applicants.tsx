@@ -109,7 +109,7 @@ export const Applicants: React.FC = () => {
   });
 
   // The plan can end while the page is open: fall back and offer the upgrade.
-  const planRefused = getErrorCode(feed.error) === 'PLAN_PRO_REQUIRED';
+  const planRefused = [feed.error, shortlist.error].some((e) => getErrorCode(e) === 'PLAN_PRO_REQUIRED');
   useEffect(() => {
     if (!planRefused) return;
     setVerifiedOnly(false);
