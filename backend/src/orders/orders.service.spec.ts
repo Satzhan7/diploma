@@ -1,172 +1,379 @@
-import { ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { OrdersService } from './orders.service';
-import { OrderStatus } from './entities/order.entity';
+import { Order, OrderStatus } from './entities/order.entity';
+import { ApplicationStatus } from './entities/order-application.entity';
+import { BriefGoal, BriefPlatform } from './brief-options';
+import { briefProblems, todayInKazakhstan } from './brief-completeness';
 import { UserRole } from '../users/entities/user.entity';
+import { ErrorCode } from '../common/errors/error-codes';
 
-describe('OrdersService profile-backed ownership', () => {
-  it('resolves the authenticated user to a profile before listing assigned orders', async () => {
-    const orderRepository = { find: jest.fn().mockResolvedValue([]) };
-    const profilesService = {
-      findByUserId: jest.fn().mockResolvedValue({ id: 'influencer-profile-1' }),
-    };
-    const service = new OrdersService(
-      orderRepository as any,
-      profilesService as any,
-      {} as any,
+const brandUser = { id: 'brand-user', name: 'Brand', email: 'b@example.test' };
+const creatorUser = { id: 'creator-user', name: 'Cr', email: 'c@example.test' };
+const BRAND_PROFILE = { id: 'brand-profile', type: 'brand' };
+
+const inDays = (days: number) =>
+  new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+
+function completeBrief(overrides: Partial<Order> = {}): Order {
+  return {
+    id: 'order-1',
+    title: 'Autumn menu',
+    description: 'Second café in Almaty',
+    goal: BriefGoal.LAUNCH,
+    platform: BriefPlatform.INSTAGRAM,
+    formats: ['reel'],
+    city: 'almaty',
+    languages: ['ru'],
+    category: 'Food',
+    budgetMin: 60000,
+    budgetMax: 120000,
+    deliverables: '1 Reel + 3 Stories',
+    requirements: null,
+    postBy: inDays(10),
+    publishedAt: null,
+    status: OrderStatus.DRAFT,
+    brandId: 'brand-profile',
+    brand: { id: 'brand-profile', user: brandUser },
+    ...overrides,
+  } as unknown as Order;
+}
+
+// One fake per collaborator; `locked` is the row the transaction sees.
+function setup(locked: Order | null, profile: object = BRAND_PROFILE) {
+  const manager = {
+    findOne: jest.fn().mockResolvedValue(locked),
+    save: jest.fn().mockImplementation((_e, entity) => entity),
+    update: jest.fn().mockResolvedValue({ affected: 1 }),
+  };
+  const rawCounts: object[] = [];
+  const qb: Record<string, jest.Mock> = {};
+  for (const m of ['select', 'addSelect', 'where', 'setParameters', 'groupBy'])
+    qb[m] = jest.fn().mockReturnValue(qb);
+  qb.getRawMany = jest.fn().mockResolvedValue(rawCounts);
+  const applications = {
+    createQueryBuilder: jest.fn().mockReturnValue(qb),
+    find: jest.fn().mockResolvedValue([]),
+  };
+  const orderRepository = {
+    create: jest.fn().mockImplementation((o) => ({ id: 'new-order', ...o })),
+    save: jest.fn().mockImplementation((o) => o),
+    findOne: jest.fn().mockResolvedValue(locked),
+    findAndCount: jest.fn().mockResolvedValue([[], 0]),
+  };
+  const profilesService = {
+    findByUserId: jest.fn().mockResolvedValue(profile),
+  };
+  const dataSource = {
+    transaction: jest.fn().mockImplementation((cb) => cb(manager)),
+    getRepository: () => applications,
+  };
+  const service = new OrdersService(
+    orderRepository as any,
+    profilesService as any,
+    dataSource as any,
+  );
+  return { service, manager, orderRepository, applications, rawCounts };
+}
+
+async function codeOf(promise: Promise<unknown>) {
+  try {
+    await promise;
+  } catch (error) {
+    return (error as { response?: { code?: string } }).response?.code;
+  }
+  throw new Error('expected a rejection');
+}
+
+describe('brief completeness', () => {
+  it('passes a complete brief', () => {
+    expect(briefProblems(completeBrief())).toEqual([]);
+  });
+
+  it('names every missing field with isNotEmpty', () => {
+    const problems = briefProblems(
+      completeBrief({ description: '  ', formats: [], postBy: null }),
     );
+    expect(problems.map((p) => [p.field, p.rule])).toEqual([
+      ['description', 'isNotEmpty'],
+      ['formats', 'isNotEmpty'],
+      ['postBy', 'isNotEmpty'],
+    ]);
+  });
 
-    await service.findByInfluencer('influencer-user-1');
+  it('keeps category, languages and requirements optional', () => {
+    const brief = completeBrief({ category: null, languages: [] });
+    expect(briefProblems(brief)).toEqual([]);
+  });
 
-    expect(profilesService.findByUserId).toHaveBeenCalledWith(
-      'influencer-user-1',
+  it('rejects a budget range that runs backwards (budgetRange)', () => {
+    const problems = briefProblems(
+      completeBrief({ budgetMin: 200000, budgetMax: 100000 }),
     );
-    expect(orderRepository.find).toHaveBeenCalledWith(
+    expect(problems).toEqual([
+      expect.objectContaining({ field: 'budgetMax', rule: 'budgetRange' }),
+    ]);
+  });
+
+  it('rejects a post-by date of today or earlier (futureDate)', () => {
+    const now = new Date('2026-10-04T20:00:00Z'); // 01:00 on the 5th in KZ
+    expect(todayInKazakhstan(now)).toBe('2026-10-05');
+    const problems = briefProblems(
+      completeBrief({ postBy: '2026-10-05' }),
+      now,
+    );
+    expect(problems).toEqual([
+      expect.objectContaining({ field: 'postBy', rule: 'futureDate' }),
+    ]);
+    expect(briefProblems(completeBrief({ postBy: '2026-10-06' }), now)).toEqual(
+      [],
+    );
+  });
+});
+
+describe('OrdersService.create', () => {
+  it('always saves a draft owned by the brand profile', async () => {
+    const { service, orderRepository } = setup(completeBrief());
+    await service.create('brand-user', { title: 'Draft' });
+    expect(orderRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { influencerId: 'influencer-profile-1' },
+        title: 'Draft',
+        brandId: 'brand-profile',
+        status: OrderStatus.DRAFT,
       }),
     );
+  });
+
+  it('refuses a creator profile', async () => {
+    const { service } = setup(null, { id: 'p', type: 'influencer' });
+    expect(await codeOf(service.create('u', { title: 'Draft' }))).toBe(
+      ErrorCode.ORDER_BRAND_ONLY,
+    );
+  });
+});
+
+describe('OrdersService.publish', () => {
+  it('opens a complete draft and stamps publishedAt', async () => {
+    const draft = completeBrief();
+    const { service, manager } = setup(draft);
+    await service.publish('order-1', 'brand-user');
+    expect(manager.save).toHaveBeenCalledWith(
+      Order,
+      expect.objectContaining({
+        status: OrderStatus.OPEN,
+        publishedAt: expect.any(Date),
+      }),
+    );
+  });
+
+  it('answers VALIDATION_FAILED with field details for an incomplete draft', async () => {
+    const { service, manager } = setup(
+      completeBrief({ goal: null, budgetMin: 5, budgetMax: 1 }),
+    );
+    const error = await service
+      .publish('order-1', 'brand-user')
+      .catch((e: BadRequestException) => e);
+    expect(error).toBeInstanceOf(BadRequestException);
+    expect((error as BadRequestException).getResponse()).toMatchObject({
+      code: ErrorCode.VALIDATION_FAILED,
+      details: [
+        expect.objectContaining({ field: 'goal', rule: 'isNotEmpty' }),
+        expect.objectContaining({ field: 'budgetMax', rule: 'budgetRange' }),
+      ],
+    });
+    expect(manager.save).not.toHaveBeenCalled();
+  });
+
+  it.each([OrderStatus.OPEN, OrderStatus.CANCELLED, OrderStatus.IN_PROGRESS])(
+    'refuses to publish a %s brief',
+    async (status) => {
+      const { service } = setup(completeBrief({ status }));
+      expect(await codeOf(service.publish('order-1', 'brand-user'))).toBe(
+        ErrorCode.ORDER_INVALID_TRANSITION,
+      );
+    },
+  );
+
+  it("refuses another brand's brief", async () => {
+    const { service } = setup(completeBrief({ brandId: 'other-brand' }));
+    await expect(service.publish('order-1', 'brand-user')).rejects.toThrow(
+      ForbiddenException,
+    );
+  });
+});
+
+describe('OrdersService.update', () => {
+  it('saves a partial change to a draft without checking completeness', async () => {
+    const { service, manager } = setup(completeBrief({ description: null }));
+    await service.update('order-1', 'brand-user', { budgetMin: 10 });
+    expect(manager.save).toHaveBeenCalledWith(
+      Order,
+      expect.objectContaining({ budgetMin: 10, description: null }),
+    );
+  });
+
+  it('keeps an open brief complete', async () => {
+    const { service, manager } = setup(
+      completeBrief({ status: OrderStatus.OPEN }),
+    );
+    expect(
+      await codeOf(
+        service.update('order-1', 'brand-user', { deliverables: null }),
+      ),
+    ).toBe(ErrorCode.VALIDATION_FAILED);
+    expect(manager.save).not.toHaveBeenCalled();
+  });
+
+  it('ignores fields that were not sent', async () => {
+    const { service, manager } = setup(completeBrief());
+    await service.update('order-1', 'brand-user', { title: undefined });
+    expect(manager.save).toHaveBeenCalledWith(
+      Order,
+      expect.objectContaining({ title: 'Autumn menu' }),
+    );
+  });
+
+  it.each([
+    OrderStatus.IN_PROGRESS,
+    OrderStatus.COMPLETED,
+    OrderStatus.CANCELLED,
+  ])('refuses to edit a %s brief (ORDER_NOT_EDITABLE)', async (status) => {
+    const { service } = setup(completeBrief({ status }));
+    const promise = service.update('order-1', 'brand-user', { title: 'New' });
+    await expect(promise).rejects.toThrow(ConflictException);
+    expect(await codeOf(promise)).toBe(ErrorCode.ORDER_NOT_EDITABLE);
+  });
+});
+
+describe('OrdersService.cancel', () => {
+  it.each([OrderStatus.DRAFT, OrderStatus.OPEN])(
+    'cancels a %s brief and rejects the pending applications',
+    async (status) => {
+      const { service, manager } = setup(completeBrief({ status }));
+      await service.cancel('order-1', 'brand-user');
+      expect(manager.save).toHaveBeenCalledWith(
+        Order,
+        expect.objectContaining({ status: OrderStatus.CANCELLED }),
+      );
+      expect(manager.update).toHaveBeenCalledWith(
+        expect.anything(),
+        { order: { id: 'order-1' }, status: ApplicationStatus.PENDING },
+        { status: ApplicationStatus.REJECTED },
+      );
+    },
+  );
+
+  it('refuses to cancel a brief in progress', async () => {
+    const { service, manager } = setup(
+      completeBrief({ status: OrderStatus.IN_PROGRESS }),
+    );
+    expect(await codeOf(service.cancel('order-1', 'brand-user'))).toBe(
+      ErrorCode.ORDER_INVALID_TRANSITION,
+    );
+    expect(manager.update).not.toHaveBeenCalled();
   });
 });
 
 describe('OrdersService.findOne access control', () => {
-  const brandUser = {
-    id: 'brand-user',
-    name: 'Brand',
-    email: 'brand@example.test',
-    role: 'brand',
-  };
-  const influencerUser = {
-    id: 'influencer-user',
-    name: 'Influencer',
-    email: 'influencer@example.test',
-    role: 'influencer',
-  };
-  const order = (status: OrderStatus) => ({
-    id: 'order-1',
-    title: 'Brief',
-    status,
-    brandId: 'brand-profile',
-    brand: { id: 'brand-profile', user: brandUser },
-    influencerId: status === OrderStatus.OPEN ? null : 'influencer-profile',
-    influencer:
-      status === OrderStatus.OPEN
-        ? null
-        : { id: 'influencer-profile', user: influencerUser },
-  });
-  const serviceFor = (status: OrderStatus, applied = false) =>
-    new OrdersService(
-      { findOne: jest.fn().mockResolvedValue(order(status)) } as any,
-      {} as any,
-      {
-        getRepository: () => ({
-          exists: jest.fn().mockResolvedValue(applied),
-        }),
-      } as any,
-    );
-  const stranger = { id: 'other-user', role: UserRole.INFLUENCER };
+  const withCreator = (status: OrderStatus) =>
+    completeBrief({
+      status,
+      influencer: { id: 'creator-profile', user: creatorUser },
+    } as Partial<Order>);
 
   it.each([
     ['owning brand', { id: 'brand-user', role: UserRole.BRAND }],
-    [
-      'assigned influencer',
-      { id: 'influencer-user', role: UserRole.INFLUENCER },
-    ],
-    ['admin', { id: 'admin-user', role: UserRole.ADMIN }],
-  ])(
-    'returns the full order without emails to the %s',
-    async (_label, viewer) => {
-      const result = (await serviceFor(OrderStatus.IN_PROGRESS).findOne(
-        'order-1',
-        viewer,
-      )) as any;
-      expect(result.influencer.user).toEqual(
-        expect.objectContaining({ id: 'influencer-user', name: 'Influencer' }),
-      );
-      expect(result.brand.user.id).toBe('brand-user');
-      expect(JSON.stringify(result)).not.toContain('@example.test');
-    },
-  );
-
-  it('keeps the brief visible to an applicant after it leaves OPEN', async () => {
-    for (const status of [
-      OrderStatus.IN_PROGRESS,
-      OrderStatus.COMPLETED,
-      OrderStatus.CANCELLED,
-    ]) {
-      const result = await serviceFor(status, true).findOne(
-        'order-1',
-        stranger,
-      );
-      expect(result.id).toBe('order-1');
-      expect(result).not.toHaveProperty('influencer');
-      expect(JSON.stringify(result)).not.toContain('@example.test');
-    }
+    ['admin', { id: 'admin', role: UserRole.ADMIN }],
+  ])('shows any status to the %s with counts', async (_, viewer) => {
+    const { service, rawCounts } = setup(withCreator(OrderStatus.DRAFT));
+    rawCounts.push({ orderId: 'order-1', total: '3', pending: '2' });
+    const view = await service.findOne('order-1', viewer);
+    expect(view).toMatchObject({ applicationsCount: 3, pendingCount: 2 });
   });
 
-  it('returns 403 to another user when the order is not open', async () => {
-    for (const status of [
-      OrderStatus.DRAFT,
-      OrderStatus.IN_PROGRESS,
-      OrderStatus.REVIEW,
-      OrderStatus.COMPLETED,
-      OrderStatus.CANCELLED,
-    ]) {
-      const error = await serviceFor(status)
-        .findOne('order-1', stranger)
-        .catch((e) => e);
-      expect(error).toBeInstanceOf(ForbiddenException);
-      expect(error.getStatus()).toBe(403);
-    }
+  it('shows an open brief to any creator, without emails', async () => {
+    const { service } = setup(completeBrief({ status: OrderStatus.OPEN }));
+    const view = await service.findOne('order-1', {
+      id: 'stranger',
+      role: UserRole.INFLUENCER,
+    });
+    expect(view.myApplication).toBeNull();
+    expect(JSON.stringify(view)).not.toContain('@example.test');
   });
 
-  it('returns a public projection of an open order without emails', async () => {
-    const result = await serviceFor(OrderStatus.OPEN).findOne(
-      'order-1',
-      stranger,
-    );
+  it('hides a draft from creators', async () => {
+    const { service } = setup(completeBrief());
+    await expect(
+      service.findOne('order-1', { id: 'stranger', role: UserRole.INFLUENCER }),
+    ).rejects.toThrow(ForbiddenException);
+  });
 
-    expect(result.brand.user).toEqual(
-      expect.objectContaining({ id: 'brand-user', name: 'Brand' }),
-    );
-    expect(JSON.stringify(result)).not.toContain('@example.test');
-    expect(result).not.toHaveProperty('influencer');
+  it('keeps a closed brief visible to an applicant', async () => {
+    const { service, applications } = setup(withCreator(OrderStatus.CANCELLED));
+    applications.find.mockResolvedValue([
+      {
+        id: 'app-1',
+        status: ApplicationStatus.REJECTED,
+        proposedPrice: 90000,
+        order: { id: 'order-1' },
+      },
+    ]);
+    const view = await service.findOne('order-1', {
+      id: 'applicant',
+      role: UserRole.INFLUENCER,
+    });
+    expect(view.myApplication).toEqual({
+      id: 'app-1',
+      status: ApplicationStatus.REJECTED,
+      proposedPrice: 90000,
+    });
+  });
+
+  it('keeps an accepted brief visible to the assigned creator', async () => {
+    const { service } = setup(withCreator(OrderStatus.IN_PROGRESS));
+    await expect(
+      service.findOne('order-1', {
+        id: 'creator-user',
+        role: UserRole.INFLUENCER,
+      }),
+    ).resolves.toMatchObject({ id: 'order-1' });
   });
 });
 
-describe('OrdersService participant lists', () => {
-  const withEmail = (id: string) => ({
-    id,
-    name: id,
-    email: `${id}@example.test`,
-    password: '$2b$10$hash',
-  });
-  const orders = () => [
-    {
-      id: 'order-1',
-      brand: { id: 'brand-profile', user: withEmail('brand-user') },
-      influencer: { id: 'creator-profile', user: withEmail('creator-user') },
-      applications: [
-        { id: 'application-1', applicant: withEmail('creator-user') },
-        { id: 'application-2', applicant: withEmail('other-creator') },
-      ],
-    },
-  ];
-  const service = () =>
-    new OrdersService(
-      { find: jest.fn().mockResolvedValue(orders()) } as any,
-      { findByUserId: jest.fn().mockResolvedValue({ id: 'profile' }) } as any,
-      {} as any,
+describe('OrdersService lists', () => {
+  it('pages the brand list and filters by status', async () => {
+    const { service, orderRepository, rawCounts } = setup(null);
+    orderRepository.findAndCount.mockResolvedValue([[completeBrief()], 41]);
+    rawCounts.push({ orderId: 'order-1', total: '4', pending: '1' });
+    const page = await service.findByBrand('brand-user', {
+      take: 20,
+      skip: 20,
+      status: [OrderStatus.DRAFT],
+    });
+    expect(orderRepository.findAndCount).toHaveBeenCalledWith(
+      expect.objectContaining({ take: 20, skip: 20 }),
     );
+    expect(page).toMatchObject({ total: 41, take: 20, skip: 20 });
+    expect(page.items[0]).toMatchObject({
+      applicationsCount: 4,
+      pendingCount: 1,
+    });
+    expect(JSON.stringify(page)).not.toContain('@example.test');
+  });
 
-  it.each([
-    ['GET /orders/brand', (s: OrdersService) => s.findByBrand('brand-user')],
-    [
-      'GET /orders/influencer',
-      (s: OrdersService) => s.findByInfluencer('creator-user'),
-    ],
-  ])('%s returns no email', async (_route, call) => {
-    const body = JSON.stringify(await call(service()));
-    expect(body).toContain('other-creator');
-    expect(body).not.toMatch(/email|password|\$2b\$/);
+  it('resolves the creator profile before listing assigned briefs', async () => {
+    const { service, orderRepository } = setup(null, {
+      id: 'creator-profile',
+    });
+    await service.findByInfluencer('creator-user', { take: 5, skip: 0 });
+    expect(orderRepository.findAndCount).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { influencerId: 'creator-profile' },
+        take: 5,
+      }),
+    );
   });
 });

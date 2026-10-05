@@ -24,7 +24,7 @@ export interface DealView {
   creator: DealParty;
 }
 
-function toParty(
+export function toParty(
   profile: Profile,
   preferredName: string | undefined,
 ): DealParty {

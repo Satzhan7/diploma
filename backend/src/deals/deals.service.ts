@@ -26,14 +26,6 @@ const DEAL_RELATIONS = {
   creatorProfile: { user: true },
 };
 
-// `deadline` is still free text on orders (R3 replaces it with a date).
-// Keep it only when it starts with an ISO date.
-export function toPostByDate(deadline: string | null | undefined) {
-  const match = /^(\d{4}-\d{2}-\d{2})/.exec(deadline ?? '');
-  if (!match || Number.isNaN(Date.parse(match[1]))) return null;
-  return match[1];
-}
-
 @Injectable()
 export class DealsService {
   constructor(
@@ -61,9 +53,10 @@ export class DealsService {
         applicationId: application.id,
         brandProfileId: order.brandId,
         creatorProfileId,
-        agreedPrice: application.proposedPrice ?? order.budget,
-        deliverables: order.requirements || null,
-        postBy: toPostByDate(order.deadline),
+        // A creator who names no price takes the top of the brief's range.
+        agreedPrice: application.proposedPrice ?? order.budgetMax ?? 0,
+        deliverables: order.deliverables || null,
+        postBy: order.postBy ?? null,
         status: DealStatus.ACTIVE,
       }),
     );

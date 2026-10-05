@@ -14,15 +14,16 @@ export const InfluencerDashboard: React.FC = () => {
   const { t } = useTranslation('influencer');
 
   const applications = useQuery({
-    queryKey: ['applications', 'mine'],
-    queryFn: applicationsService.getMyApplications,
+    queryKey: ['applications', 'summary'],
+    queryFn: () => applicationsService.mine({ take: 100 }),
   });
   const activeDeals = useQuery({
     queryKey: ['deals', 'active-count'],
     queryFn: () => dealsService.list({ status: 'active', take: 1 }),
   });
 
-  const list = applications.data ?? [];
+  // Counts over the newest 100 until R6 adds a summary endpoint.
+  const list = applications.data?.items ?? [];
   const count = (status: string) => list.filter((a) => a.status === status).length;
 
   return (
@@ -46,7 +47,11 @@ export const InfluencerDashboard: React.FC = () => {
               </>
             ) : (
               <>
-                <StatCard icon={FiSend} label={t('dashboard.overview.applicationsSent')} value={list.length} />
+                <StatCard
+                  icon={FiSend}
+                  label={t('dashboard.overview.applicationsSent')}
+                  value={applications.data?.total ?? 0}
+                />
                 <StatCard icon={FiClock} label={t('dashboard.overview.pending')} value={count('pending')} />
                 <StatCard icon={FiThumbsUp} label={t('dashboard.overview.accepted')} value={count('accepted')} />
                 <StatCard

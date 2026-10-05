@@ -6,6 +6,8 @@ import {
   Patch,
   Param,
   Delete,
+  ParseUUIDPipe,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -23,6 +25,10 @@ import { CreateOrderApplicationDto } from './dto/create-order-application.dto';
 import { UpdateOrderApplicationDto } from './dto/update-order-application.dto';
 import { OrderApplication } from './entities/order-application.entity';
 import { UserRole } from '../users/entities/user.entity';
+import { ShortlistApplicationDto } from './dto/shortlist-application.dto';
+import { ListOrderApplicationsQueryDto } from './dto/list-applications-query.dto';
+import { ApplicantView, MyApplicationView } from './applicant-view';
+import { Page, PaginationQueryDto } from '../common/dto/pagination-query.dto';
 
 @ApiTags('order-applications')
 @ApiBearerAuth()
@@ -34,29 +40,25 @@ export class OrderApplicationsController {
   ) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get all applications for the current user' })
-  @ApiResponse({
-    status: 200,
-    description: 'Return all applications for the current user',
-    type: [OrderApplication],
-  })
-  findAll(@GetCurrentUser('sub') userId: string): Promise<OrderApplication[]> {
-    return this.orderApplicationsService.findAllByUser(userId);
+  @ApiOperation({ summary: "The current user's applications, newest first" })
+  findAll(
+    @GetCurrentUser('sub') userId: string,
+    @Query() query: PaginationQueryDto,
+  ): Promise<Page<MyApplicationView>> {
+    return this.orderApplicationsService.findAllByUser(userId, query);
   }
 
   @Get('order/:orderId')
   @Roles(UserRole.BRAND)
-  @ApiOperation({ summary: 'Get all applications for an order' })
-  @ApiResponse({
-    status: 200,
-    description: 'Return all applications for the order',
-    type: [OrderApplication],
+  @ApiOperation({
+    summary: 'Applicants of a brief, best match first (owning brand)',
   })
   findByOrder(
-    @Param('orderId') orderId: string,
+    @Param('orderId', ParseUUIDPipe) orderId: string,
     @GetCurrentUser('sub') userId: string,
-  ): Promise<OrderApplication[]> {
-    return this.orderApplicationsService.findByOrder(orderId, userId);
+    @Query() query: ListOrderApplicationsQueryDto,
+  ): Promise<Page<ApplicantView>> {
+    return this.orderApplicationsService.findByOrder(orderId, userId, query);
   }
 
   @Post(':orderId')
@@ -68,7 +70,7 @@ export class OrderApplicationsController {
     type: OrderApplication,
   })
   create(
-    @Param('orderId') orderId: string,
+    @Param('orderId', ParseUUIDPipe) orderId: string,
     @GetCurrentUser('sub') userId: string,
     @Body() createOrderApplicationDto: CreateOrderApplicationDto,
   ): Promise<OrderApplication> {
@@ -89,7 +91,7 @@ export class OrderApplicationsController {
     type: OrderApplication,
   })
   findOne(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @GetCurrentUser('sub') userId: string,
     @GetCurrentUser('role') userRole: UserRole,
   ): Promise<OrderApplication> {
@@ -107,7 +109,7 @@ export class OrderApplicationsController {
     type: OrderApplication,
   })
   update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @GetCurrentUser('sub') userId: string,
     @GetCurrentUser('role') userRole: UserRole,
     @Body() updateOrderApplicationDto: UpdateOrderApplicationDto,
@@ -120,6 +122,21 @@ export class OrderApplicationsController {
     );
   }
 
+  @Patch(':id/shortlist')
+  @Roles(UserRole.BRAND)
+  @ApiOperation({ summary: 'Add to or remove from the shortlist' })
+  shortlist(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetCurrentUser('sub') userId: string,
+    @Body() dto: ShortlistApplicationDto,
+  ): Promise<{ id: string; shortlisted: boolean }> {
+    return this.orderApplicationsService.setShortlisted(
+      id,
+      userId,
+      dto.shortlisted,
+    );
+  }
+
   @Delete(':id')
   @Roles(UserRole.INFLUENCER)
   @ApiOperation({ summary: 'Withdraw an application' })
@@ -129,7 +146,7 @@ export class OrderApplicationsController {
     type: OrderApplication,
   })
   withdraw(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @GetCurrentUser('sub') userId: string,
   ): Promise<OrderApplication> {
     return this.orderApplicationsService.withdraw(id, userId);

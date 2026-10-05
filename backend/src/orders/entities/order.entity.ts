@@ -7,10 +7,18 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Profile } from '../../profiles/entities/profile.entity';
 import { OrderApplication } from './order-application.entity';
+import {
+  BriefCity,
+  BriefFormat,
+  BriefGoal,
+  BriefLanguage,
+  BriefPlatform,
+} from '../brief-options';
 
 export enum OrderStatus {
   DRAFT = 'draft',
@@ -42,33 +50,60 @@ export class Order {
       'We are looking for influencers to promote our new skincare line...',
     description: 'Detailed description of the order',
   })
-  @Column({ type: 'text' })
-  description: string;
+  @Column({ type: 'text', nullable: true })
+  description: string | null;
+
+  @ApiProperty({ enum: BriefGoal, required: false })
+  @Column({ type: 'enum', enum: BriefGoal, nullable: true })
+  goal: BriefGoal | null;
+
+  @ApiProperty({ enum: BriefPlatform, required: false })
+  @Column({ type: 'enum', enum: BriefPlatform, nullable: true })
+  platform: BriefPlatform | null;
+
+  @ApiProperty({ example: ['reel', 'stories'], required: false })
+  @Column({ type: 'simple-array', nullable: true })
+  formats: BriefFormat[] | null;
+
+  @ApiProperty({ example: 'almaty', required: false })
+  @Column({ type: 'varchar', nullable: true })
+  city: BriefCity | null;
+
+  @ApiProperty({ example: ['kk', 'ru'], required: false })
+  @Column({ type: 'simple-array', nullable: true })
+  languages: BriefLanguage[] | null;
+
+  @ApiProperty({ example: 'food', required: false })
+  @Column({ type: 'varchar', nullable: true })
+  category: string | null;
+
+  @ApiProperty({ example: 60000, description: 'Budget per creator, ₸' })
+  @Column({ type: 'int', nullable: true })
+  budgetMin: number | null;
+
+  @ApiProperty({ example: 120000, description: 'Budget per creator, ₸' })
+  @Column({ type: 'int', nullable: true })
+  budgetMax: number | null;
+
+  @ApiProperty({ example: '1 Reel + 3 Stories', required: false })
+  @Column({ type: 'text', nullable: true })
+  deliverables: string | null;
 
   @ApiProperty({
-    example: 1000,
-    description: 'The budget for the order in USD',
+    example: 'Tag @cafe.daryn, show the pistachio croissant',
+    description: 'What the post must include',
+    required: false,
   })
-  @Column()
-  budget: number;
+  @Column({ type: 'text', nullable: true })
+  requirements: string | null;
 
-  @ApiProperty({ example: 'Beauty', description: 'The category of the order' })
-  @Column()
-  category: string;
+  @ApiProperty({ example: '2026-10-15', description: 'Post by (YYYY-MM-DD)' })
+  @Column({ type: 'date', nullable: true })
+  postBy: string | null;
 
-  @ApiProperty({
-    example: 'Post 3 Instagram stories and 1 feed post...',
-    description: 'Specific requirements for the order',
-  })
-  @Column({ type: 'text' })
-  requirements: string;
-
-  @ApiProperty({
-    example: '2024-05-01',
-    description: 'The deadline for the order',
-  })
-  @Column()
-  deadline: string;
+  @ApiProperty({ required: false })
+  @Column({ type: 'timestamptz', nullable: true })
+  publishedAt: Date | null;
 
   @ApiProperty({
     enum: OrderStatus,
@@ -78,13 +113,14 @@ export class Order {
   @Column({
     type: 'enum',
     enum: OrderStatus,
-    default: OrderStatus.OPEN,
+    default: OrderStatus.DRAFT,
   })
   status: OrderStatus;
 
   @ApiProperty({ type: () => Profile })
   @ManyToOne(() => Profile)
   @JoinColumn({ name: 'brand_id' })
+  @Index()
   brand: Profile;
 
   @Column({ name: 'brand_id' })
@@ -93,6 +129,7 @@ export class Order {
   @ApiProperty({ type: () => Profile })
   @ManyToOne(() => Profile, { nullable: true })
   @JoinColumn({ name: 'influencer_id' })
+  @Index()
   influencer: Profile;
 
   @Column({ name: 'influencer_id', nullable: true })

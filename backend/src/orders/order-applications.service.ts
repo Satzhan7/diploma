@@ -13,6 +13,7 @@ import {
   ApplicationStatus,
 } from './entities/order-application.entity';
 import { Order, OrderStatus } from './entities/order.entity';
+import { todayInKazakhstan } from './brief-completeness';
 import { CreateOrderApplicationDto } from './dto/create-order-application.dto';
 import { UpdateOrderApplicationDto } from './dto/update-order-application.dto';
 import { ProfilesService } from '../profiles/profiles.service';
@@ -20,6 +21,16 @@ import { UserRole } from '../users/entities/user.entity';
 import { toPublicUser } from '../users/public-user';
 import { ChatsService } from '../chats/chats.service';
 import { DealsService } from '../deals/deals.service';
+import { MatchProfile, matchScore } from '../profiles/match-score';
+import { Page, PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { ListOrderApplicationsQueryDto } from './dto/list-applications-query.dto';
+import {
+  ApplicantView,
+  briefProfile,
+  MyApplicationView,
+  toApplicantView,
+  toMyApplicationView,
+} from './applicant-view';
 import { apiError, ErrorCode } from '../common/errors/error-codes';
 
 // Allowed application status changes. Every role, admin included, goes
@@ -123,6 +134,16 @@ export class OrderApplicationsService {
             ),
           );
         }
+        // The feed hides a brief once its post-by date arrives; a stale tab or
+        // a direct link must not get an application in after that either.
+        if (order.postBy && order.postBy <= todayInKazakhstan()) {
+          throw new BadRequestException(
+            apiError(
+              ErrorCode.ORDER_EXPIRED,
+              'The post-by date of this order has passed',
+            ),
+          );
+        }
 
         const existingApplication = await manager.findOne(OrderApplication, {
           where: {
@@ -162,15 +183,25 @@ export class OrderApplicationsService {
     }
   }
 
-  async findAllByUser(userId: string): Promise<OrderApplication[]> {
-    const applications = await this.orderApplicationRepository.find({
-      where: { applicant: { id: userId } },
-      relations: ['order', 'order.brand', 'order.brand.user'],
-      order: {
-        createdAt: 'DESC',
-      },
-    });
-    return applications.map(withPublicUsers);
+  async findAllByUser(
+    userId: string,
+    query: PaginationQueryDto,
+  ): Promise<Page<MyApplicationView>> {
+    const { take, skip } = query;
+    const [applications, total] =
+      await this.orderApplicationRepository.findAndCount({
+        where: { applicant: { id: userId } },
+        relations: { order: { brand: { user: true } } },
+        order: { createdAt: 'DESC', id: 'DESC' },
+        take,
+        skip,
+      });
+    return {
+      items: applications.map(toMyApplicationView),
+      total,
+      take,
+      skip,
+    };
   }
 
   // `requester` is passed from the controller for direct reads; internal
@@ -218,7 +249,7 @@ export class OrderApplicationsService {
     userId: string,
     userRole: UserRole,
     updateOrderApplicationDto: UpdateOrderApplicationDto,
-  ): Promise<OrderApplication> {
+  ): Promise<OrderApplication & { dealId?: string }> {
     const application = await this.findOne(id);
 
     // If user is an influencer, they can only update their own applications and only the message or proposedPrice
@@ -326,7 +357,7 @@ export class OrderApplicationsService {
         );
       }
 
-      const { brandUserId, influencerUserId, orderTitle } =
+      const { dealId, brandUserId, influencerUserId, orderTitle } =
         await this.dataSource.transaction(async (manager) => {
           const order = await manager.findOne(Order, {
             where: { id: application.order.id },
@@ -390,7 +421,7 @@ export class OrderApplicationsService {
 
           // One deal per accepted application, created under the same
           // order lock (docs/adr/0001-deal-pipeline.md).
-          await this.dealsService.createForAcceptedApplication(
+          const deal = await this.dealsService.createForAcceptedApplication(
             manager,
             order,
             current,
@@ -398,6 +429,7 @@ export class OrderApplicationsService {
           );
 
           return {
+            dealId: deal.id,
             brandUserId: application.order.brand.user.id,
             influencerUserId: application.applicant.id,
             orderTitle: order.title,
@@ -423,7 +455,8 @@ export class OrderApplicationsService {
       }
 
       application.status = ApplicationStatus.ACCEPTED;
-      return withPublicUsers(application);
+      // The client opens the new deal from here.
+      return Object.assign(withPublicUsers(application), { dealId });
     }
 
     if (nextStatus) {
@@ -477,15 +510,11 @@ export class OrderApplicationsService {
     return withPublicUsers(application);
   }
 
-  async findByOrder(
-    orderId: string,
-    userId: string,
-  ): Promise<OrderApplication[]> {
+  private async ownedOrder(orderId: string, userId: string): Promise<Order> {
     const order = await this.orderRepository.findOne({
       where: { id: orderId },
-      relations: ['brand', 'brand.user'],
+      relations: { brand: { user: true } },
     });
-
     if (!order) {
       throw new NotFoundException(
         apiError(
@@ -494,7 +523,6 @@ export class OrderApplicationsService {
         ),
       );
     }
-
     if (order.brand.user.id !== userId) {
       throw new ForbiddenException(
         apiError(
@@ -503,11 +531,79 @@ export class OrderApplicationsService {
         ),
       );
     }
+    return order;
+  }
 
+  // Applicants best match first: matchScore of the brief's targeting against
+  // the creator profile, ties oldest first. A brief has tens of applicants,
+  // so ranking and paging happen in memory after one query.
+  async findByOrder(
+    orderId: string,
+    userId: string,
+    query: ListOrderApplicationsQueryDto,
+  ): Promise<Page<ApplicantView>> {
+    const { take, skip, shortlisted } = query;
+    const order = await this.ownedOrder(orderId, userId);
     const applications = await this.orderApplicationRepository.find({
-      where: { order: { id: orderId } },
-      relations: ['applicant', 'order'],
+      where: {
+        order: { id: orderId },
+        status: Not(ApplicationStatus.WITHDRAWN),
+        ...(shortlisted !== undefined && { shortlisted }),
+      },
+      relations: { applicant: { profile: true } },
     });
-    return applications.map(withPublicUsers);
+
+    const target = briefProfile(order, order.brand);
+    const ranked = applications
+      .map((application) =>
+        toApplicantView(
+          application,
+          matchScore(
+            target,
+            application.applicant.profile ?? ({} as MatchProfile),
+          ),
+        ),
+      )
+      .sort(
+        (a, b) =>
+          b.score.total - a.score.total ||
+          a.createdAt.getTime() - b.createdAt.getTime(),
+      );
+    return {
+      items: ranked.slice(skip, skip + take),
+      total: ranked.length,
+      take,
+      skip,
+    };
+  }
+
+  // The brand's private shortlist; only pending applications can move on it.
+  async setShortlisted(
+    id: string,
+    userId: string,
+    shortlisted: boolean,
+  ): Promise<{ id: string; shortlisted: boolean }> {
+    const application = await this.findOne(id);
+    if (application.order.brand?.user?.id !== userId) {
+      throw new ForbiddenException(
+        apiError(
+          ErrorCode.APPLICATION_ACCESS_DENIED,
+          'You can only shortlist applications for your own orders',
+        ),
+      );
+    }
+    const result = await this.orderApplicationRepository.update(
+      { id, status: ApplicationStatus.PENDING },
+      { shortlisted },
+    );
+    if (!result.affected) {
+      throw new BadRequestException(
+        apiError(
+          ErrorCode.APPLICATION_NOT_PENDING,
+          'Only pending applications can be shortlisted',
+        ),
+      );
+    }
+    return { id, shortlisted };
   }
 }

@@ -7,6 +7,7 @@ import { FiCheckCircle } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../types/user';
 import { dealsService } from '../services/deals';
+import { nextSkip } from '../services/page';
 import { DealCard } from '../components/DealCard';
 import { CardGridSkeleton, EmptyState, PageHeader, SegmentedControl } from '../components/ui';
 
@@ -18,7 +19,6 @@ export const Deals: React.FC = () => {
   const { t } = useTranslation('deals');
   const { user } = useAuth();
   const isBrand = user?.role === UserRole.BRAND;
-  const base = isBrand ? '/brand' : '/influencer';
   const [filter, setFilter] = useState<Filter>('all');
 
   const query = useInfiniteQuery({
@@ -30,8 +30,7 @@ export const Deals: React.FC = () => {
         status: filter === 'all' ? undefined : filter,
       }),
     initialPageParam: 0,
-    getNextPageParam: (last) =>
-      last.skip + last.items.length < last.total ? last.skip + last.items.length : undefined,
+    getNextPageParam: nextSkip,
   });
 
   const deals = query.data?.pages.flatMap((p) => p.items) ?? [];
@@ -62,7 +61,7 @@ export const Deals: React.FC = () => {
           title={t('empty.title')}
           description={t(isBrand ? 'empty.brand' : 'empty.influencer')}
           action={
-            <Button as={RouterLink} to={`${base}/orders`} colorScheme="brand">
+            <Button as={RouterLink} to={isBrand ? '/brand/briefs/new' : '/influencer/briefs'} colorScheme="brand">
               {t(isBrand ? 'empty.brandAction' : 'empty.influencerAction')}
             </Button>
           }

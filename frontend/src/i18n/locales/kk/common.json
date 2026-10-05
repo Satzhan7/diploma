@@ -57,8 +57,10 @@
       "messages": "Чаттар",
       "findBriefs": "Брифтер",
       "myApplications": "Өтінімдер",
-      "profile": "Профиль"
-    }
+      "profile": "Профиль",
+      "applicants": "Өтінімдер"
+    },
+    "applicants": "Өтінімдер"
   },
   "status": {
     "open": "Ашық",

@@ -6,7 +6,7 @@ import { UserRole } from './entities/user.entity';
 
 describe('UsersController access control', () => {
   const guard = new RolesGuard(new Reflector());
-  const contextFor = (handler: () => unknown, role: UserRole) =>
+  const contextFor = (handler: (...args: never[]) => unknown, role: UserRole) =>
     ({
       getHandler: () => handler,
       getClass: () => UsersController,

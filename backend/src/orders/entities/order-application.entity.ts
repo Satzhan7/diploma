@@ -6,6 +6,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Unique,
+  Index,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Order } from './order.entity';
@@ -56,6 +57,11 @@ export class OrderApplication {
   })
   status: ApplicationStatus;
 
+  // The brand's private shortlist (the Compare view). Creators never see it.
+  @ApiProperty({ example: false })
+  @Column({ default: false })
+  shortlisted: boolean;
+
   @ApiProperty({
     example: '2024-04-19T09:00:00.000Z',
     description: 'The creation date of the application',
@@ -73,6 +79,8 @@ export class OrderApplication {
   @ManyToOne(() => Order, (order) => order.applications)
   order: Order;
 
+  // "orderId" leads the unique pair, so only the applicant needs its own index.
+  @Index()
   @ManyToOne(() => User)
   applicant: User;
 }

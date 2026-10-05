@@ -1,19 +1,4 @@
 {
-  "shared": {
-    "notAvailable": "—",
-    "brandNameMissing": "Название бренда не указано",
-    "yourMessage": "Ваше сообщение: «{{message}}»",
-    "searchBrands": "Поиск брендов..."
-  },
-  "categories": {
-    "fashion": "Мода",
-    "beauty": "Красота",
-    "technology": "Технологии",
-    "food": "Еда",
-    "foodBeverage": "Еда и напитки",
-    "lifestyle": "Лайфстайл",
-    "travel": "Путешествия"
-  },
   "dashboard": {
     "title": "Обзор",
     "subtitle": "Ваши отклики и сделки",
@@ -24,87 +9,6 @@
       "pending": "Ждут ответа",
       "accepted": "Приняты",
       "activeDeals": "Сделки в работе"
-    }
-  },
-  "orders": {
-    "title": "Доступные заказы",
-    "filters": {
-      "category": "Категория",
-      "allCategories": "Все категории",
-      "minBudget": "Мин. бюджет",
-      "maxBudget": "Макс. бюджет"
-    },
-    "loading": "Загружаем заказы...",
-    "empty": "Нет заказов, подходящих под ваши фильтры.",
-    "card": {
-      "budget": "Бюджет:",
-      "deadline": "Срок:",
-      "brand": "Бренд:",
-      "applied": "Вы откликнулись ({{status}})",
-      "applyNow": "Откликнуться"
-    },
-    "applyModal": {
-      "title": "Отклик на заказ «{{title}}»",
-      "messageLabel": "Ваше сообщение бренду",
-      "messagePlaceholder": "Расскажите, почему вы подходите для этого заказа и что можете предложить...",
-      "priceLabel": "Ваша цена (₸)",
-      "originalBudget": "Исходный бюджет: {{amount}}",
-      "submit": "Отправить отклик"
-    },
-    "toast": {
-      "submittedTitle": "Отклик отправлен",
-      "submittedDescription": "Бренд получил ваш отклик",
-      "submitError": "Не удалось отправить отклик"
-    }
-  },
-  "orderDetail": {
-    "title": "Детали заказа",
-    "loadErrorTitle": "Ошибка загрузки заказа",
-    "loadError": "Не удалось загрузить детали заказа.",
-    "notFound": "Заказ не найден.",
-    "postedBy": "Опубликовал:",
-    "description": "Описание",
-    "budget": "Бюджет",
-    "category": "Категория",
-    "requirements": "Требования",
-    "deadline": "Срок"
-  },
-  "applications": {
-    "title": "Мои отклики",
-    "loadError": "Ошибка загрузки откликов: {{message}}",
-    "tabs": {
-      "all": "Все ({{count}})",
-      "pending": "На рассмотрении ({{count}})",
-      "accepted": "Принятые ({{count}})",
-      "rejected": "Отклонённые ({{count}})",
-      "withdrawn": "Отозванные ({{count}})"
-    },
-    "card": {
-      "brand": "Бренд:",
-      "category": "Категория: {{category}}",
-      "appliedOn": "Дата отклика: {{date}}",
-      "viewOrder": "Открыть заказ",
-      "withdraw": "Отозвать отклик"
-    },
-    "empty": {
-      "all": "Откликов пока нет.",
-      "allHint": "Откликайтесь на заказы, которые подходят вашему профилю!",
-      "browseOrders": "Смотреть заказы",
-      "pending": "Нет откликов на рассмотрении.",
-      "pendingHint": "Здесь появятся ваши активные отклики.",
-      "accepted": "Принятых откликов пока нет.",
-      "acceptedHint": "Здесь появятся принятые сотрудничества.",
-      "rejected": "Нет отклонённых откликов.",
-      "withdrawn": "Нет отозванных откликов."
-    },
-    "withdrawDialog": {
-      "title": "Отозвать отклик",
-      "body": "Вы уверены, что хотите отозвать отклик на заказ «{{title}}»?",
-      "confirm": "Отозвать"
-    },
-    "toast": {
-      "withdrawn": "Отклик отозван",
-      "withdrawError": "Не удалось отозвать отклик"
     }
   }
 }

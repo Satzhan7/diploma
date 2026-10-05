@@ -57,8 +57,10 @@
       "messages": "Messages",
       "findBriefs": "Briefs",
       "myApplications": "Applied",
-      "profile": "Profile"
-    }
+      "profile": "Profile",
+      "applicants": "Applicants"
+    },
+    "applicants": "Applicants"
   },
   "status": {
     "open": "Open",

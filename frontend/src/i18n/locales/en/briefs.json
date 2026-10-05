@@ -1,0 +1,283 @@
+{
+  "goal": {
+    "launch": "Launch a product",
+    "traffic": "Bring people in",
+    "followers": "Grow followers",
+    "event": "Promote an event"
+  },
+  "platform": {
+    "instagram": "Instagram",
+    "tiktok": "TikTok",
+    "youtube": "YouTube"
+  },
+  "format": {
+    "reel": "Reel",
+    "stories": "Stories",
+    "post": "Post",
+    "video": "Video",
+    "short": "Short"
+  },
+  "city": {
+    "almaty": "Almaty",
+    "astana": "Astana",
+    "shymkent": "Shymkent",
+    "any": "Any city"
+  },
+  "language": {
+    "kk": "Kazakh",
+    "ru": "Russian",
+    "en": "English"
+  },
+  "list": {
+    "title": "Briefs",
+    "subtitle": "Drafts, live briefs and their applicants.",
+    "new": "New brief",
+    "filterLabel": "Filter briefs",
+    "filter": {
+      "all": "All",
+      "open": "Live",
+      "draft": "Drafts",
+      "inProgress": "In progress",
+      "closed": "Closed"
+    },
+    "empty": {
+      "title": "No briefs here yet",
+      "description": "Post a brief and creators in your niche can apply."
+    },
+    "loadError": "Couldn't load your briefs. Try again.",
+    "actions": {
+      "edit": "Edit",
+      "publish": "Publish",
+      "cancel": "Cancel brief",
+      "applicants_one": "{{count}} applicant",
+      "applicants_other": "{{count}} applicants"
+    },
+    "newApplicants_one": "{{count}} new applicant",
+    "newApplicants_other": "{{count}} new applicants",
+    "postBy": "Post by {{date}}",
+    "noDate": "No date yet",
+    "noBudget": "No budget yet",
+    "count": "{{shown}} of {{total}}",
+    "more": "Show more",
+    "toasts": {
+      "published": "Brief published",
+      "cancelled": "Brief cancelled"
+    },
+    "cancelDialog": {
+      "title": "Cancel this brief?",
+      "body": "“{{title}}” closes, and creators still waiting get a decline.",
+      "confirm": "Cancel brief",
+      "keep": "Keep it"
+    }
+  },
+  "wizard": {
+    "titleNew": "New brief",
+    "titleEdit": "Edit brief",
+    "stepsLabel": "Brief steps",
+    "steps": {
+      "goal": {
+        "label": "Goal",
+        "title": "What should the post do?",
+        "hint": "Name the brief and pick its goal."
+      },
+      "content": {
+        "label": "Content",
+        "title": "Where and what",
+        "hint": "Creators price by deliverable, so be specific."
+      },
+      "budget": {
+        "label": "Budget",
+        "title": "Budget and timing",
+        "hint": "Money is settled directly with the creator."
+      },
+      "creators": {
+        "label": "Creators",
+        "title": "Who should apply",
+        "hint": "We rank applicants by these."
+      },
+      "review": {
+        "label": "Review",
+        "title": "Ready to publish",
+        "hint": "Check the brief before creators see it."
+      }
+    },
+    "fields": {
+      "goal": "Goal",
+      "title": "Title",
+      "description": "About the brief",
+      "platform": "Platform",
+      "formats": "Formats",
+      "deliverables": "Deliverables",
+      "requirements": "Must include",
+      "budgetMin": "Budget from",
+      "budgetMax": "Budget up to",
+      "postBy": "Post by",
+      "city": "City",
+      "category": "Niche",
+      "languages": "Language"
+    },
+    "placeholders": {
+      "title": "Spring menu launch",
+      "description": "What you launch, what creators get, what matters to you.",
+      "deliverables": "1 Reel + 3 Stories",
+      "requirements": "Tag @yourbrand, show the product",
+      "previewTitle": "Your brief title"
+    },
+    "optional": "Optional.",
+    "budgetHint": "Per creator, in tenge. A creator who names no price gets the upper amount.",
+    "rankHint": "Optional. Applicants in this niche rank higher.",
+    "review": {
+      "content": "Content",
+      "budget": "Budget",
+      "creators": "Creators",
+      "none": "—",
+      "anyCreator": "Anyone"
+    },
+    "preview": "Creators will see",
+    "back": "Back",
+    "next": "Next",
+    "saveDraft": "Save draft",
+    "publish": "Publish",
+    "saveChanges": "Save changes",
+    "fixFields": "Fix the highlighted fields.",
+    "toasts": {
+      "saved": "Draft saved",
+      "published": "Brief published",
+      "updated": "Brief updated"
+    },
+    "loadError": "Couldn't load this brief.",
+    "notEditable": "This brief can no longer be edited.",
+    "backToBriefs": "Back to briefs"
+  },
+  "applicants": {
+    "crumb": "Briefs",
+    "title_one": "{{count}} creator applied",
+    "title_other": "{{count}} creators applied",
+    "ranked": "ranked by match",
+    "viewsLabel": "Applicant view",
+    "views": {
+      "feed": "Feed",
+      "compare": "Compare",
+      "focus": "One by one"
+    },
+    "verifiedOnly": "Verified only",
+    "pro": "PRO",
+    "proHint": "Comes with the Pro plan.",
+    "shortlist": "Shortlist",
+    "shortlisted": "Shortlisted",
+    "accept": "Accept",
+    "pass": "Pass",
+    "asks": "Asks",
+    "noPrice": "Brief budget",
+    "score": "Match {{value}} of 100",
+    "stats": {
+      "followers": "followers",
+      "er": "ER"
+    },
+    "strip": "Content samples appear here once creators add a portfolio.",
+    "rows": {
+      "match": "Match",
+      "price": "Price",
+      "city": "City",
+      "languages": "Languages",
+      "verified": "Verified"
+    },
+    "yes": "Yes",
+    "no": "No",
+    "compareEmpty": "Shortlist creators in the feed to compare them here.",
+    "compareCaption": "Shortlisted creators side by side; the best value in each row is highlighted.",
+    "compareMetric": "Metric",
+    "position": "{{n}} of {{total}}",
+    "closed": "This brief is {{status}}: applicants can no longer be accepted.",
+    "empty": {
+      "title": "No applicants yet",
+      "description": "Creators who apply show up here, best match first.",
+      "draft": "Publish the brief so creators can apply."
+    },
+    "noBrief": {
+      "title": "No live briefs",
+      "description": "Publish a brief to start getting applicants."
+    },
+    "acceptDialog": {
+      "title": "Accept {{name}}?",
+      "body": "A deal starts with this creator and the other pending applicants are declined.",
+      "confirm": "Accept and start deal",
+      "cancel": "Not yet"
+    },
+    "toasts": {
+      "accepted": "Accepted. The deal has started.",
+      "shortlisted": "Added to the shortlist",
+      "removed": "Removed from the shortlist"
+    }
+  },
+  "feed": {
+    "title": "Paid briefs for you",
+    "subtitle_one": "{{count}} open brief",
+    "subtitle_other": "{{count}} open briefs",
+    "nicheLabel": "Niche",
+    "all": "All",
+    "cityLabel": "City",
+    "anyCity": "All cities",
+    "hoursLeft_one": "{{count}} h left",
+    "hoursLeft_other": "{{count}} h left",
+    "daysLeft_one": "{{count}} day left",
+    "daysLeft_other": "{{count}} days left",
+    "applied_one": "{{count}} applied",
+    "applied_other": "{{count}} applied",
+    "apply": "Apply",
+    "view": "View",
+    "applyLabel": "Apply: {{title}}",
+    "viewLabel": "View: {{title}}",
+    "empty": {
+      "title": "No briefs match",
+      "description": "Try another niche or city, or check back later."
+    }
+  },
+  "apply": {
+    "back": "Briefs",
+    "posted": "posted {{date}}",
+    "facts": {
+      "budget": "Budget",
+      "postBy": "Post by",
+      "content": "Content",
+      "deliverables": "Deliverables",
+      "city": "City",
+      "languages": "Languages"
+    },
+    "requirements": "Must include",
+    "pitch": "Your pitch",
+    "pitchPlaceholder": "Why you, and what you would post.",
+    "price": "Your price",
+    "priceHint": "Optional. Leave it empty to take the upper budget.",
+    "send": "Send application",
+    "sentTitle": "Application sent",
+    "sentBody": "{{brand}} will see it among the applicants. Replies come in Messages.",
+    "yourPrice": "Your price: {{price}}",
+    "browse": "Browse briefs",
+    "myApplications": "My applications",
+    "closed": "This brief no longer takes applications."
+  },
+  "mine": {
+    "title": "My applications",
+    "subtitle": "Every brief you applied to, newest first.",
+    "appliedOn": "Applied {{date}}",
+    "yourPrice": "Your price",
+    "briefBudget": "Brief budget",
+    "withdraw": "Withdraw",
+    "viewBrief": "View brief",
+    "openDeals": "Open deals",
+    "empty": {
+      "title": "No applications yet",
+      "description": "Find a brief in your niche and send a pitch.",
+      "action": "Find briefs"
+    },
+    "withdrawDialog": {
+      "title": "Withdraw this application?",
+      "body": "The brand will no longer see your application to “{{title}}”.",
+      "confirm": "Withdraw"
+    },
+    "toasts": {
+      "withdrawn": "Application withdrawn"
+    }
+  }
+}

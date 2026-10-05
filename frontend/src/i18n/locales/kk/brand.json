@@ -1,5 +1,4 @@
 {
-  "notAvailable": "Жоқ",
   "categories": {
     "fashion": "Сән",
     "beauty": "Сұлулық",
@@ -29,62 +28,5 @@
       "pending_other": "{{count}} жауап күтуде",
       "activeDeals": "Орындалып жатқан мәмілелер"
     }
-  },
-  "orders": {
-    "loadingUser": "Пайдаланушы деректері жүктелуде…",
-    "loadError": "Тапсырыстарды жүктеу мүмкін болмады: {{message}}",
-    "title": "Менің тапсырыстарым",
-    "createNew": "Жаңа тапсырыс жасау",
-    "budget": "Бюджет: {{amount}}",
-    "newApplications_one": "{{count}} жаңа",
-    "newApplications_other": "{{count}} жаңа",
-    "viewApplicants": "Өтінімдерді көру",
-    "empty": "Сіз әлі бірде-бір тапсырыс жасамадыңыз.",
-    "applicants": {
-      "title": "«{{title}}» тапсырысына өтінімдер",
-      "empty": "Әзірге өтінімдер жоқ.",
-      "unknown": "Белгісіз инфлюенсер",
-      "proposed": "Ұсынылған баға: {{amount}}",
-      "message": "«{{message}}»",
-      "accept": "Қабылдау",
-      "reject": "Қабылдамау",
-      "viewProfile": "Профильді ашу"
-    },
-    "toasts": {
-      "accepted": "Өтінім қабылданды",
-      "rejected": "Өтінім қабылданбады",
-      "acceptError": "Өтінімді қабылдау мүмкін болмады",
-      "rejectError": "Өтінімді қабылдамау мүмкін болмады"
-    }
-  },
-  "createOrder": {
-    "title": "Жаңа тапсырыс",
-    "fields": {
-      "title": "Атауы",
-      "titlePlaceholder": "Тапсырыс атауын енгізіңіз",
-      "description": "Сипаттама",
-      "descriptionPlaceholder": "Тапсырысыңызды толық сипаттаңыз",
-      "budget": "Бюджет (₸)",
-      "category": "Санат",
-      "categoryPlaceholder": "Санатты таңдаңыз",
-      "requirements": "Талаптар",
-      "requirementsPlaceholder": "Талаптарыңызды тізіп жазыңыз",
-      "deadline": "Орындау мерзімі"
-    },
-    "submit": "Тапсырыс жасау",
-    "toasts": {
-      "successTitle": "Тапсырыс жасалды",
-      "successDescription": "Тапсырысыңыз сәтті жасалды",
-      "errorFallback": "Тапсырысты жасау мүмкін болмады"
-    }
-  },
-  "influencerList": {
-    "title": "Инфлюенсерлер",
-    "loading": "Инфлюенсерлер жүктелуде…",
-    "loadError": "Инфлюенсерлерді жүктеу мүмкін болмады",
-    "searchPlaceholder": "Инфлюенсерлерді іздеу…",
-    "categoryPlaceholder": "Санат бойынша сүзу",
-    "followers": "Жазылушылар: {{followers}}",
-    "noBio": "Сипаттама көрсетілмеген."
   }
 }

@@ -12,3 +12,5 @@ export { StatCardSkeleton, CardGridSkeleton } from './CardSkeleton';
 export { BriefCard } from './BriefCard';
 export { Stepper } from './Stepper';
 export type { Step } from './Stepper';
+export { CreatorCard } from './CreatorCard';
+export type { CreatorStat } from './CreatorCard';

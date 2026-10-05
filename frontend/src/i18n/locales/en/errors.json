@@ -20,6 +20,7 @@
   "PROFILE_NOT_FOUND": "Profile not found.",
   "ORDER_NOT_FOUND": "Order not found.",
   "ORDER_NOT_OPEN": "This order is no longer accepting applications.",
+  "ORDER_EXPIRED": "The post-by date of this brief has passed, so it no longer takes applications.",
   "ORDER_ACCESS_DENIED": "You do not have access to this order.",
   "ORDER_BRAND_ONLY": "Only brands can create orders.",
   "ORDER_INFLUENCER_ONLY": "Only influencers can apply to orders.",
@@ -42,11 +43,15 @@
     "isIn": "Choose one of the options.",
     "isInt": "Enter a whole number.",
     "min": "The value is too small.",
-    "max": "The value is too large."
+    "max": "The value is too large.",
+    "budgetRange": "The upper amount must be at least the lower one.",
+    "futureDate": "Pick a date after today."
   },
   "CHAT_NOT_ALLOWED": "You can message someone once one of you has applied to the other's brief.",
   "CHAT_SELF": "You cannot start a chat with yourself.",
   "DEAL_NOT_FOUND": "Deal not found.",
   "DEAL_INVALID_TRANSITION": "This deal can't move to that step.",
-  "DEAL_STALE": "The deal changed in the meantime. Reload and try again."
+  "DEAL_STALE": "The deal changed in the meantime. Reload and try again.",
+  "ORDER_NOT_EDITABLE": "This brief can no longer be edited.",
+  "ORDER_INVALID_TRANSITION": "This brief cannot change that way in its current state."
 }

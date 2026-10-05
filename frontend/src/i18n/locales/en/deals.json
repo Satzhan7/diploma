@@ -19,7 +19,7 @@
   },
   "card": {
     "open": "Open",
-    "openLabel": "Open the deal “{{title}}”",
+    "openLabel": "Open: “{{title}}”",
     "postBy": "Post by {{date}}",
     "noDate": "No post-by date"
   },

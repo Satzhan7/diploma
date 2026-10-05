@@ -27,6 +27,9 @@ import { User } from '../types/user';
 import { formatTime } from '../i18n';
 import { getErrorMessage } from '../i18n/errors';
 
+/** The API's page size limit (backend MAX_PAGE_SIZE). */
+const MAX_PAGE = 100;
+
 // Helper function to extract user ID safely
 const getUserId = (user: User | { id: string } | undefined): string => {
   if (!user) return '';
@@ -68,7 +71,7 @@ export const Messages: React.FC = () => {
           console.error('Failed to mark messages as read', error);
         }
       };
-      
+
       markAsRead();
     }
   }, [selectedChat, queryClient]);
@@ -88,14 +91,14 @@ export const Messages: React.FC = () => {
           duration: 5000,
           isClosable: true,
         });
-        
+
         // Try to reconnect after 5 seconds
         setTimeout(connectSocket, 5000);
       }
     };
-    
+
     connectSocket();
-    
+
     return () => {
       socketService.disconnect();
       setIsSocketConnected(false);
@@ -105,41 +108,41 @@ export const Messages: React.FC = () => {
   // Set up socket listeners
   useEffect(() => {
     if (!isSocketConnected) return;
-    
+
     // Listen for new messages
     socketService.on('newMessage', (message: Message) => {
       console.log('New message received:', message);
-      
+
       // Make sure we have a valid chat ID using our helper
       const messageChatId = getChatId(message.chat);
-      
+
       if (!messageChatId) {
         console.error('Received message without chat ID', message);
         return;
       }
-      
+
       // Update messages for the current chat
       if (selectedChat === messageChatId) {
         queryClient.setQueryData(['messages', selectedChat], (oldData: Message[] | undefined) => {
           if (!oldData) return [message];
           return [...oldData, message];
         });
-        
+
         // Auto scroll to bottom
         setTimeout(() => {
           messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }, 100);
-        
+
         // Mark as read if we're the recipient and in this chat
         if (user?.id === getUserId(message.recipient)) {
           api.post(`/chats/${selectedChat}/read`).catch(console.error);
         }
       }
-      
+
       // Update the chat list
       queryClient.invalidateQueries({ queryKey: ['chats'] });
     });
-    
+
     // Listen for messages being read
     socketService.on('messagesRead', ({ chatId }: { chatId: string }) => {
       if (selectedChat === chatId) {
@@ -147,17 +150,17 @@ export const Messages: React.FC = () => {
       }
       queryClient.invalidateQueries({ queryKey: ['chats'] });
     });
-    
+
     // Listen for new chat
     socketService.on('newChat', () => {
       queryClient.invalidateQueries({ queryKey: ['chats'] });
     });
-    
+
     // Listen for chat updates (like unread count)
     socketService.on('chatUpdated', () => {
       queryClient.invalidateQueries({ queryKey: ['chats'] });
     });
-    
+
     return () => {
       socketService.off('newMessage');
       socketService.off('messagesRead');
@@ -181,24 +184,34 @@ export const Messages: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [selectedChat]);
 
-  const { data: chats, isLoading: isLoadingChats, error: chatsError } = useQuery<Conversation[]>({
+  // The 100 most recent conversations.
+  const {
+    data: chats,
+    isLoading: isLoadingChats,
+    error: chatsError,
+  } = useQuery<Conversation[]>({
     queryKey: ['chats'],
     queryFn: async () => {
-      const response = await api.get('/chats');
-      return response.data;
+      const response = await api.get('/chats', { params: { take: MAX_PAGE } });
+      return response.data.items;
     },
   });
 
-  const { 
-    data: messages, 
-    isLoading: isLoadingMessages, 
-    error: messagesError 
+  // Whether the open chat has messages older than the ones loaded.
+  const [hasOlder, setHasOlder] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+
+  const {
+    data: messages,
+    isLoading: isLoadingMessages,
+    error: messagesError,
   } = useQuery<Message[]>({
     queryKey: ['messages', selectedChat],
     queryFn: async () => {
       if (!selectedChat) return [];
-      const response = await api.get(`/chats/${selectedChat}/messages`);
-      return response.data || [];
+      const { data } = await api.get(`/chats/${selectedChat}/messages`, { params: { take: MAX_PAGE } });
+      setHasOlder(data.skip + data.items.length < data.total);
+      return data.items;
     },
     enabled: !!selectedChat,
   });
@@ -211,7 +224,7 @@ export const Messages: React.FC = () => {
       await api.post(`/chats/${selectedChat}/messages`, {
         content: newMessage.trim(),
       });
-      
+
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['messages', selectedChat] });
       queryClient.invalidateQueries({ queryKey: ['chats'] });
@@ -227,9 +240,29 @@ export const Messages: React.FC = () => {
     }
   };
 
+  // Prepends the next older page; ids dedupe messages that arrived since.
+  const loadOlder = async () => {
+    if (!selectedChat || !messages) return;
+    setLoadingOlder(true);
+    try {
+      const { data } = await api.get(`/chats/${selectedChat}/messages`, {
+        params: { take: MAX_PAGE, skip: messages.length },
+      });
+      setHasOlder(data.skip + data.items.length < data.total);
+      queryClient.setQueryData(['messages', selectedChat], (current: Message[] = []) => {
+        const seen = new Set(current.map((m) => m.id));
+        return [...(data.items as Message[]).filter((m) => !seen.has(m.id)), ...current];
+      });
+    } catch (error) {
+      toast({ title: getErrorMessage(error), status: 'error', duration: 3000, isClosable: true });
+    } finally {
+      setLoadingOlder(false);
+    }
+  };
+
   // Get the other user in the chat (not the current user)
   const getOtherUser = (chat: Conversation): User | null => {
-    if (!user || !chat) { 
+    if (!user || !chat) {
       return null;
     }
     // Check if the current user is the sender or recipient
@@ -241,7 +274,7 @@ export const Messages: React.FC = () => {
     }
     // Should not happen in a 1-on-1 chat if data is correct, but return null as fallback
     console.warn('Could not determine other user in chat:', chat);
-    return null; 
+    return null;
   };
 
   if (isLoadingChats) {
@@ -282,7 +315,7 @@ export const Messages: React.FC = () => {
             <Box p={4} borderBottomWidth="1px" bg="bg.surface">
               <Heading size="md">{t('title')}</Heading>
             </Box>
-            
+
             <Box overflowY="auto" height="calc(100% - 60px)">
               {isLoadingChats ? (
                 <Center py={10}>
@@ -299,7 +332,7 @@ export const Messages: React.FC = () => {
                     console.warn("Skipping chat render, couldn't get other user for chat:", chat.id);
                     return null;
                   }
-                  
+
                   return (
                     <Box
                       key={chat.id}
@@ -322,7 +355,11 @@ export const Messages: React.FC = () => {
                               {otherUser.name || t('unknownUser')}
                             </Text>
                             {chat.unreadCount > 0 && (
-                              <Badge colorScheme="brand" borderRadius="full" aria-label={t('unread', { count: chat.unreadCount })}>
+                              <Badge
+                                colorScheme="brand"
+                                borderRadius="full"
+                                aria-label={t('unread', { count: chat.unreadCount })}
+                              >
                                 {chat.unreadCount}
                               </Badge>
                             )}
@@ -357,19 +394,17 @@ export const Messages: React.FC = () => {
             <Center height="100%" bg="bg.surface" borderRadius="lg" boxShadow="sm">
               <VStack spacing={4}>
                 <Text color="fg.subtle">{t('selectConversation')}</Text>
-                <Text fontSize="sm" color="fg.subtle">{t('or')}</Text>
-                <Button colorScheme="brand" size="sm">{t('startNewChat')}</Button>
+                <Text fontSize="sm" color="fg.subtle">
+                  {t('or')}
+                </Text>
+                <Button colorScheme="brand" size="sm">
+                  {t('startNewChat')}
+                </Button>
               </VStack>
             </Center>
           ) : (
             <VStack spacing={0} align="stretch" height="100%">
-              <HStack
-                p={4}
-                borderBottomWidth="1px"
-                bg="bg.surface"
-                spacing={4}
-                align="center"
-              >
+              <HStack p={4} borderBottomWidth="1px" bg="bg.surface" spacing={4} align="center">
                 <Button
                   display={{ base: 'inline-flex', md: 'none' }}
                   size="sm"
@@ -379,25 +414,18 @@ export const Messages: React.FC = () => {
                 >
                   {t('common:actions.back')}
                 </Button>
-                
-                {chats && (
+
+                {chats &&
                   (() => {
-                    const currentChat = chats.find(c => c.id === selectedChat);
+                    const currentChat = chats.find((c) => c.id === selectedChat);
                     const otherUser = currentChat ? getOtherUser(currentChat) : null;
                     return (
                       <>
-                        <Avatar
-                          size="sm"
-                          name={otherUser?.name || t('unknownUser')}
-                          src={otherUser?.avatarUrl}
-                        />
-                        <Text fontWeight="bold">
-                          {otherUser?.name || t('unknownUser')}
-                        </Text>
+                        <Avatar size="sm" name={otherUser?.name || t('unknownUser')} src={otherUser?.avatarUrl} />
+                        <Text fontWeight="bold">{otherUser?.name || t('unknownUser')}</Text>
                       </>
                     );
-                  })()
-                )}
+                  })()}
               </HStack>
 
               <Box
@@ -418,35 +446,44 @@ export const Messages: React.FC = () => {
                     <Text color="danger">{t('messagesLoadError')}</Text>
                   </Center>
                 ) : messages && messages.length > 0 ? (
-                  messages.map((message) => {
-                    const isMyMessage = user?.id === getUserId(message.sender);
-                    return (
-                      <Box
-                        key={message.id}
-                        alignSelf={isMyMessage ? 'flex-end' : 'flex-start'}
-                        maxWidth={{ base: "85%", md: "70%" }}
-                        mb={3}
-                      >
+                  <>
+                    {hasOlder && (
+                      <Center pb={2}>
+                        <Button size="sm" variant="ghost" onClick={loadOlder} isLoading={loadingOlder}>
+                          {t('loadOlder')}
+                        </Button>
+                      </Center>
+                    )}
+                    {messages.map((message) => {
+                      const isMyMessage = user?.id === getUserId(message.sender);
+                      return (
                         <Box
-                          bg={isMyMessage ? 'primary' : 'bg.surface'}
-                          color={isMyMessage ? 'primary.fg' : 'fg.default'}
-                          p={3}
-                          borderRadius="lg"
-                          boxShadow="sm"
+                          key={message.id}
+                          alignSelf={isMyMessage ? 'flex-end' : 'flex-start'}
+                          maxWidth={{ base: '85%', md: '70%' }}
+                          mb={3}
                         >
-                          <Text>{message.content}</Text>
+                          <Box
+                            bg={isMyMessage ? 'primary' : 'bg.surface'}
+                            color={isMyMessage ? 'primary.fg' : 'fg.default'}
+                            p={3}
+                            borderRadius="lg"
+                            boxShadow="sm"
+                          >
+                            <Text>{message.content}</Text>
+                          </Box>
+                          <Text fontSize="xs" color="fg.subtle" textAlign={isMyMessage ? 'right' : 'left'}>
+                            {formatTime(message.createdAt)}
+                            {isMyMessage && (
+                              <Text as="span" ml={1}>
+                                {message.isRead ? ' ✓✓' : ' ✓'}
+                              </Text>
+                            )}
+                          </Text>
                         </Box>
-                        <Text fontSize="xs" color="fg.subtle" textAlign={isMyMessage ? 'right' : 'left'}>
-                          {formatTime(message.createdAt)}
-                          {isMyMessage && (
-                            <Text as="span" ml={1}>
-                              {message.isRead ? ' ✓✓' : ' ✓'}
-                            </Text>
-                          )}
-                        </Text>
-                      </Box>
-                    );
-                  })
+                      );
+                    })}
+                  </>
                 ) : (
                   <Center flex="1">
                     <Text color="fg.subtle">{t('noMessages')}</Text>
@@ -455,11 +492,7 @@ export const Messages: React.FC = () => {
                 <div ref={messagesEndRef} />
               </Box>
 
-              <HStack
-                p={4}
-                borderTopWidth="1px"
-                bg="bg.surface"
-              >
+              <HStack p={4} borderTopWidth="1px" bg="bg.surface">
                 <Input
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
@@ -491,4 +524,4 @@ export const Messages: React.FC = () => {
   );
 };
 
-export default Messages; 
+export default Messages;

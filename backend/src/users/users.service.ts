@@ -7,6 +7,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
 import { hashRefreshToken } from '../auth/refresh-token-hash';
 import { apiError, ErrorCode } from '../common/errors/error-codes';
+import { Page, PaginationQueryDto } from '../common/dto/pagination-query.dto';
 
 @Injectable()
 export class UsersService {
@@ -15,8 +16,13 @@ export class UsersService {
     private readonly usersRepository: Repository<User>,
   ) {}
 
-  async findAll(): Promise<User[]> {
-    return await this.usersRepository.find();
+  async findAll({ take, skip }: PaginationQueryDto): Promise<Page<User>> {
+    const [items, total] = await this.usersRepository.findAndCount({
+      order: { createdAt: 'DESC', id: 'DESC' },
+      take,
+      skip,
+    });
+    return { items, total, take, skip };
   }
 
   async findById(id: string): Promise<User> {

@@ -1,6 +1,6 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { In } from 'typeorm';
-import { DealsService, toPostByDate } from './deals.service';
+import { DealsService } from './deals.service';
 import { Deal, DealStatus } from './entities/deal.entity';
 import { UserRole } from '../users/entities/user.entity';
 
@@ -34,9 +34,11 @@ describe('DealsService.createForAcceptedApplication', () => {
   const order = {
     id: 'order-1',
     brandId: 'brand-profile',
-    budget: 120000,
-    requirements: '1 Reel + 3 Stories',
-    deadline: '2026-10-15',
+    budgetMin: 60000,
+    budgetMax: 120000,
+    deliverables: '1 Reel + 3 Stories',
+    requirements: 'Tag @cafe.daryn',
+    postBy: '2026-10-15',
   } as any;
 
   const managerWith = (existing: unknown) => ({
@@ -69,7 +71,7 @@ describe('DealsService.createForAcceptedApplication', () => {
     expect(deal.id).toBe('deal-1');
   });
 
-  it('falls back to the brief budget when no price was proposed', async () => {
+  it('falls back to the top of the brief budget when no price was proposed', async () => {
     const manager = managerWith(null);
     await new DealsService({} as any).createForAcceptedApplication(
       manager as any,
@@ -96,19 +98,6 @@ describe('DealsService.createForAcceptedApplication', () => {
       where: { applicationId: 'application-1' },
     });
     expect(manager.save).not.toHaveBeenCalled();
-  });
-});
-
-describe('toPostByDate', () => {
-  it.each([
-    ['2026-10-15', '2026-10-15'],
-    ['2026-10-15T00:00:00.000Z', '2026-10-15'],
-    ['next Friday', null],
-    ['2026-13-45', null],
-    ['', null],
-    [null, null],
-  ])('%p → %p', (input, expected) => {
-    expect(toPostByDate(input)).toBe(expected);
   });
 });
 

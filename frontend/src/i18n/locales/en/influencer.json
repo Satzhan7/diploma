@@ -1,19 +1,4 @@
 {
-  "shared": {
-    "notAvailable": "N/A",
-    "brandNameMissing": "Brand name missing",
-    "yourMessage": "Your message: \"{{message}}\"",
-    "searchBrands": "Search brands..."
-  },
-  "categories": {
-    "fashion": "Fashion",
-    "beauty": "Beauty",
-    "technology": "Technology",
-    "food": "Food",
-    "foodBeverage": "Food & Beverage",
-    "lifestyle": "Lifestyle",
-    "travel": "Travel"
-  },
   "dashboard": {
     "title": "Overview",
     "subtitle": "Your applications and deals",
@@ -24,87 +9,6 @@
       "pending": "Waiting for a reply",
       "accepted": "Accepted",
       "activeDeals": "Active deals"
-    }
-  },
-  "orders": {
-    "title": "Available Orders",
-    "filters": {
-      "category": "Category",
-      "allCategories": "All categories",
-      "minBudget": "Min Budget",
-      "maxBudget": "Max Budget"
-    },
-    "loading": "Loading orders...",
-    "empty": "No orders available matching your filters.",
-    "card": {
-      "budget": "Budget:",
-      "deadline": "Deadline:",
-      "brand": "Brand:",
-      "applied": "Applied ({{status}})",
-      "applyNow": "Apply Now"
-    },
-    "applyModal": {
-      "title": "Apply for {{title}}",
-      "messageLabel": "Your Message to the Brand",
-      "messagePlaceholder": "Explain why you're a good fit for this order and what you can offer...",
-      "priceLabel": "Your Proposed Price (₸)",
-      "originalBudget": "Original budget: {{amount}}",
-      "submit": "Submit Application"
-    },
-    "toast": {
-      "submittedTitle": "Application submitted",
-      "submittedDescription": "Your application has been sent to the brand",
-      "submitError": "Failed to submit application"
-    }
-  },
-  "orderDetail": {
-    "title": "Order Details",
-    "loadErrorTitle": "Error loading order",
-    "loadError": "Could not load order details.",
-    "notFound": "Order not found.",
-    "postedBy": "Posted by:",
-    "description": "Description",
-    "budget": "Budget",
-    "category": "Category",
-    "requirements": "Requirements",
-    "deadline": "Deadline"
-  },
-  "applications": {
-    "title": "My Applications",
-    "loadError": "Error loading applications: {{message}}",
-    "tabs": {
-      "all": "All ({{count}})",
-      "pending": "Pending ({{count}})",
-      "accepted": "Accepted ({{count}})",
-      "rejected": "Rejected ({{count}})",
-      "withdrawn": "Withdrawn ({{count}})"
-    },
-    "card": {
-      "brand": "Brand:",
-      "category": "Category: {{category}}",
-      "appliedOn": "Applied on: {{date}}",
-      "viewOrder": "View Order",
-      "withdraw": "Withdraw Application"
-    },
-    "empty": {
-      "all": "No applications found.",
-      "allHint": "Apply to orders that match your profile!",
-      "browseOrders": "Browse Orders",
-      "pending": "No pending applications.",
-      "pendingHint": "Your active applications will appear here.",
-      "accepted": "No accepted applications yet.",
-      "acceptedHint": "Accepted collaborations will show up here.",
-      "rejected": "No rejected applications.",
-      "withdrawn": "No withdrawn applications."
-    },
-    "withdrawDialog": {
-      "title": "Withdraw Application",
-      "body": "Are you sure you want to withdraw your application for \"{{title}}\"?",
-      "confirm": "Withdraw"
-    },
-    "toast": {
-      "withdrawn": "Application Withdrawn",
-      "withdrawError": "Error withdrawing application"
     }
   }
 }

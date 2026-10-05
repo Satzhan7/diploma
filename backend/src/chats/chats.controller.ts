@@ -10,7 +10,9 @@ import {
   InternalServerErrorException,
   BadRequestException,
   ParseUUIDPipe,
+  Query,
 } from '@nestjs/common';
+import { Page, PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import {
   ApiTags,
   ApiOperation,
@@ -66,7 +68,10 @@ export class ChatsController {
   @ApiOperation({
     summary: 'Maintenance (admin only): raw messages for a chat',
   })
-  async debugMessages(@Param('chatId') chatId: string): Promise<any> {
+  async debugMessages(
+    @Param('chatId', ParseUUIDPipe) chatId: string,
+    @Query() { take, skip }: PaginationQueryDto,
+  ): Promise<any> {
     const connection =
       this.chatsService['messagesRepository'].manager.connection;
     const result = await connection.query(
@@ -75,13 +80,17 @@ export class ChatsController {
       FROM message m
       LEFT JOIN chat c ON m."chatId" = c.id
       WHERE m."chatId" = $1
+      ORDER BY m."createdAt" DESC, m.id DESC
+      LIMIT $2 OFFSET $3
     `,
-      [chatId],
+      [chatId, take, skip],
     );
 
     return {
       rawMessages: result,
       messageCount: result.length,
+      take,
+      skip,
     };
   }
 
@@ -259,9 +268,17 @@ SELECT COUNT(*) FROM message WHERE "chatId" IS NULL;
   @Get()
   @ApiOperation({ summary: 'Get all chats for the current user' })
   @ApiResponse({ status: 200, description: 'Return all chats.', type: [Chat] })
-  async findAll(@GetCurrentUser() user: CurrentUser): Promise<PublicChat[]> {
-    const chats = await this.chatsService.findAll(user.id);
-    return chats.map(toPublicChat);
+  async findAll(
+    @GetCurrentUser() user: CurrentUser,
+    @Query() query: PaginationQueryDto,
+  ): Promise<Page<PublicChat>> {
+    const { chats, total } = await this.chatsService.findAll(user.id, query);
+    return {
+      items: chats.map(toPublicChat),
+      total,
+      take: query.take,
+      skip: query.skip,
+    };
   }
 
   @Get(':id')
@@ -269,7 +286,7 @@ SELECT COUNT(*) FROM message WHERE "chatId" IS NULL;
   @ApiResponse({ status: 200, description: 'Return the chat.', type: Chat })
   @ApiResponse({ status: 404, description: 'Chat not found.' })
   async findOne(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @GetCurrentUser() user: CurrentUser,
   ): Promise<PublicChat> {
     return toPublicChat(await this.chatsService.findOne(id, user.id));
@@ -283,10 +300,11 @@ SELECT COUNT(*) FROM message WHERE "chatId" IS NULL;
     type: [Message],
   })
   getMessages(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @GetCurrentUser() user: CurrentUser,
-  ): Promise<Message[]> {
-    return this.chatsService.getMessages(id, user.id);
+    @Query() query: PaginationQueryDto,
+  ): Promise<Page<Message>> {
+    return this.chatsService.getMessages(id, user.id, query);
   }
 
   @Post(':recipientId')

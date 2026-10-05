@@ -1,5 +1,4 @@
 {
-  "notAvailable": "Н/Д",
   "categories": {
     "fashion": "Мода",
     "beauty": "Красота",
@@ -31,64 +30,5 @@
       "pending_other": "{{count}} ждут ответа",
       "activeDeals": "Сделки в работе"
     }
-  },
-  "orders": {
-    "loadingUser": "Загружаем данные пользователя…",
-    "loadError": "Не удалось загрузить заказы: {{message}}",
-    "title": "Мои заказы",
-    "createNew": "Создать заказ",
-    "budget": "Бюджет: {{amount}}",
-    "newApplications_one": "{{count}} новый",
-    "newApplications_few": "{{count}} новых",
-    "newApplications_many": "{{count}} новых",
-    "newApplications_other": "{{count}} новых",
-    "viewApplicants": "Смотреть отклики",
-    "empty": "Вы ещё не создали ни одного заказа.",
-    "applicants": {
-      "title": "Отклики на «{{title}}»",
-      "empty": "Откликов пока нет.",
-      "unknown": "Неизвестный инфлюенсер",
-      "proposed": "Предложенная цена: {{amount}}",
-      "message": "«{{message}}»",
-      "accept": "Принять",
-      "reject": "Отклонить",
-      "viewProfile": "Открыть профиль"
-    },
-    "toasts": {
-      "accepted": "Отклик принят",
-      "rejected": "Отклик отклонён",
-      "acceptError": "Не удалось принять отклик",
-      "rejectError": "Не удалось отклонить отклик"
-    }
-  },
-  "createOrder": {
-    "title": "Новый заказ",
-    "fields": {
-      "title": "Название",
-      "titlePlaceholder": "Введите название заказа",
-      "description": "Описание",
-      "descriptionPlaceholder": "Подробно опишите ваш заказ",
-      "budget": "Бюджет (₸)",
-      "category": "Категория",
-      "categoryPlaceholder": "Выберите категорию",
-      "requirements": "Требования",
-      "requirementsPlaceholder": "Перечислите ваши требования",
-      "deadline": "Срок выполнения"
-    },
-    "submit": "Создать заказ",
-    "toasts": {
-      "successTitle": "Заказ создан",
-      "successDescription": "Ваш заказ успешно создан",
-      "errorFallback": "Не удалось создать заказ"
-    }
-  },
-  "influencerList": {
-    "title": "Инфлюенсеры",
-    "loading": "Загружаем инфлюенсеров…",
-    "loadError": "Не удалось загрузить инфлюенсеров",
-    "searchPlaceholder": "Поиск инфлюенсеров…",
-    "categoryPlaceholder": "Фильтр по категории",
-    "followers": "Подписчики: {{followers}}",
-    "noBio": "Описание не указано."
   }
 }

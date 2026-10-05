@@ -17,5 +17,6 @@
     "title": "Connection error",
     "description": "Couldn't establish a real-time connection. Retrying in 5 seconds…"
   },
-  "sendError": "Couldn't send the message. Please try again."
+  "sendError": "Couldn't send the message. Please try again.",
+  "loadOlder": "Show earlier messages"
 }

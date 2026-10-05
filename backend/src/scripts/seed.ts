@@ -24,6 +24,8 @@ import { AuthService } from '../auth/auth.service';
 import { UsersService } from '../users/users.service';
 import { ProfilesService } from '../profiles/profiles.service';
 import { OrdersService } from '../orders/orders.service';
+import { CreateOrderDto } from '../orders/dto/create-order.dto';
+import { BriefGoal, BriefPlatform } from '../orders/brief-options';
 import { OrderApplicationsService } from '../orders/order-applications.service';
 import { UserRole } from '../users/entities/user.entity';
 import { ApplicationStatus } from '../orders/entities/order-application.entity';
@@ -114,40 +116,64 @@ async function main() {
   summary.brand1 = brandIds[0];
   summary.influencer1 = influencerIds[0];
 
-  // 2. Orders from brand1 (open)
-  const orderSpecs = [
+  // 2. Briefs from brand1: saved as drafts, then published (open).
+  const inDays = (days: number) =>
+    new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+  const orderSpecs: CreateOrderDto[] = [
     {
       title: 'Spring lipstick line launch',
       description:
         'Instagram campaign for our new spring lipstick collection across KZ.',
-      budget: 1500,
+      goal: BriefGoal.LAUNCH,
+      platform: BriefPlatform.INSTAGRAM,
+      formats: ['reel', 'stories'],
+      city: 'almaty',
+      languages: ['ru', 'kk'],
       category: 'Beauty',
-      requirements: '3 stories + 1 reel, min 10k followers, KZ audience.',
-      deadline: '2026-07-15',
+      budgetMin: 100000,
+      budgetMax: 150000,
+      deliverables: '1 Reel + 3 Stories',
+      requirements: 'Min 10k followers, KZ audience.',
+      postBy: inDays(14),
     },
     {
       title: 'Protein bar taste test',
       description:
         'Honest review format for the new SteppeFit protein bar range.',
-      budget: 800,
+      goal: BriefGoal.TRAFFIC,
+      platform: BriefPlatform.YOUTUBE,
+      formats: ['short'],
+      city: 'any',
+      languages: ['ru'],
       category: 'Fitness',
-      requirements: '1 YouTube short or reel, fitness niche.',
-      deadline: '2026-07-30',
+      budgetMin: 60000,
+      budgetMax: 80000,
+      deliverables: '1 YouTube Short',
+      requirements: 'Fitness niche.',
+      postBy: inDays(21),
     },
     {
       title: 'Summer skincare routine collab',
       description: 'Educational series about SPF with our dermatologist.',
-      budget: 2000,
+      goal: BriefGoal.FOLLOWERS,
+      platform: BriefPlatform.INSTAGRAM,
+      formats: ['post', 'stories'],
+      city: 'astana',
+      languages: ['kk', 'ru'],
       category: 'Beauty',
-      requirements: 'Carousel post + 2 stories.',
-      deadline: '2026-08-10',
+      budgetMin: 150000,
+      budgetMax: 200000,
+      deliverables: '1 carousel post + 2 Stories',
+      requirements: null,
+      postBy: inDays(30),
     },
   ];
   const orderIds: string[] = [];
   for (const spec of orderSpecs) {
-    const order = await orders.create(brandIds[0], spec);
+    const draft = await orders.create(brandIds[0], spec);
+    const order = await orders.publish(draft.id, brandIds[0]);
     orderIds.push(order.id);
-    console.log(`order   "${spec.title}" -> ${order.id}`);
+    console.log(`brief   "${spec.title}" -> ${order.id}`);
   }
   summary.order1 = orderIds[0];
 
@@ -155,17 +181,17 @@ async function main() {
   const app1 = await applications.create(orderIds[0], influencerIds[0], {
     message:
       'Beauty is my core niche — my audience is 80% KZ women 18-34. Would love to collaborate!',
-    proposedPrice: 1400,
+    proposedPrice: 140000,
   });
   await applications.create(orderIds[0], influencerIds[1], {
     message:
       'I can give the campaign a lifestyle angle with food/beauty crossover content.',
-    proposedPrice: 1200,
+    proposedPrice: 120000,
   });
   await applications.create(orderIds[1], influencerIds[2], {
     message:
       'Fitness content is my specialty, happy to do an honest taste test.',
-    proposedPrice: 750,
+    proposedPrice: 75000,
   });
   console.log(`applications created: 3`);
   summary.application1 = app1.id;
