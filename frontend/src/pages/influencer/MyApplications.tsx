@@ -1,272 +1,151 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
-  Box,
-  Heading,
-  Tabs,
-  TabList,
-  TabPanels,
-  Tab,
-  TabPanel,
-  Spinner,
-  Center,
-  Text,
-  SimpleGrid,
-  Card,
-  CardHeader,
-  CardBody,
-  CardFooter,
-  HStack,
-  VStack,
-  Button,
-  useToast,
-  Link as ChakraLink,
   AlertDialog,
   AlertDialogBody,
+  AlertDialogContent,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogContent,
   AlertDialogOverlay,
-  useDisclosure,
+  Button,
+  Center,
+  HStack,
+  SimpleGrid,
+  Stack,
+  Text,
+  useToast,
 } from '@chakra-ui/react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { applicationsService, Application } from '../../services/applications';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { IconWrapper, IconButtonWithWrapper } from '../../components/IconWrapper';
-import { FiExternalLink, FiTrash2, FiEye } from 'react-icons/fi';
-import { useAuth } from '../../contexts/AuthContext';
-import { useTranslation } from 'react-i18next';
-import { formatDate } from '../../i18n';
-import { StatusBadge } from '../../components/ui';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link as RouterLink } from 'react-router-dom';
+import { FiSend } from 'react-icons/fi';
+import { applicationsService, MyApplication } from '../../services/applications';
+import { nextSkip } from '../../services/page';
+import { formatDate, formatMoney } from '../../i18n';
 import { getErrorMessage } from '../../i18n/errors';
+import { useBriefText } from '../../components/useBriefText';
+import { BriefCard, CardGridSkeleton, EmptyState, PageHeader, StatusBadge } from '../../components/ui';
+
+const PAGE_SIZE = 20;
 
 export const MyApplications: React.FC = () => {
-  const { t } = useTranslation('influencer');
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
+  const text = useBriefText();
+  const { t } = text;
   const toast = useToast();
-  const navigate = useNavigate();
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [applicationToWithdraw, setApplicationToWithdraw] = useState<Application | null>(null);
-  const cancelRef = React.useRef<HTMLButtonElement>(null);
+  const queryClient = useQueryClient();
+  const [withdrawing, setWithdrawing] = useState<MyApplication | null>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
 
-  const { data: applications, isLoading, error } = useQuery<Application[], Error>({
-    queryKey: ['myApplications', user?.id],
-    queryFn: () => applicationsService.getByInfluencer(),
-    enabled: !!user,
+  const query = useInfiniteQuery({
+    queryKey: ['applications', 'mine'],
+    queryFn: ({ pageParam }) => applicationsService.mine({ take: PAGE_SIZE, skip: pageParam }),
+    initialPageParam: 0,
+    getNextPageParam: nextSkip,
   });
+  const applications = query.data?.pages.flatMap((p) => p.items) ?? [];
+  const total = query.data?.pages[0]?.total ?? 0;
 
-  const withdrawMutation = useMutation({
-    mutationFn: (applicationId: string) => applicationsService.withdrawApplication(applicationId),
+  const withdraw = useMutation({
+    mutationFn: (id: string) => applicationsService.withdraw(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myApplications', user?.id] });
-      toast({ title: t('applications.toast.withdrawn'), status: 'info' });
-      onClose();
-      setApplicationToWithdraw(null); // Clear selection after withdrawal
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+      queryClient.invalidateQueries({ queryKey: ['briefs', 'feed'] });
+      toast({ status: 'info', title: t('mine.toasts.withdrawn') });
     },
-    onError: (err) => {
-      toast({ title: t('applications.toast.withdrawError'), description: getErrorMessage(err), status: 'error' });
-      onClose();
-    },
+    onError: (error) => toast({ status: 'error', title: getErrorMessage(error) }),
+    onSettled: () => setWithdrawing(null),
   });
 
-  const handleWithdrawClick = (application: Application) => {
-    setApplicationToWithdraw(application);
-    onOpen();
-  };
-
-  const confirmWithdraw = () => {
-    if (applicationToWithdraw) {
-      withdrawMutation.mutate(applicationToWithdraw.id);
-    }
-  };
-
-  const handleViewOrder = (orderId: string) => {
-    navigate(`/influencer/orders/${orderId}`); 
-    // console.log('View order:', orderId);
-    // toast({ title: 'Order details view not implemented yet.', status: 'warning' });
-  };
-
-  const handleViewBrand = (brandUserId: string) => {
-    navigate(`/influencer/profile/${brandUserId}`);
-  };
-
-  const renderApplicationCard = (application: Application) => (
-    <Card key={application.id} variant="outline">
-      <CardHeader pb={2}>
-        <HStack justify="space-between">
-          <Heading size="md" noOfLines={1} title={application.order.title}>
-            <ChakraLink as={RouterLink} to={`/influencer/orders/${application.order.id}`} isExternal={false}>
-              {application.order.title}
-            </ChakraLink>
-          </Heading>
-          <StatusBadge status={application.status} />
-        </HStack>
-      </CardHeader>
-      <CardBody py={2}>
-        <VStack align="start" spacing={1}>
-          <Text fontSize="sm">
-            {t('applications.card.brand')}
-            <ChakraLink ml={1} color="primary.ink" onClick={() => application.order.brand?.user?.id && handleViewBrand(application.order.brand.user.id)}>
-              {application.order.brand?.displayName || t('shared.brandNameMissing')} <IconWrapper icon={FiExternalLink} />
-            </ChakraLink>
-          </Text>
-          <Text fontSize="sm">{t('applications.card.category', { category: application.order.category })}</Text>
-          <Text fontSize="sm">{t('applications.card.appliedOn', { date: formatDate(application.createdAt) })}</Text>
-          {application.message && <Text fontSize="sm" mt={2} fontStyle="italic">{t('shared.yourMessage', { message: application.message })}</Text>}
-        </VStack>
-      </CardBody>
-      <CardFooter pt={2}>
-        <HStack spacing={2}>
-          <Button
-            size="sm"
-            variant="outline"
-            leftIcon={<IconWrapper icon={FiEye} />}
-            onClick={() => handleViewOrder(application.order.id)}
-            // isDisabled // Enable button
-          >
-            {t('applications.card.viewOrder')}
-          </Button>
-          {application.status === 'pending' && (
-            <IconButtonWithWrapper
-              icon={FiTrash2}
-              size="sm"
-              colorScheme="red"
-              aria-label={t('applications.card.withdraw')}
-              onClick={() => handleWithdrawClick(application)}
-              isLoading={withdrawMutation.isPending && applicationToWithdraw?.id === application.id}
-            />
-          )}
-        </HStack>
-      </CardFooter>
-    </Card>
+  const actionsFor = (a: MyApplication) => (
+    <HStack spacing={2} wrap="wrap" justify="flex-end">
+      {a.status === 'pending' && (
+        <Button variant="ghost" size="sm" onClick={() => setWithdrawing(a)}>
+          {t('mine.withdraw')}
+        </Button>
+      )}
+      {a.status === 'accepted' ? (
+        <Button as={RouterLink} to="/influencer/deals" colorScheme="brand" size="sm">
+          {t('mine.openDeals')}
+        </Button>
+      ) : (
+        <Button as={RouterLink} to={`/influencer/briefs/${a.order.id}`} variant="outline" size="sm">
+          {t('mine.viewBrief')}
+        </Button>
+      )}
+    </HStack>
   );
 
-  if (isLoading) return <Center p={10}><Spinner /></Center>;
-  if (error) return <Center p={10}><Text color="danger">{t('applications.loadError', { message: getErrorMessage(error) })}</Text></Center>;
-  // Now explicitly check if applications is defined *before* rendering tabs
-  // This handles the case where the query finishes but returns undefined/null
-  if (!applications) return <Center p={10}><Text>{t('applications.empty.all')}</Text></Center>; 
-
-
-  // Filter applications *once* after loading and error checks
-  const pendingApplications = applications.filter(app => app.status === 'pending');
-  const acceptedApplications = applications.filter(app => app.status === 'accepted');
-  const rejectedApplications = applications.filter(app => app.status === 'rejected');
-  const withdrawnApplications = applications.filter(app => app.status === 'withdrawn');
-
   return (
-    <Box p={4}>
-      <Heading mb={6}>{t('applications.title')}</Heading>
+    <Stack spacing={6}>
+      <PageHeader title={t('mine.title')} subtitle={t('mine.subtitle')} />
 
-      <Tabs variant="soft-rounded" colorScheme="brand">
-        <TabList mb={4} flexWrap="wrap">
-          <Tab>{t('applications.tabs.all', { count: applications.length })}</Tab>
-          <Tab>{t('applications.tabs.pending', { count: pendingApplications.length })}</Tab>
-          <Tab>{t('applications.tabs.accepted', { count: acceptedApplications.length })}</Tab>
-          <Tab>{t('applications.tabs.rejected', { count: rejectedApplications.length })}</Tab>
-          <Tab>{t('applications.tabs.withdrawn', { count: withdrawnApplications.length })}</Tab>
-        </TabList>
-
-        <TabPanels>
-          {/* ALL Tab */}
-          <TabPanel>
-            {applications.length > 0 ? (
-              <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-                {applications.map(application => renderApplicationCard(application))}
-              </SimpleGrid>
-            ) : (
-              <Box textAlign="center" p={8}>
-                <Text fontSize="xl">{t('applications.empty.all')}</Text>
-                <Text color="fg.muted">{t('applications.empty.allHint')}</Text>
-                <Button mt={4} colorScheme="brand" as={RouterLink} to="/influencer/orders">{t('applications.empty.browseOrders')}</Button>
-              </Box>
+      {query.isPending ? (
+        <CardGridSkeleton />
+      ) : query.isError ? (
+        <EmptyState
+          title={getErrorMessage(query.error)}
+          action={<Button onClick={() => query.refetch()}>{t('common:actions.retry')}</Button>}
+        />
+      ) : applications.length === 0 ? (
+        <EmptyState
+          icon={FiSend}
+          title={t('mine.empty.title')}
+          description={t('mine.empty.description')}
+          action={
+            <Button as={RouterLink} to="/influencer/briefs" colorScheme="brand">
+              {t('mine.empty.action')}
+            </Button>
+          }
+        />
+      ) : (
+        <>
+          <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} spacing={4}>
+            {applications.map((a) => (
+              <BriefCard
+                key={a.id}
+                partyName={a.order.brand?.name ?? ''}
+                partyAvatarUrl={a.order.brand?.avatarUrl}
+                partyCaption={t('mine.appliedOn', { date: formatDate(a.createdAt) })}
+                badge={<StatusBadge status={a.status} />}
+                title={a.order.title}
+                chips={text.chips(a.order)}
+                amount={a.proposedPrice != null ? formatMoney(a.proposedPrice) : (text.budget(a.order) ?? '—')}
+                amountCaption={t(a.proposedPrice != null ? 'mine.yourPrice' : 'mine.briefBudget')}
+                action={actionsFor(a)}
+              />
+            ))}
+          </SimpleGrid>
+          <Center flexDirection="column" gap={2}>
+            <Text fontSize="sm" color="fg.muted">
+              {t('list.count', { shown: applications.length, total })}
+            </Text>
+            {query.hasNextPage && (
+              <Button variant="outline" onClick={() => query.fetchNextPage()} isLoading={query.isFetchingNextPage}>
+                {t('list.more')}
+              </Button>
             )}
-          </TabPanel>
+          </Center>
+        </>
+      )}
 
-          {/* PENDING Tab */}
-          <TabPanel>
-            {pendingApplications.length > 0 ? (
-              <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-                {pendingApplications.map(application => renderApplicationCard(application))}
-              </SimpleGrid>
-            ) : (
-              <Box textAlign="center" p={8}>
-                <Text fontSize="xl">{t('applications.empty.pending')}</Text>
-                <Text color="fg.muted">{t('applications.empty.pendingHint')}</Text>
-              </Box>
-            )}
-          </TabPanel>
-
-          {/* ACCEPTED Tab */}
-          <TabPanel>
-            {acceptedApplications.length > 0 ? (
-              <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-                {acceptedApplications.map(application => renderApplicationCard(application))}
-              </SimpleGrid>
-            ) : (
-              <Box textAlign="center" p={8}>
-                <Text fontSize="xl">{t('applications.empty.accepted')}</Text>
-                <Text color="fg.muted">{t('applications.empty.acceptedHint')}</Text>
-              </Box>
-            )}
-          </TabPanel>
-
-          {/* REJECTED Tab */}
-          <TabPanel>
-            {rejectedApplications.length > 0 ? (
-              <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-                {rejectedApplications.map(application => renderApplicationCard(application))}
-              </SimpleGrid>
-            ) : (
-              <Box textAlign="center" p={8}>
-                <Text fontSize="xl">{t('applications.empty.rejected')}</Text>
-              </Box>
-            )}
-          </TabPanel>
-
-          {/* WITHDRAWN Tab */}
-          <TabPanel>
-            {withdrawnApplications.length > 0 ? (
-              <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-                {withdrawnApplications.map(application => renderApplicationCard(application))}
-              </SimpleGrid>
-            ) : (
-              <Box textAlign="center" p={8}>
-                <Text fontSize="xl">{t('applications.empty.withdrawn')}</Text>
-              </Box>
-            )}
-          </TabPanel>
-        </TabPanels>
-      </Tabs>
-
-      {/* Withdraw Confirmation Dialog */}
-      <AlertDialog
-        isOpen={isOpen}
-        leastDestructiveRef={cancelRef}
-        onClose={onClose}
-      >
+      <AlertDialog isOpen={!!withdrawing} leastDestructiveRef={cancelRef} onClose={() => setWithdrawing(null)}>
         <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader fontSize="lg" fontWeight="bold">
-              {t('applications.withdrawDialog.title')}
-            </AlertDialogHeader>
-
-            <AlertDialogBody>
-              {t('applications.withdrawDialog.body', { title: applicationToWithdraw?.order?.title })}
-            </AlertDialogBody>
-
-            <AlertDialogFooter>
-              <Button ref={cancelRef} onClick={onClose}>
+          <AlertDialogContent mx={4}>
+            <AlertDialogHeader>{t('mine.withdrawDialog.title')}</AlertDialogHeader>
+            <AlertDialogBody>{t('mine.withdrawDialog.body', { title: withdrawing?.order.title })}</AlertDialogBody>
+            <AlertDialogFooter gap={2}>
+              <Button ref={cancelRef} variant="ghost" onClick={() => setWithdrawing(null)}>
                 {t('common:actions.cancel')}
               </Button>
-              <Button colorScheme="red" onClick={confirmWithdraw} ml={3} isLoading={withdrawMutation.isPending}>
-                {t('applications.withdrawDialog.confirm')}
+              <Button
+                colorScheme="red"
+                onClick={() => withdrawing && withdraw.mutate(withdrawing.id)}
+                isLoading={withdraw.isPending}
+              >
+                {t('mine.withdrawDialog.confirm')}
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialogOverlay>
       </AlertDialog>
-
-    </Box>
+    </Stack>
   );
 };

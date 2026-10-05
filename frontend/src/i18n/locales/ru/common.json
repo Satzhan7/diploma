@@ -57,8 +57,10 @@
       "messages": "Чаты",
       "findBriefs": "Брифы",
       "myApplications": "Отклики",
-      "profile": "Профиль"
-    }
+      "profile": "Профиль",
+      "applicants": "Отклики"
+    },
+    "applicants": "Отклики"
   },
   "status": {
     "open": "Открыт",

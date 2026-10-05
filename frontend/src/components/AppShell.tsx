@@ -27,6 +27,7 @@ import {
   FiSend,
   FiSettings,
   FiUser,
+  FiUsers,
 } from 'react-icons/fi';
 import { UserRole } from '../types/user';
 import { useAuth } from '../contexts/AuthContext';
@@ -44,17 +45,18 @@ interface NavItem {
   noTab?: boolean;
 }
 
-// Routes are the current pages; R3–R4 swap in Applicants and Plan.
+// R4 adds Plan.
 const NAV: Partial<Record<UserRole, NavItem[]>> = {
   [UserRole.BRAND]: [
     { key: 'home', to: '/brand/dashboard', icon: FiHome },
-    { key: 'newBrief', to: '/brand/orders/create', icon: FiFilePlus, noTab: true },
-    { key: 'briefs', to: '/brand/orders', icon: FiList },
+    { key: 'newBrief', to: '/brand/briefs/new', icon: FiFilePlus, noTab: true },
+    { key: 'briefs', to: '/brand/briefs', icon: FiList },
+    { key: 'applicants', to: '/brand/applicants', icon: FiUsers },
     { key: 'deals', to: '/brand/deals', icon: FiCheckCircle },
     { key: 'messages', to: '/brand/messages', icon: FiMessageSquare },
   ],
   [UserRole.INFLUENCER]: [
-    { key: 'findBriefs', to: '/influencer/orders', icon: FiSearch },
+    { key: 'findBriefs', to: '/influencer/briefs', icon: FiSearch },
     { key: 'myApplications', to: '/influencer/applications', icon: FiSend },
     { key: 'deals', to: '/influencer/deals', icon: FiCheckCircle },
     { key: 'messages', to: '/influencer/messages', icon: FiMessageSquare },
@@ -68,7 +70,7 @@ const TOPBAR_H = 56;
 const TABBAR_H = 64;
 const TABBAR_BOTTOM = 18;
 
-/** Longest matching prefix, so "New brief" wins over "Briefs" on /orders/create. */
+/** Longest matching prefix, so "New brief" wins over "Briefs" on /briefs/new. */
 function activeItem(items: NavItem[], pathname: string) {
   return items
     .filter((i) => pathname === i.to || pathname.startsWith(`${i.to}/`))
@@ -81,9 +83,7 @@ const AccountMenu: React.FC<{ role?: UserRole; compact?: boolean }> = ({ role, c
   const { t } = useTranslation();
   const base = role === UserRole.BRAND ? '/brand' : '/influencer';
 
-  const avatar = (
-    <Avatar size="sm" name={user?.name} bg="primary.soft" color="primary.ink" fontWeight="700" />
-  );
+  const avatar = <Avatar size="sm" name={user?.name} bg="primary.soft" color="primary.ink" fontWeight="700" />;
 
   return (
     <Menu placement={compact ? 'bottom-start' : 'top-start'}>
@@ -212,7 +212,11 @@ const AppShell: React.FC<{ children: React.ReactNode; role?: UserRole }> = ({ ch
                 fontWeight={on ? 700 : 500}
                 bg={on ? 'primary.soft' : 'transparent'}
                 color={on ? 'primary.ink' : 'fg.muted'}
-                _hover={{ textDecoration: 'none', color: on ? 'primary.ink' : 'fg.default', bg: on ? 'primary.soft' : 'bg.subtle' }}
+                _hover={{
+                  textDecoration: 'none',
+                  color: on ? 'primary.ink' : 'fg.default',
+                  bg: on ? 'primary.soft' : 'bg.subtle',
+                }}
               >
                 <IconWrapper icon={item.icon} size="18px" />
                 <Text as="span">{t(`nav.${item.key}`)}</Text>

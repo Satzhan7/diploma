@@ -1,4 +1,5 @@
 import api from './api';
+import type { Page, PageParams } from './page';
 
 export interface Chat {
   id: string;
@@ -24,8 +25,8 @@ export interface Message {
 }
 
 export const chatsService = {
-  getAll: async (): Promise<Chat[]> => {
-    const response = await api.get('/chats');
+  getAll: async (query: PageParams = {}): Promise<Page<Chat>> => {
+    const response = await api.get('/chats', { params: query });
     return response.data;
   },
 
@@ -34,8 +35,9 @@ export const chatsService = {
     return response.data;
   },
 
-  getMessages: async (chatId: string): Promise<Message[]> => {
-    const response = await api.get(`/chats/${chatId}/messages`);
+  /** The newest page of a chat, oldest first. */
+  getMessages: async (chatId: string, query: PageParams = {}): Promise<Page<Message>> => {
+    const response = await api.get(`/chats/${chatId}/messages`, { params: query });
     return response.data;
   },
 
@@ -52,4 +54,4 @@ export const chatsService = {
     const response = await api.post(`/chats/${participantId}`);
     return response.data;
   },
-}; 
+};

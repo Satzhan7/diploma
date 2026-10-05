@@ -16,9 +16,12 @@ const Landing = page(() => import('./pages/Landing'), 'default');
 const Auth = page(() => import('./pages/Auth'), 'Auth');
 const BrandDashboard = page(() => import('./pages/brand/Dashboard'), 'BrandDashboard');
 const InfluencerDashboard = page(() => import('./pages/influencer/Dashboard'), 'InfluencerDashboard');
-const InfluencerOrders = page(() => import('./pages/influencer/Orders'), 'Orders');
-const CreateOrder = page(() => import('./pages/brand/CreateOrder'), 'CreateOrder');
-const BrandOrders = page(() => import('./pages/brand/Orders'), 'default');
+const Feed = page(() => import('./pages/influencer/Feed'), 'Feed');
+const Apply = page(() => import('./pages/influencer/Apply'), 'Apply');
+const Briefs = page(() => import('./pages/brand/Briefs'), 'Briefs');
+const BriefWizard = page(() => import('./pages/brand/BriefWizard'), 'BriefWizard');
+const Applicants = page(() => import('./pages/brand/Applicants'), 'Applicants');
+const LatestApplicants = page(() => import('./pages/brand/Applicants'), 'LatestApplicants');
 const MyApplications = page(() => import('./pages/influencer/MyApplications'), 'MyApplications');
 const Profile = page(() => import('./pages/Profile'), 'Profile');
 const EditProfile = page(() => import('./pages/EditProfile'), 'EditProfile');
@@ -26,12 +29,10 @@ const Messages = page(() => import('./pages/Messages'), 'Messages');
 const Settings = page(() => import('./pages/Settings'), 'Settings');
 const Deals = page(() => import('./pages/Deals'), 'Deals');
 const Deal = page(() => import('./pages/Deal'), 'Deal');
-const OrderDetail = page(() => import('./pages/influencer/OrderDetail'), 'OrderDetail');
 const NotFound = page(() => import('./pages/NotFound'), 'NotFound');
 
 /** Where each role lands after login. */
-const homeFor = (role?: UserRole) =>
-  role === UserRole.BRAND ? '/brand/dashboard' : '/influencer/orders';
+const homeFor = (role?: UserRole) => (role === UserRole.BRAND ? '/brand/dashboard' : '/influencer/briefs');
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -123,18 +124,9 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route
-        path="/"
-        element={!isAuthenticated ? <Landing /> : <Navigate to={homeFor(user?.role)} replace />}
-      />
-      <Route
-        path="/login"
-        element={!isAuthenticated ? <Auth mode="login" /> : <Navigate to="/" replace />}
-      />
-      <Route
-        path="/register"
-        element={!isAuthenticated ? <Auth mode="register" /> : <Navigate to="/" replace />}
-      />
+      <Route path="/" element={!isAuthenticated ? <Landing /> : <Navigate to={homeFor(user?.role)} replace />} />
+      <Route path="/login" element={!isAuthenticated ? <Auth mode="login" /> : <Navigate to="/" replace />} />
+      <Route path="/register" element={!isAuthenticated ? <Auth mode="register" /> : <Navigate to="/" replace />} />
 
       <Route
         path="/brand/*"
@@ -143,8 +135,11 @@ function AppRoutes() {
           <>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<BrandDashboard />} />
-            <Route path="orders" element={<BrandOrders />} />
-            <Route path="orders/create" element={<CreateOrder />} />
+            <Route path="briefs" element={<Briefs />} />
+            <Route path="briefs/new" element={<BriefWizard />} />
+            <Route path="briefs/:id/edit" element={<BriefWizard />} />
+            <Route path="briefs/:id/applicants" element={<Applicants />} />
+            <Route path="applicants" element={<LatestApplicants />} />
           </>,
         )}
       />
@@ -154,10 +149,10 @@ function AppRoutes() {
         element={shell(
           UserRole.INFLUENCER,
           <>
-            <Route index element={<Navigate to="orders" replace />} />
+            <Route index element={<Navigate to="briefs" replace />} />
             <Route path="dashboard" element={<InfluencerDashboard />} />
-            <Route path="orders" element={<InfluencerOrders />} />
-            <Route path="orders/:orderId" element={<OrderDetail />} />
+            <Route path="briefs" element={<Feed />} />
+            <Route path="briefs/:id" element={<Apply />} />
             <Route path="applications" element={<MyApplications />} />
           </>,
         )}

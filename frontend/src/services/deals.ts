@@ -1,5 +1,6 @@
 import api from './api';
 import type { PillTone } from '../components/ui/StatusPill';
+import type { Page } from './page';
 
 export type DealStatus = 'active' | 'proof_submitted' | 'completed' | 'disputed' | 'cancelled';
 
@@ -25,13 +26,6 @@ export interface Deal {
   order: { id: string; title: string; category: string | null };
   brand: DealParty;
   creator: DealParty;
-}
-
-export interface Page<T> {
-  items: T[];
-  total: number;
-  take: number;
-  skip: number;
 }
 
 export interface DealListParams {

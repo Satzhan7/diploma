@@ -1,5 +1,4 @@
 {
-  "notAvailable": "N/A",
   "categories": {
     "fashion": "Fashion",
     "beauty": "Beauty",
@@ -29,62 +28,5 @@
       "pending_other": "{{count}} waiting for you",
       "activeDeals": "Active deals"
     }
-  },
-  "orders": {
-    "loadingUser": "Loading user information…",
-    "loadError": "Error loading orders: {{message}}",
-    "title": "My orders",
-    "createNew": "Create new order",
-    "budget": "Budget: {{amount}}",
-    "newApplications_one": "{{count}} new",
-    "newApplications_other": "{{count}} new",
-    "viewApplicants": "View applicants",
-    "empty": "You haven't created any orders yet.",
-    "applicants": {
-      "title": "Applicants for “{{title}}”",
-      "empty": "No applicants yet.",
-      "unknown": "Unknown applicant",
-      "proposed": "Proposed: {{amount}}",
-      "message": "“{{message}}”",
-      "accept": "Accept",
-      "reject": "Reject",
-      "viewProfile": "View profile"
-    },
-    "toasts": {
-      "accepted": "Application accepted",
-      "rejected": "Application rejected",
-      "acceptError": "Couldn't accept the application",
-      "rejectError": "Couldn't reject the application"
-    }
-  },
-  "createOrder": {
-    "title": "Create new order",
-    "fields": {
-      "title": "Title",
-      "titlePlaceholder": "Enter the order title",
-      "description": "Description",
-      "descriptionPlaceholder": "Describe your order in detail",
-      "budget": "Budget (₸)",
-      "category": "Category",
-      "categoryPlaceholder": "Select a category",
-      "requirements": "Requirements",
-      "requirementsPlaceholder": "List your specific requirements",
-      "deadline": "Deadline"
-    },
-    "submit": "Create order",
-    "toasts": {
-      "successTitle": "Order created",
-      "successDescription": "Your order has been created successfully",
-      "errorFallback": "Failed to create order"
-    }
-  },
-  "influencerList": {
-    "title": "Influencers",
-    "loading": "Loading influencers…",
-    "loadError": "Failed to load influencers",
-    "searchPlaceholder": "Search influencers…",
-    "categoryPlaceholder": "Filter by category",
-    "followers": "Followers: {{followers}}",
-    "noBio": "No bio available."
   }
 }

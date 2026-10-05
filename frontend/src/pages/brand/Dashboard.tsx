@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router-dom';
 import { FiActivity, FiCheckCircle, FiInbox, FiList, FiPlus } from 'react-icons/fi';
-import { ordersService } from '../../services/orders';
+import { briefsService } from '../../services/briefs';
 import { dealsService } from '../../services/deals';
 import { PageHeader, StatCard, StatCardSkeleton, EmptyState } from '../../components/ui';
 import { RecentDeals } from '../../components/RecentDeals';
@@ -14,15 +14,19 @@ import { RecentDeals } from '../../components/RecentDeals';
 export const BrandDashboard: React.FC = () => {
   const { t } = useTranslation('brand');
 
-  const orders = useQuery({ queryKey: ['orders', 'brand'], queryFn: ordersService.getByBrand });
+  // Counts over the newest 100 briefs until R6 adds a summary endpoint.
+  const orders = useQuery({
+    queryKey: ['briefs', 'summary'],
+    queryFn: () => briefsService.listMine({ take: 100 }),
+  });
   const activeDeals = useQuery({
     queryKey: ['deals', 'active-count'],
     queryFn: () => dealsService.list({ status: 'active', take: 1 }),
   });
 
-  const list = orders.data ?? [];
-  const applications = list.flatMap((o) => o.applications ?? []);
-  const pending = applications.filter((a) => a.status === 'pending').length;
+  const list = orders.data?.items ?? [];
+  const sum = (key: 'applicationsCount' | 'pendingCount') => list.reduce((n, o) => n + (o[key] ?? 0), 0);
+  const pending = sum('pendingCount');
 
   return (
     <Stack spacing={8}>
@@ -30,7 +34,7 @@ export const BrandDashboard: React.FC = () => {
         title={t('dashboard.title')}
         subtitle={t('dashboard.subtitle')}
         actions={
-          <Button as={RouterLink} to="/brand/orders/create" colorScheme="brand" leftIcon={<FiPlus />}>
+          <Button as={RouterLink} to="/brand/briefs/new" colorScheme="brand" leftIcon={<FiPlus />}>
             {t('dashboard.newBrief')}
           </Button>
         }
@@ -53,7 +57,7 @@ export const BrandDashboard: React.FC = () => {
               </>
             ) : (
               <>
-                <StatCard icon={FiList} label={t('dashboard.overview.briefs')} value={list.length} />
+                <StatCard icon={FiList} label={t('dashboard.overview.briefs')} value={orders.data?.total ?? 0} />
                 <StatCard
                   icon={FiActivity}
                   label={t('dashboard.overview.openBriefs')}
@@ -62,7 +66,7 @@ export const BrandDashboard: React.FC = () => {
                 <StatCard
                   icon={FiInbox}
                   label={t('dashboard.overview.applications')}
-                  value={applications.length}
+                  value={sum('applicationsCount')}
                   helpText={t('dashboard.overview.pending', { count: pending })}
                 />
                 <StatCard
