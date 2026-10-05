@@ -12,6 +12,13 @@ import {
   Flex,
   HStack,
   Link,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
   SimpleGrid,
   Stack,
   Text,
@@ -21,12 +28,14 @@ import {
 } from '@chakra-ui/react';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink, Navigate, useNavigate, useParams } from 'react-router-dom';
-import { FiArrowLeft, FiLock, FiUsers } from 'react-icons/fi';
+import { FiArrowLeft, FiCheck, FiLock, FiUsers } from 'react-icons/fi';
 import { Applicant, applicationsService } from '../../services/applications';
 import { Brief, briefsService } from '../../services/briefs';
 import { nextSkip } from '../../services/page';
+import { planService } from '../../services/plan';
+import { publicFileUrl } from '../../services/files';
 import { formatMoney, formatNumber, formatPercent } from '../../i18n';
-import { getErrorMessage } from '../../i18n/errors';
+import { getErrorCode, getErrorMessage } from '../../i18n/errors';
 import { useBriefText } from '../../components/useBriefText';
 import {
   CardGridSkeleton,
@@ -78,19 +87,35 @@ export const Applicants: React.FC = () => {
   const [focusIndex, setFocusIndex] = useState(0);
   const [accepting, setAccepting] = useState<Applicant | null>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
+  // "Verified only" is Pro; the server refuses it to Free (PLAN_PRO_REQUIRED).
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
+  const plan = useQuery({ queryKey: ['plan', 'me'], queryFn: planService.mine });
+  const isPro = plan.data?.plan === 'pro';
   const brief = useQuery({ queryKey: ['briefs', 'detail', id], queryFn: () => briefsService.get(id) });
   const feed = useInfiniteQuery({
-    queryKey: ['applicants', id, 'all'],
-    queryFn: ({ pageParam }) => applicationsService.forBrief(id, { take: PAGE_SIZE, skip: pageParam }),
+    queryKey: ['applicants', id, verifiedOnly ? 'verified' : 'all'],
+    queryFn: ({ pageParam }) =>
+      applicationsService.forBrief(id, { take: PAGE_SIZE, skip: pageParam, verifiedOnly: verifiedOnly || undefined }),
     initialPageParam: 0,
     getNextPageParam: nextSkip,
   });
   const shortlist = useQuery({
-    queryKey: ['applicants', id, 'shortlist'],
-    queryFn: () => applicationsService.forBrief(id, { shortlisted: true, take: 100 }),
+    queryKey: ['applicants', id, 'shortlist', verifiedOnly],
+    queryFn: () =>
+      applicationsService.forBrief(id, { shortlisted: true, take: 100, verifiedOnly: verifiedOnly || undefined }),
     enabled: view === 'compare',
   });
+
+  // The plan can end while the page is open: fall back and offer the upgrade.
+  const planRefused = [feed.error, shortlist.error].some((e) => getErrorCode(e) === 'PLAN_PRO_REQUIRED');
+  useEffect(() => {
+    if (!planRefused) return;
+    setVerifiedOnly(false);
+    setUpgradeOpen(true);
+    queryClient.invalidateQueries({ queryKey: ['plan'] });
+  }, [planRefused, queryClient]);
 
   // Offset paging can repeat a row when ranks shift between pages; keep the first copy.
   const applicants = useMemo(() => {
@@ -206,16 +231,28 @@ export const Applicants: React.FC = () => {
           .filter(Boolean)
           .join(' · ')}
         actions={
-          <Tooltip label={t('applicants.proHint')} hasArrow>
+          isPro ? (
             <Button
-              variant="outline"
-              leftIcon={<FiLock aria-hidden />}
-              isDisabled
-              rightIcon={<StatusPill tone="primary">{t('applicants.pro')}</StatusPill>}
+              variant={verifiedOnly ? 'solid' : 'outline'}
+              aria-pressed={verifiedOnly}
+              leftIcon={verifiedOnly ? <FiCheck aria-hidden /> : undefined}
+              onClick={() => setVerifiedOnly((on) => !on)}
             >
               {t('applicants.verifiedOnly')}
             </Button>
-          </Tooltip>
+          ) : (
+            <Tooltip label={t('applicants.proHint')} hasArrow>
+              <Button
+                variant="outline"
+                leftIcon={<FiLock aria-hidden />}
+                isDisabled={plan.isPending}
+                onClick={() => setUpgradeOpen(true)}
+                rightIcon={<StatusPill tone="primary">{t('applicants.pro')}</StatusPill>}
+              >
+                {t('applicants.verifiedOnly')}
+              </Button>
+            </Tooltip>
+          )
         }
       />
     </Stack>
@@ -237,7 +274,13 @@ export const Applicants: React.FC = () => {
             quote={a.message}
             price={price(a)}
             priceCaption={priceCaption(a)}
-            stripLabel={t('applicants.strip')}
+            stripLabel={
+              a.creator.portfolio.length ? t('applicants.stripOf', { name: a.creator.name }) : t('applicants.strip')
+            }
+            images={a.creator.portfolio.map((fileId, i) => ({
+              src: publicFileUrl(fileId),
+              alt: t('applicants.portfolioAlt', { n: i + 1, name: a.creator.name }),
+            }))}
             highlighted={a.shortlisted}
             actions={actionsFor(a)}
           />
@@ -482,7 +525,11 @@ export const Applicants: React.FC = () => {
           action={<Button onClick={() => feed.refetch()}>{t('common:actions.retry')}</Button>}
         />
       ) : applicants.length === 0 ? (
-        <EmptyState icon={FiUsers} title={t('applicants.empty.title')} description={t(briefEmptyKey(brief.data))} />
+        verifiedOnly ? (
+          <EmptyState icon={FiUsers} title={t('applicants.verifiedEmpty')} />
+        ) : (
+          <EmptyState icon={FiUsers} title={t('applicants.empty.title')} description={t(briefEmptyKey(brief.data))} />
+        )
       ) : view === 'feed' ? (
         renderFeed()
       ) : view === 'compare' ? (
@@ -490,6 +537,25 @@ export const Applicants: React.FC = () => {
       ) : (
         renderFocus()
       )}
+
+      <Modal isOpen={upgradeOpen} onClose={() => setUpgradeOpen(false)} isCentered>
+        <ModalOverlay />
+        <ModalContent mx={4}>
+          <ModalHeader>{t('applicants.upgrade.title')}</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Text>{t('applicants.upgrade.body')}</Text>
+          </ModalBody>
+          <ModalFooter gap={2}>
+            <Button variant="ghost" onClick={() => setUpgradeOpen(false)}>
+              {t('applicants.upgrade.close')}
+            </Button>
+            <Button as={RouterLink} to="/brand/plan" colorScheme="brand">
+              {t('applicants.upgrade.cta')}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       <AlertDialog isOpen={!!accepting} leastDestructiveRef={cancelRef} onClose={() => setAccepting(null)}>
         <AlertDialogOverlay>

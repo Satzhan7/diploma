@@ -1,0 +1,38 @@
+{
+  "title": "Plan",
+  "subtitle": "Free covers the whole brief-to-deal loop. Pro adds verified creators.",
+  "current": "Your plan",
+  "until": "Pro until {{date}}",
+  "noEnd": "No end date",
+  "expired": "Pro ended on {{date}}",
+  "testBadge": "Test period",
+  "testNote": "Pro costs {{price}} for 30 days, and nobody is charged.",
+  "perMonth": "per month",
+  "currentBadge": "Current",
+  "free": {
+    "name": "Free"
+  },
+  "pro": {
+    "name": "Pro",
+    "afterTest": "{{price}} per month after the test"
+  },
+  "checkout": {
+    "button": "Get Pro for {{price}}",
+    "done": "Pro is on until {{date}}"
+  },
+  "features": {
+    "briefs": "Unlimited briefs",
+    "ranked": "Applicants ranked by match",
+    "deals": "Deals and messages",
+    "verified": "“Verified only” filter: creators with checked stats",
+    "everything": "Everything in Free"
+  },
+  "pay": {
+    "title": "How to get Pro",
+    "s1": "Open Kaspi.kz → Transfers.",
+    "s2": "Send {{price}} to {{phone}} ({{recipient}}).",
+    "s2NoPhone": "Write to support for the transfer details.",
+    "s3": "In the comment, write the email of this account: {{email}}.",
+    "s4": "An admin turns Pro on within one working day; it lasts a month from that day."
+  }
+}

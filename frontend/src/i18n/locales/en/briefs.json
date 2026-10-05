@@ -208,6 +208,15 @@
       "accepted": "Accepted. The deal has started.",
       "shortlisted": "Added to the shortlist",
       "removed": "Removed from the shortlist"
+    },
+    "stripOf": "Work samples by {{name}}",
+    "portfolioAlt": "Work sample {{n}} by {{name}}",
+    "verifiedEmpty": "No verified creators among the applicants yet.",
+    "upgrade": {
+      "title": "“Verified only” comes with Pro",
+      "body": "Pro shows only creators whose stats an admin checked against an insights screenshot. ₸19 900 per month.",
+      "cta": "See plans",
+      "close": "Not now"
     }
   },
   "feed": {

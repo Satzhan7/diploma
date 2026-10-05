@@ -25,6 +25,7 @@ const CODE_BY_STATUS: Record<number, ErrorCode> = {
   [HttpStatus.NOT_FOUND]: ErrorCode.NOT_FOUND,
   [HttpStatus.CONFLICT]: ErrorCode.CONFLICT,
   [HttpStatus.GONE]: ErrorCode.GONE,
+  [HttpStatus.PAYLOAD_TOO_LARGE]: ErrorCode.PAYLOAD_TOO_LARGE,
   [HttpStatus.TOO_MANY_REQUESTS]: ErrorCode.TOO_MANY_REQUESTS,
 };
 

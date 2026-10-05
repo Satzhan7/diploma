@@ -22,8 +22,10 @@ export interface ApplicantCreator {
   platforms: string[];
   followersCount: number | null;
   engagementRate: number | null;
-  /** Verification arrives in R4; always false until then. */
+  /** Stats approved by an admin (`profiles.verifiedAt`). */
   verified: boolean;
+  /** Portfolio image ids (public, served by `GET /files/:id`), at most 6. */
+  portfolio: string[];
 }
 
 export interface ApplicantView {
@@ -52,6 +54,7 @@ export function briefProfile(order: Order, brand: Profile): MatchProfile {
 export function toApplicantView(
   application: OrderApplication,
   score: MatchScore,
+  portfolio: string[] = [],
 ): ApplicantView {
   const user = application.applicant;
   const profile: Partial<Profile> = user.profile ?? {};
@@ -77,7 +80,8 @@ export function toApplicantView(
       platforms: profile.socialMediaPlatforms ?? [],
       followersCount: profile.followersCount ?? null,
       engagementRate: Number.isFinite(rate) ? rate : null,
-      verified: false,
+      verified: Boolean(profile.verifiedAt),
+      portfolio,
     },
   };
 }

@@ -5,6 +5,7 @@ import {
   ExecutionContext,
   CallHandler,
   InternalServerErrorException,
+  StreamableFile,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -19,6 +20,10 @@ export class TransformInterceptor implements NestInterceptor {
       map((data) => {
         // If data is undefined or null, return it directly
         if (data === undefined || data === null) {
+          return data;
+        }
+        // File downloads go to the response untouched.
+        if (data instanceof StreamableFile) {
           return data;
         }
 

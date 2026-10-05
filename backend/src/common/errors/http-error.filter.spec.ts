@@ -6,6 +6,7 @@ import {
   HttpStatus,
   InternalServerErrorException,
   NotFoundException,
+  PayloadTooLargeException,
 } from '@nestjs/common';
 import { ThrottlerException } from '@nestjs/throttler';
 import { apiError, ErrorCode } from './error-codes';
@@ -78,9 +79,13 @@ describe('toErrorBody', () => {
     });
     expect(toErrorBody(tooLarge)).toEqual({
       statusCode: 413,
-      code: 'BAD_REQUEST',
+      code: 'PAYLOAD_TOO_LARGE',
       message: 'request entity too large',
     });
+    // Multer's file size limit arrives as Nest's PayloadTooLargeException.
+    expect(
+      toErrorBody(new PayloadTooLargeException('File too large')),
+    ).toMatchObject({ statusCode: 413, code: 'PAYLOAD_TOO_LARGE' });
     // Not exposed, or not a client error: still a hidden 500.
     const hidden = Object.assign(new Error('secret'), { status: 400 });
     expect(toErrorBody(hidden).statusCode).toBe(500);

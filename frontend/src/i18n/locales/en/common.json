@@ -58,9 +58,17 @@
       "findBriefs": "Briefs",
       "myApplications": "Applied",
       "profile": "Profile",
-      "applicants": "Applicants"
+      "applicants": "Applicants",
+      "plan": "Plan",
+      "stats": "Stats",
+      "verifications": "Queue",
+      "adminBrands": "Brands"
     },
-    "applicants": "Applicants"
+    "applicants": "Applicants",
+    "plan": "Plan",
+    "stats": "Stats & portfolio",
+    "verifications": "Verification",
+    "adminBrands": "Brands & plans"
   },
   "status": {
     "open": "Open",

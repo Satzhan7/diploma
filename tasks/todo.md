@@ -1,6 +1,6 @@
 # Productization Plan — AdPartners.kz v1 (2026-10-01)
 
-Source: [docs/PRODUCT-BRIEF.md](../docs/PRODUCT-BRIEF.md) (from the grilling session) + project audit of 2026-10-01.
+Source: [docs/PROJECT.md](../docs/PROJECT.md) (product brief, from the grilling session) + project audit of 2026-10-01.
 Format: ECC `blueprint`. Each step is about one PR. Dependencies are listed under "Needs". Steps marked ∥ can run in parallel with the other ∥ steps in the same phase.
 Rule: every phase ends with something deployable and usable. Nothing goes to `main` without passing CI.
 
@@ -11,7 +11,7 @@ Rule: every phase ends with something deployable and usable. Nothing goes to `ma
 - [x] **D5 — Counterparty email (decided 2026-10-03, applies in Phase 2).** Emails are **never** shown to the other side; contact happens through in-app chat only. Chat creation is limited to pairs that share an application/deal (brand→influencer invites come later).
 - [x] **D6 — Account deletion (decided 2026-10-03).** `DELETE /auth/account` 500s on users with data (FK constraints). Deferred to Phase 8 (legal: anonymise vs cascade, retention).
 - [ ] **D2 — Hosting in Kazakhstan (before Phase 8).** Choose a KZ provider (e.g. PS Cloud, Hoster.kz, Kazakhtelecom cloud) with Postgres and S3-compatible storage, to comply with the personal-data localisation law.
-- [x] **D3 — Pro price and Free limits (decided 2026-10-04).** The platform runs as a **free test version**: nobody is charged. The Plan model, Plan page and the Pro price (₸19 900/month, Free = unlimited briefs) stay as designed; a test-period switch gives every brand Pro features at no cost (R4).
+- [x] **D3 — Pro price and Free limits (decided 2026-10-04).** The platform runs as a **free test version**: nobody is charged. The Plan model, Plan page and the Pro price (₸19 900/month, Free = unlimited briefs) stay as designed. Revised 2026-10-05: the test-period switch no longer gives every brand Pro; during the test a brand gets Pro (30 days) through a real checkout for 0 ₸, and nobody is charged. With the switch off, the paid path is a Kaspi transfer, then an admin sets Pro in /admin/brands (no payment provider) (R4).
 - [x] **D4 — Screenshot storage (decided 2026-10-04).** Local private disk volume behind a storage interface now; S3-compatible KZ storage later with D2.
 
 ## Phase 0 — Stabilise (audit P0/P1). Must be first.
@@ -204,13 +204,34 @@ Rules for every PR:
 - Known, not fixed here: (6) Compare shows at most 100 shortlisted creators (no paging; fine for the test period); (7) a brand can lower `budgetMax` on an open brief after creators applied, and an applicant without a proposed price is then accepted at the new maximum (deliberate: no payments in the test period); (8) editing an open brief whose `postBy` has passed is refused on any field until the date moves (deliberate: the wizard shows the `postBy` error on its step); (10) Messages "load newer" replaces the loaded page, so older messages the user scrolled to drop out — fix with the R6 Messages redesign; Applicants has no "Posted N h ago" and no creator handle (differences from the mockup, listed on the PR).
 
 ### PR R4 — Uploads, creator stats and verification queue, Plan and paywall (old 4.5, 5.1–5.4)
-- [ ] Storage interface with a local private disk volume implementation (D4; S3-compatible KZ storage later with D2). Multer with type (jpeg/png/webp, magic-byte check) and size limits; files served only through an auth-checked endpoint (owner, admin; portfolio images public). nginx `client_max_body_size` raised for the upload route. `PAYLOAD_TOO_LARGE` error code (+ ru/kk/en).
-- [ ] Creator stats: claimed followers/engagement + insights screenshot → review queue. Admin queue: claimed stats next to the screenshot, approve ("Approve and Lock Stats", sets `verifiedAt`) or reject with a reason; resubmitting clears the badge. Audit log table for admin actions (who changed what).
-- [ ] Portfolio images for the content strip: up to 6 per creator (decided 2026-10-04).
-- [ ] Plan: `plan` (FREE/PRO) + `proExpiresAt` on the brand; admin sets the plan; the effective plan is computed on read (expired Pro = Free, no cron needed). Plan page: Free vs Pro (₸19 900/month), Kaspi transfer instructions.
-- [ ] "Verified only" enforced server-side for Pro; Free gets an upgrade prompt.
-- [ ] Test period (D3): env `FREE_TEST_PERIOD=true` (default during the test) makes every brand's effective plan Pro; the Plan page shows the price with "free during the test period" and no payment step. Turning it off restores the paywall with no code change (test both ways).
+- [x] Storage interface with a local private disk volume implementation (D4; S3-compatible KZ storage later with D2). Multer with type (jpeg/png/webp, magic-byte check) and size limits; files served only through an auth-checked endpoint (owner, admin; portfolio images public). nginx `client_max_body_size` raised for the upload route. `PAYLOAD_TOO_LARGE` error code (+ ru/kk/en).
+- [x] Creator stats: claimed followers/engagement + insights screenshot → review queue. Admin queue: claimed stats next to the screenshot, approve ("Approve and Lock Stats", sets `verifiedAt`) or reject with a reason; resubmitting clears the badge. Audit log table for admin actions (who changed what).
+- [x] Portfolio images for the content strip: up to 6 per creator (decided 2026-10-04).
+- [x] Plan: `plan` (FREE/PRO) + `proExpiresAt` on the brand; admin sets the plan; the effective plan is computed on read (expired Pro = Free, no cron needed). Plan page: Free vs Pro (₸19 900/month), Kaspi transfer instructions.
+- [x] "Verified only" enforced server-side for Pro; Free gets an upgrade prompt.
+- [x] Test period (D3, revised 2026-10-05): env `FREE_TEST_PERIOD=true` (default during the test) opens a 0 ₸ checkout (`POST /plan/checkout`, Pro for 30 days, audit row); the Plan page shows 0 ₸ with "19 900 ₸ per month after the test" and a "Get Pro for 0 ₸" button, no Kaspi step. Off: no checkout (409 `PLAN_CHECKOUT_UNAVAILABLE`), Kaspi steps, an admin sets Pro. No code change between the two (test both ways).
 - **Done when:** a Free brand cannot get verified-only results through the API (test); an admin upgrade takes effect immediately; a rejected screenshot shows its reason to the creator.
+- Implementation checklist (2026-10-05, branch `redesign/4-plan` on `redesign/3-briefs`, PR against #10):
+  - [x] Config: `freeTestPeriod` from `FREE_TEST_PERIOD` (`true`/`false`, unset → true, anything else throws), spec. Compose (dev + prod), `.env.prod.example`, docs/ENVIRONMENT_VARIABLES.md.
+  - [x] Plan: `profiles.plan` enum (free/pro, default free) + `proExpiresAt` timestamptz, both `@Exclude` (not in public profiles). Pure `effectivePlan(profile, now)` + spec (pro without expiry or not yet expired → pro; anything else → free; the test period does not change it). `PlanService.forUser(userId)` reads the row each call (no cache, so an admin change applies at once). `GET /plan/me` (brand): `{ plan, storedPlan, proExpiresAt, freeTestPeriod, priceKzt: 19900, checkoutPriceKzt }` (0 in the test, else null). `POST /plan/checkout` (brand, test period only): Pro + `proExpiresAt = now + 30 days` under a profile row lock, `plan.checkout` audit row (`{ priceKzt: 0, proExpiresAt }`) in the same transaction; already Pro → 409 `PLAN_ALREADY_PRO`; off → 409 `PLAN_CHECKOUT_UNAVAILABLE`.
+  - [x] Storage: `StorageService` abstract (`put(key, buffer)`, `read(key)` stream, `remove(key)`), `LocalDiskStorage` under `UPLOAD_DIR` (keys are generated uuids, checked by regex; no user file names). `files` table (id, `ownerId` → users ON DELETE CASCADE, `kind` portfolio/verification, `mimeType`, `size`, `storageKey`, `position`, `createdAt`). Image upload pipe: Multer memory storage, 5 MB, one file; type from magic bytes (jpeg/png/webp) + spec; 413 → `PAYLOAD_TOO_LARGE`, wrong type → 415 `UPLOAD_UNSUPPORTED_TYPE`, missing → 400 `UPLOAD_MISSING`. `GET /files/:id` with optional auth: portfolio public (`Cross-Origin-Resource-Policy: cross-origin`, long cache); other kinds owner or admin, else 401 (no token) / 404; `nosniff`, `private, no-store`. TransformInterceptor passes `StreamableFile` through. Docker volume `uploads` (dev + prod; prod image creates the dir for the `nestjs` user). nginx: `client_max_body_size 6M` on the two upload routes only.
+  - [x] Portfolio: `POST /files/portfolio` (creator, max 6, counted under a profile row lock → 409 `PORTFOLIO_FULL`), `DELETE /files/portfolio/:id` (owner), `GET /files/portfolio/me`. Applicant view gets `portfolio: string[]` (file ids, position order, one query for all applicants).
+  - [x] Verification: `creator_verifications` (one row per creator profile: followers int, engagementRate numeric(5,2) percent, `screenshotId` → files, status pending/approved/rejected, `rejectReason`, `submittedAt`, `reviewedAt`, `reviewedById`). `profiles.verifiedAt` = the badge. `GET /verification/me`; `POST /verification` multipart (followers, engagementRate, screenshot) → pending, badge cleared, previous screenshot removed. Changing followers/ER through `PATCH /profiles/me` on a verified profile clears the badge.
+  - [x] Admin: `GET /admin/verifications?status=` (paginated, oldest first, with creator name/email and current stats), `POST /admin/verifications/:id/approve` (body `submittedAt` → compare-and-set, 409 `VERIFICATION_STALE`; sets `verifiedAt`, copies the stats into the profile), `POST /admin/verifications/:id/reject` (`reason` 3–500 chars). `GET /admin/brands` (paginated, search by name/email, stored + effective plan), `PATCH /admin/brands/:profileId/plan` (`plan`, `proExpiresAt` future or null). `audit_log` table (actor, action, target type/id, details jsonb, createdAt) written in the same transaction as each admin action; `GET /admin/audit` (paginated).
+  - [x] Paywall: `GET /order-applications/order/:id?verifiedOnly=true` — effective Free → 403 `PLAN_PRO_REQUIRED`; Pro → only `verifiedAt` creators. Spec: Free brand gets 403 and no repository query; Pro filters; in the test period a stored-Free brand gets 403 until it checks out.
+  - [x] Migration `PlanUploadsVerification` generated on a scratch DB at `BriefModel`; round trip; no drift. New error codes in RU/KZ/EN (`PAYLOAD_TOO_LARGE`, `UPLOAD_UNSUPPORTED_TYPE`, `UPLOAD_MISSING`, `PORTFOLIO_FULL`, `FILE_NOT_FOUND`, `VERIFICATION_NOT_FOUND`, `VERIFICATION_STALE`, `PLAN_PRO_REQUIRED`).
+  - [x] Frontend: `services/files.ts` (public URL helper, authed blob fetch for private images), `services/verification.ts`, `services/plan.ts`, `services/admin.ts`; `plan`, `verification`, `admin` namespaces RU/KZ/EN.
+  - [x] Creator page `/influencer/stats` ("Stats and portfolio"): verification status (none / pending / verified / rejected with the reason), claim form (followers, ER, screenshot, field errors), portfolio grid (upload up to 6, remove). Linked from the Profile page and the account menu.
+  - [x] Brand Plan page `/brand/plan` (nav item): Free vs Pro, ₸19 900/month; test period → "free during the test period", no payment step; off → Kaspi transfer instructions; current plan and expiry.
+  - [x] Applicants: content strip shows portfolio images (placeholders when none); "Verified only" toggle works for effective Pro, Free sees an upgrade prompt linking to Plan.
+  - [x] Admin shell `/admin/*` (admin home was the creator feed, which redirected in a loop): Verification queue (claim beside the screenshot, Approve / Reject with reason), Brands (set plan + expiry).
+  - [x] Checks (both apps), migration round trip, `docker compose up -d --build --no-deps backend frontend`, `qa-r4.mjs` (both `FREE_TEST_PERIOD` values), cleanup (`qa_left` 0, Mailpit empty), security-review, one review agent, push, CI, PR.
+- As built (`redesign/4-plan`, PR on #10, commits `937570f`..`893fecc`): `FREE_TEST_PERIOD` (unset → true, anything but `true`/`false` stops startup) opens the 0 ₸ Pro checkout (`893fecc`: `POST /plan/checkout` stores Pro for 30 days with a `plan.checkout` audit row; off → Kaspi + admin); the effective plan is computed on each read from `profiles.plan` + `proExpiresAt` (no cron, no cache). `StorageService` with a local private disk under `UPLOAD_DIR` (volume `uploads_data`), generated keys; type from magic bytes, EXIF/XMP/IPTC/comments and PNG/WebP text chunks stripped without decoding. `GET /files/:id`: portfolio public, screenshots owner/admin only (anonymous 401, others 404), `nosniff` + sandboxed CSP. `creator_verifications` (one claim per creator) with an admin queue (approve is compare-and-set on `submittedAt`, copies the stats into the profile and sets `verifiedAt`); every admin action writes `audit_log` in the same transaction. `?verifiedOnly=true` checks the plan before any query. Frontend: Plan page, Stats and portfolio page, admin shell (queue, brands), working "Verified only" and an upgrade prompt; `CSP_IMG_SRC` in the frontend image. The `PlanUploadsVerification` migration is additive.
+- Checks (at `893fecc`): backend `tsc` ok · eslint 0 · prettier ok · Jest `28 passed` / `216 passed` · `nest build` ok. Frontend `tsc` ok · eslint 0 errors / 1 warning · Vitest `7 passed` / `28 passed` · `vite build` ok; first-load JS 779 834 → 807 292 bytes (the three new namespaces' locales; 805 987 at `8ce25fc`). The checkout needs no migration: `migration:generate --dr` on a scratch DB at `PlanUploadsVerification` reports no changes. Migration generated on a scratch DB at `BriefModel`: up → `--dr` no drift → down (tables, columns, enums gone) → up → no drift.
+- Browser QA (Docker, headless Chrome, `qa-r4.mjs` restarts the backend to switch the flag) 119/119 at `893fecc` (94/94 at `8ce25fc`, before the checkout): upload rules (SVG as `.png` 415, 6 MB 413, no file 400, brand/anonymous refused, EXIF GPS stripped, 7th image 409); serving matrix (portfolio public with CORP and immutable cache; screenshot anonymous 401 / brand 404 / other creator 404 / owner and admin 200 `no-store`); creator uploads PNG/JPEG/WebP and sends a claim in the UI; admin rejects with a reason in the UI and the creator sees it; resubmit replaces the screenshot; stale approve 409; approve locks the stats; audit log; a profile edit clears the badge; test period on: a stored-Free brand is effectively Free (API verified-only 403, the toggle opens the upgrade prompt), the Plan page shows "0 ₸" for Free and Pro with the 19 900 ₸ note and no Kaspi steps, "Get Pro for 0 ₸" in the UI → toast and "Pro до …", the same token then gets only the verified creator, `audit_log` has `plan.checkout` with `priceKzt` 0, a second checkout → 409 `PLAN_ALREADY_PRO`, creator 403 / anonymous 401 on checkout; then the content strip shows portfolio images and "Verified only" filters; off (brand reset to Free in SQL): checkout → 409 `PLAN_CHECKOUT_UNAVAILABLE`, Free → 403 `PLAN_PRO_REQUIRED` (still the full list), upgrade prompt → Kaspi steps with the account email and no checkout button, admin sets Pro in the UI and the same token is allowed at once, expired Pro is Free on the next request; flag back to `true`. KZ/RU/EN, light/dark, 1280/390 without horizontal scroll, raw keys or console errors, including `/brand/plan` in both states; no other user's email in responses. Found during QA: the test-period alert repeated "Test period" (badge + note), note shortened. The script now polls `/health` after a restart and logs in once (the old poll reused a 15-minute token and the dev container's `npm ci` took minutes). `qa-r4-*` users, files on disk, claims, audit rows and Mailpit removed, 0 left.
+- Security review: done inline against the PR base (the `security-review` skill diffs against `origin/HEAD`, which shares no history with this stack). Fixed: public portfolio JPEGs kept phone GPS in EXIF (`8ce25fc`). Checked: generated keys (no traversal), `nosniff` + sandboxed CSP on files, 404 for non-owners of private files, refresh tokens cannot fetch files, `verifiedAt`/plan fields in no DTO, paywall checked server-side before the query, class-level `@Roles(ADMIN)`, ILIKE wildcards escaped, upload throttle and Multer limits; checkout (`893fecc`): brand-only, no client-supplied price or date, flag read on the server, profile row locked so a double click cannot write two audit rows. Accepted: the Verified badge stays visible to Free brands (Pro sells the filter).
+- Review (one reviewer agent): approve with comments, no high-severity items. Fixed in `8ce25fc`: (4) a metrics patch without a rate compared `NaN !== NaN` and cleared the badge, and replaced `metrics` wholesale — skips unset fields and merges; (5) the upgrade prompt also reacts to a refused shortlist query; (3) the `jsonb_set` approve SQL checked on Postgres with null and existing `metrics`; (7) the `/files/:id` matrix is covered in `files.service.spec`.
+- Known, not fixed here: (1) account deletion would leave stored bytes on disk — today `DELETE /users/:id` cannot delete a user with a profile (FK `NO ACTION`), so nothing orphans; whoever builds account deletion must remove the keys; (2) a crash between the disk write and the commit leaves an unreferenced file — a sweep script with D2 storage; (6) the badge is not cached elsewhere on the frontend, nothing to invalidate; a 5 MB image can decode to a very large bitmap in the viewer's browser (decompression bomb; no server-side decoding).
 
 ### PR R5 — Deal proof, confirm or dispute, two-way ratings (old 6.1–6.3)
 - [ ] Creator submits a proof link + optional screenshot (R4 storage) → PROOF_SUBMITTED. Brand: Confirm Completion → COMPLETED, Report a Problem → DISPUTED (admin moderation list).
@@ -231,7 +252,7 @@ Rules for every PR:
 - Phase 7: the mobile notification bell from the mockups (the email code moved to R1b).
 
 ### Decisions for this plan (2026-10-04)
-- [x] D3: free test version, nobody is charged; price kept as designed (see D3 above).
+- [x] D3: free test version, nobody is charged; price kept as designed; Pro through a 0 ₸ checkout during the test (revised 2026-10-05, see D3 above).
 - [x] D4: local private volume behind a storage interface.
 - [x] Content strip: creator-uploaded portfolio images, up to 6.
 - [x] Plan approved, with the 6-digit email code moved into R1b.
@@ -255,14 +276,14 @@ P0 → P1 → R1 → R1b → R2 → R3 → R4 → R5 → R6 → P7 → P8 (D2)
 ```
 
 ## Review gate (blueprint adversarial check)
-- Before starting each phase: re-read PRODUCT-BRIEF anti-goals; cut any step that serves agencies, in-app payments, or social APIs.
+- Before starting each phase: re-read the anti-goals in docs/PROJECT.md; cut any step that serves agencies, in-app payments, or social APIs.
 - After each phase or redesign PR: run `code-review` on the diff; `security-review` on P0, R2 (D5 email paths), R4 (uploads, paywall) and P7; record the result here.
 
 ---
 
 # Audit Remediation — Approved Implementation Plan (2026-07-14)
 
-Scope approved after `docs/audits/PROJECT_FULL_AUDIT_AND_IMPROVEMENT_REVIEW.md` Phase 0 review. Preserve pre-existing UI/UX work; this plan owns only audit remediation.
+Scope approved after the full project audit's Phase 0 review (audit since consolidated into `docs/PROJECT.md`). Preserve pre-existing UI/UX work; this plan owns only audit remediation.
 
 ## Phase 1 — Token boundary (P0)
 - [x] Add explicit access/refresh JWT token types and enforce them for REST, refresh, and Socket.IO.
@@ -322,14 +343,14 @@ Verification: after recreating the backend, CORS preflight returned the matching
 Prior audit-fix plan complete — see git history (fa98eed and earlier).
 
 ## Phase A — Documentation
-- [ ] docs/UI_UX_AUDIT.md — full audit with severity
-- [ ] docs/PRODUCT_STRUCTURE.md — personas, IA, navigation
-- [ ] docs/DESIGN_SYSTEM.md — typography, color, spacing, radius, shadows, motion
-- [ ] docs/THEMING.md — light/dark token strategy
-- [ ] docs/COMPONENT_LIBRARY.md — shared component contracts
-- [ ] docs/RESPONSIVE_STRATEGY.md — breakpoints, adaptive nav
-- [ ] docs/ACCESSIBILITY_AUDIT.md — WCAG AA findings + fixes
-- [ ] docs/UI_PERFORMANCE.md — rendering, bundle, CLS
+- [ ] docs/PROJECT.md — full audit with severity
+- [ ] docs/PROJECT.md — personas, IA, navigation
+- [ ] docs/PROJECT.md — typography, color, spacing, radius, shadows, motion
+- [ ] docs/PROJECT.md — light/dark token strategy
+- [ ] docs/PROJECT.md — shared component contracts
+- [ ] docs/PROJECT.md — breakpoints, adaptive nav
+- [ ] docs/PROJECT.md — WCAG AA findings + fixes
+- [ ] docs/PROJECT.md — rendering, bundle, CLS
 
 ## Phase B — Foundation (code)
 - [ ] theme.ts → Design System 2.0: semantic tokens, dark mode, typography scale, component variants, shadows

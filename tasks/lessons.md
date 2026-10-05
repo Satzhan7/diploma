@@ -64,3 +64,18 @@
 - **`waitForLoadState('networkidle')` after a client-side navigation returns at once.** The page load already happened. Wait for content of the new page instead (`getByText(...).waitFor()`).
 - **Postgres `to_date` raises on impossible days, and `AND` does not fix evaluation order.** `to_date('2026-02-31','YYYY-MM-DD')` errors ("field value out of range") instead of rolling over, so a round-trip guard cannot protect a cast. Validate inside a `CASE` (its branches run in order): pattern first, then the day against the month's last day. Seed bad rows on the scratch DB to prove it.
 - **`gh` here is an x86_64 build whose git call fails through `xcrun`.** Run it outside the repo with `-R Satzhan7/diploma` (`cd /tmp && gh pr view 10 -R …`); push with plain `git`.
+
+## 2026-10-05 — Redesign R4
+
+- **The login route is throttled at 10/min per IP, and QA scripts hit it.** Polling `/auth/login` to see whether a restarted backend is up burned the limit in seconds. Poll an authed GET with an existing token (tokens survive a restart: same secret), log in once per role, and give browser contexts the tokens through `addInitScript` (`accessToken` / `refreshToken` in localStorage) instead of the form. Keep one real form login per run.
+- **An axios instance with a default `Content-Type: application/json` serialises `FormData` to JSON.** Pass `{ headers: { 'Content-Type': 'multipart/form-data' } }` on uploads; the browser then sets the boundary.
+- **Images from the API need the frontend CSP's `img-src`.** Dev serves the API on another origin, and private images shown from object URLs need `blob:`. The CSP is a template variable (`CSP_IMG_SRC`) like `CSP_CONNECT_SRC`.
+- **A compose `environment:` list item containing `: ` is a YAML mapping.** Quote the whole item (`- "CSP_IMG_SRC='self' data: blob: …"`); check with `docker compose config -q`.
+- **Public uploads must lose their metadata.** Phone JPEGs carry GPS in EXIF; a magic-byte check alone serves it to everyone. Strip APP1/APP13/COM (JPEG), text/eXIf chunks (PNG), EXIF/XMP chunks (WebP) and refuse broken structures.
+- **The `security-review` skill diffs against `origin/HEAD`, which shares no history with these branches** (see the 2026-10-01 note). Do the security pass inline against the PR base and record it in todo.md.
+- **`Number(undefined) !== Number(undefined)` is true (NaN).** A "did the value change" check must skip fields the patch does not set, and a partial jsonb patch should merge, not replace.
+- **A re-login rotates the only stored refresh token, so update tokens in open browser contexts.** An `addInitScript` that sets tokens runs on every navigation and puts back stale ones unless it is guarded (seed once per tab with a `sessionStorage` flag, then write fresh tokens into live pages after a re-login).
+- **The dev backend reruns `npm ci` on every start (about 3 min).** QA restarts poll `/health`, not an authed route: access tokens last 15 minutes and logins are throttled.
+- **When a flag stops granting a capability, re-test the gate with the real service, not a stub.** The paywall spec stubbed `planService.forUser`, so it could not notice that the test period no longer means Pro; the new spec drives the real `PlanService` (stored Free → 403 → checkout → allowed).
+- **Never hard-code a currency format in copy.** `formatMoney(0)` is "0 ₸" in RU but "₸0" in EN and "₸ 0" in KZ; interpolate `{{price}}` from `formatMoney` and assert in QA with `\s` (Intl uses U+00A0).
+- **A badge next to a note must not repeat it.** "Тестовый период" as a pill followed by "Тестовый период: …" reads twice; check alerts in a screenshot, not only by text.

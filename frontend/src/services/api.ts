@@ -1,6 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005'; // Fallback to localhost:3005
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005'; // Fallback to localhost:3005
 
 const api = axios.create({
   baseURL: API_BASE_URL,

@@ -58,9 +58,17 @@
       "findBriefs": "Брифтер",
       "myApplications": "Өтінімдер",
       "profile": "Профиль",
-      "applicants": "Өтінімдер"
+      "applicants": "Өтінімдер",
+      "plan": "Тариф",
+      "stats": "Статистика",
+      "verifications": "Кезек",
+      "adminBrands": "Брендтер"
     },
-    "applicants": "Өтінімдер"
+    "applicants": "Өтінімдер",
+    "plan": "Тариф",
+    "stats": "Статистика және портфолио",
+    "verifications": "Тексеру",
+    "adminBrands": "Брендтер мен тарифтер"
   },
   "status": {
     "open": "Ашық",

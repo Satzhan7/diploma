@@ -1,4 +1,8 @@
-export function parseMigrationsRun(
+import { join } from 'path';
+
+/** A `true`/`false` env flag; empty or unset gives `fallback`, anything else throws. */
+export function parseBooleanEnv(
+  name: string,
   value: string | undefined,
   fallback: boolean,
 ): boolean {
@@ -6,12 +10,12 @@ export function parseMigrationsRun(
   if (normalised === 'true') return true;
   if (normalised === 'false') return false;
   if (normalised) {
-    throw new Error(
-      `DB_MIGRATIONS_RUN must be "true" or "false", got "${value}"`,
-    );
+    throw new Error(`${name} must be "true" or "false", got "${value}"`);
   }
   return fallback;
 }
+
+export const PRO_PRICE_KZT = 19900;
 
 export default () => ({
   port: parseInt(process.env.PORT, 10) || 3000,
@@ -30,7 +34,8 @@ export default () => ({
     // src/database/migrations, applied on boot. DB_MIGRATIONS_RUN=false turns
     // that off (e.g. to apply them by hand with migration:run:prod first);
     // =true turns it on elsewhere. Unset keeps the default.
-    migrationsRun: parseMigrationsRun(
+    migrationsRun: parseBooleanEnv(
+      'DB_MIGRATIONS_RUN',
       process.env.DB_MIGRATIONS_RUN,
       process.env.NODE_ENV === 'production',
     ),
@@ -47,6 +52,21 @@ export default () => ({
     accessTokenExpiration: process.env.JWT_ACCESS_EXPIRATION || '15m',
     refreshTokenExpiration: process.env.JWT_REFRESH_EXPIRATION || '7d',
   },
+  // Test period (decision D3): while this is on, a brand gets Pro for 30 days
+  // through a 0 ₸ checkout (POST /plan/checkout). Off: no checkout; a brand
+  // pays by Kaspi transfer and an admin sets the plan.
+  freeTestPeriod: parseBooleanEnv(
+    'FREE_TEST_PERIOD',
+    process.env.FREE_TEST_PERIOD,
+    true,
+  ),
+  // Where brands send the Pro fee (Plan page) once the test period ends.
+  kaspi: {
+    phone: process.env.KASPI_PHONE?.trim() || null,
+    recipient: process.env.KASPI_RECIPIENT?.trim() || 'AdPartners',
+  },
+  // Private uploads (decision D4): a local disk volume behind StorageService.
+  uploadDir: process.env.UPLOAD_DIR || join(process.cwd(), 'uploads'),
   mail: {
     from: process.env.MAIL_FROM || 'AdPartners <no-reply@adpartners.kz>',
     smtp: {

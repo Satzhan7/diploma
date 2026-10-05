@@ -1,0 +1,34 @@
+import { effectivePlan, Plan } from './plan';
+
+describe('effectivePlan', () => {
+  const now = new Date('2026-10-05T12:00:00Z');
+  const later = new Date('2026-11-05T12:00:00Z');
+  const earlier = new Date('2026-10-05T11:59:59Z');
+
+  it('keeps Free as Free, whatever the expiry says', () => {
+    expect(effectivePlan({ plan: Plan.FREE, proExpiresAt: null }, now)).toBe(
+      Plan.FREE,
+    );
+    expect(effectivePlan({ plan: Plan.FREE, proExpiresAt: later }, now)).toBe(
+      Plan.FREE,
+    );
+  });
+
+  it('keeps Pro until it expires', () => {
+    expect(effectivePlan({ plan: Plan.PRO, proExpiresAt: null }, now)).toBe(
+      Plan.PRO,
+    );
+    expect(effectivePlan({ plan: Plan.PRO, proExpiresAt: later }, now)).toBe(
+      Plan.PRO,
+    );
+  });
+
+  it('counts expired Pro as Free, from the expiry instant on', () => {
+    expect(effectivePlan({ plan: Plan.PRO, proExpiresAt: earlier }, now)).toBe(
+      Plan.FREE,
+    );
+    expect(effectivePlan({ plan: Plan.PRO, proExpiresAt: now }, now)).toBe(
+      Plan.FREE,
+    );
+  });
+});

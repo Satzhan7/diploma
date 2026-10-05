@@ -17,6 +17,8 @@ import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconType } from 'react-icons';
 import {
+  FiBarChart2,
+  FiBriefcase,
   FiCheckCircle,
   FiFilePlus,
   FiHome,
@@ -26,6 +28,8 @@ import {
   FiSearch,
   FiSend,
   FiSettings,
+  FiShield,
+  FiStar,
   FiUser,
   FiUsers,
 } from 'react-icons/fi';
@@ -45,7 +49,6 @@ interface NavItem {
   noTab?: boolean;
 }
 
-// R4 adds Plan.
 const NAV: Partial<Record<UserRole, NavItem[]>> = {
   [UserRole.BRAND]: [
     { key: 'home', to: '/brand/dashboard', icon: FiHome },
@@ -54,6 +57,7 @@ const NAV: Partial<Record<UserRole, NavItem[]>> = {
     { key: 'applicants', to: '/brand/applicants', icon: FiUsers },
     { key: 'deals', to: '/brand/deals', icon: FiCheckCircle },
     { key: 'messages', to: '/brand/messages', icon: FiMessageSquare },
+    { key: 'plan', to: '/brand/plan', icon: FiStar, noTab: true },
   ],
   [UserRole.INFLUENCER]: [
     { key: 'findBriefs', to: '/influencer/briefs', icon: FiSearch },
@@ -61,6 +65,11 @@ const NAV: Partial<Record<UserRole, NavItem[]>> = {
     { key: 'deals', to: '/influencer/deals', icon: FiCheckCircle },
     { key: 'messages', to: '/influencer/messages', icon: FiMessageSquare },
     { key: 'profile', to: '/influencer/profile', icon: FiUser },
+    { key: 'stats', to: '/influencer/stats', icon: FiBarChart2, noTab: true },
+  ],
+  [UserRole.ADMIN]: [
+    { key: 'verifications', to: '/admin/verifications', icon: FiShield },
+    { key: 'adminBrands', to: '/admin/brands', icon: FiBriefcase },
   ],
 };
 
@@ -126,9 +135,21 @@ const AccountMenu: React.FC<{ role?: UserRole; compact?: boolean }> = ({ role, c
             {t('nav.profile')}
           </MenuItem>
         )}
-        <MenuItem icon={<IconWrapper icon={FiSettings} size="1em" />} onClick={() => navigate(`${base}/settings`)}>
-          {t('nav.settings')}
-        </MenuItem>
+        {role === UserRole.BRAND && (
+          <MenuItem icon={<IconWrapper icon={FiStar} size="1em" />} onClick={() => navigate('/brand/plan')}>
+            {t('nav.plan')}
+          </MenuItem>
+        )}
+        {role === UserRole.INFLUENCER && (
+          <MenuItem icon={<IconWrapper icon={FiBarChart2} size="1em" />} onClick={() => navigate('/influencer/stats')}>
+            {t('nav.stats')}
+          </MenuItem>
+        )}
+        {role !== UserRole.ADMIN && (
+          <MenuItem icon={<IconWrapper icon={FiSettings} size="1em" />} onClick={() => navigate(`${base}/settings`)}>
+            {t('nav.settings')}
+          </MenuItem>
+        )}
         {compact && (
           <Box px={3} py={2}>
             <LanguageSwitcher />

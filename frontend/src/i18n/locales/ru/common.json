@@ -58,9 +58,17 @@
       "findBriefs": "Брифы",
       "myApplications": "Отклики",
       "profile": "Профиль",
-      "applicants": "Отклики"
+      "applicants": "Отклики",
+      "plan": "Тариф",
+      "stats": "Статистика",
+      "verifications": "Очередь",
+      "adminBrands": "Бренды"
     },
-    "applicants": "Отклики"
+    "applicants": "Отклики",
+    "plan": "Тариф",
+    "stats": "Статистика и портфолио",
+    "verifications": "Проверка",
+    "adminBrands": "Бренды и тарифы"
   },
   "status": {
     "open": "Открыт",

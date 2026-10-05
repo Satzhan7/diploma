@@ -12,4 +12,13 @@ export class ListOrderApplicationsQueryDto extends PaginationQueryDto {
   )
   @IsBoolean()
   shortlisted?: boolean;
+
+  /** `true`: only creators with approved stats. Pro only (`PLAN_PRO_REQUIRED`). */
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) =>
+    value === 'true' ? true : value === 'false' ? false : value,
+  )
+  @IsBoolean()
+  verifiedOnly?: boolean;
 }

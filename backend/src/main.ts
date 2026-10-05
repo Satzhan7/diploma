@@ -37,7 +37,7 @@ async function bootstrap() {
   // instead of putting every user behind the proxy into one bucket.
   app.set('trust proxy', 1);
 
-  // Standard security headers (SECURITY_AUDIT H5/L3).
+  // Standard security headers.
   app.use(helmet());
 
   // Enable CORS. In production, restrict to CORS_ORIGIN (comma-separated list).
@@ -48,7 +48,7 @@ async function bootstrap() {
   app.enableCors({ origin: corsOrigin, credentials: true });
 
   // Enable validation pipes. whitelist+forbidNonWhitelisted reject unknown
-  // body properties (mass-assignment guard, SECURITY_AUDIT H4).
+  // body properties (mass-assignment guard).
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

@@ -1,0 +1,51 @@
+{
+  "verifications": {
+    "title": "Verification queue",
+    "subtitle": "Compare each claim with its screenshot, oldest first.",
+    "filter": {
+      "pending": "Waiting",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "empty": "No claims here.",
+    "claimed": "Claimed",
+    "onProfile": "On the profile now",
+    "followers": "Followers",
+    "engagement": "Engagement",
+    "submitted": "Sent {{date}}",
+    "reviewed": "Reviewed {{date}}",
+    "screenshot": "Insights screenshot of {{name}}",
+    "screenshotError": "The screenshot could not be loaded.",
+    "open": "Open full size",
+    "approve": "Approve and lock stats",
+    "reject": "Reject",
+    "rejectTitle": "Reject the claim",
+    "reason": "Reason the creator will see",
+    "reasonHint": "3 to 500 characters.",
+    "cancel": "Cancel",
+    "rejectedWith": "Reason: {{reason}}",
+    "toasts": {
+      "approved": "{{name}} is verified",
+      "rejected": "Claim rejected"
+    }
+  },
+  "brands": {
+    "title": "Brands and plans",
+    "subtitle": "Set Pro after a Kaspi transfer. The change applies at once.",
+    "search": "Search by name, company or email",
+    "testNote": "The test period is on: every brand has Pro, whatever is set here.",
+    "plan": "Plan",
+    "until": "Pro until",
+    "noEnd": "No end date",
+    "save": "Save",
+    "now": "Now: {{plan}}",
+    "empty": "No brands found.",
+    "toasts": {
+      "saved": "Plan saved for {{name}}"
+    }
+  },
+  "list": {
+    "more": "Show more",
+    "count": "{{shown}} of {{total}}"
+  }
+}

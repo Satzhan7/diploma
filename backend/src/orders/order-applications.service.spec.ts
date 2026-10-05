@@ -16,6 +16,16 @@ import {
   OrderApplication,
 } from './entities/order-application.entity';
 import { UserRole } from '../users/entities/user.entity';
+import { Plan } from '../plan/plan';
+import { PlanService } from '../plan/plan.service';
+
+// PlanService and FilesService stubs: a Free brand, no portfolios.
+const planStub = (plan = Plan.FREE) => ({
+  forUser: jest.fn(async () => ({ plan })),
+});
+const filesStub = () => ({
+  portfolioIdsFor: jest.fn(async () => new Map<string, string[]>()),
+});
 
 describe('OrderApplicationsService.create', () => {
   const manager = {
@@ -36,6 +46,8 @@ describe('OrderApplicationsService.create', () => {
       {} as any,
       {} as any,
       {} as any,
+      planStub() as any,
+      filesStub() as any,
       dataSource as any,
     );
   });
@@ -121,6 +133,8 @@ describe('OrderApplicationsService.findAllByUser', () => {
       {} as any,
       {} as any,
       {} as any,
+      planStub() as any,
+      filesStub() as any,
       {} as any,
     );
 
@@ -169,6 +183,8 @@ describe('OrderApplicationsService.findAllByUser', () => {
       {} as any,
       {} as any,
       {} as any,
+      planStub() as any,
+      filesStub() as any,
       {} as any,
     );
 
@@ -243,6 +259,8 @@ describe('Application status transitions', () => {
         create: jest.fn().mockResolvedValue({ id: 'chat-1' }),
         addMessage: jest.fn(),
       } as any,
+      planStub() as any,
+      filesStub() as any,
       { transaction: jest.fn((work) => work(manager)) } as any,
     );
     return { service, manager, repository, dealsService };
@@ -449,17 +467,24 @@ describe('OrderApplicationsService applicant ranking', () => {
       contentTypes: [],
     },
   };
-  const serviceWith = (applications: object[]) => {
+  const serviceWith = (
+    applications: object[],
+    plan = Plan.FREE,
+    files = filesStub(),
+  ) => {
     const repository = { find: jest.fn().mockResolvedValue(applications) };
+    const planService = planStub(plan);
     const service = new OrderApplicationsService(
       repository as any,
       { findOne: jest.fn().mockResolvedValue(order) } as any,
       {} as any,
       {} as any,
       {} as any,
+      planService as any,
+      files as any,
       {} as any,
     );
-    return { service, repository };
+    return { service, repository, planService };
   };
 
   it('ranks by the brief targeting, then oldest first, and pages after ranking', async () => {
@@ -506,6 +531,110 @@ describe('OrderApplicationsService applicant ranking', () => {
     );
   });
 
+  it('refuses verified-only results to a Free brand before reading applicants', async () => {
+    const { service, repository, planService } = serviceWith([], Plan.FREE);
+    await expect(
+      service.findByOrder('order-1', 'brand-user', {
+        take: 20,
+        skip: 0,
+        verifiedOnly: true,
+      }),
+    ).rejects.toMatchObject({
+      status: 403,
+      response: expect.objectContaining({
+        code: ErrorCode.PLAN_PRO_REQUIRED,
+      }),
+    });
+    expect(planService.forUser).toHaveBeenCalledWith('brand-user');
+    expect(repository.find).not.toHaveBeenCalled();
+  });
+
+  it('refuses verified-only results to a stored-Free brand in the test period until it checks out', async () => {
+    let stored = { id: 'brand-profile', plan: Plan.FREE, proExpiresAt: null };
+    const config = { get: jest.fn((key: string) => key === 'freeTestPeriod') };
+    const manager = {
+      createQueryBuilder: () => ({
+        setLock: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn(async () => stored),
+      }),
+      update: jest.fn(async (_entity: unknown, _id: string, patch: object) => {
+        stored = { ...stored, ...patch };
+      }),
+      insert: jest.fn(async () => undefined),
+    };
+    const planService = new PlanService(
+      { findOne: jest.fn(async () => stored) } as any,
+      config as any,
+      { transaction: async (work: any) => work(manager) } as any,
+    );
+    const { service, repository } = serviceWith([]);
+    (service as any).planService = planService;
+    const query = { take: 20, skip: 0, verifiedOnly: true };
+
+    await expect(
+      service.findByOrder('order-1', 'brand-user', query),
+    ).rejects.toMatchObject({
+      status: 403,
+      response: expect.objectContaining({
+        code: ErrorCode.PLAN_PRO_REQUIRED,
+      }),
+    });
+    expect(repository.find).not.toHaveBeenCalled();
+
+    await planService.checkout('brand-user');
+    await service.findByOrder('order-1', 'brand-user', query);
+    expect(repository.find).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives a Pro brand only verified creators', async () => {
+    const { service, repository } = serviceWith([], Plan.PRO);
+    await service.findByOrder('order-1', 'brand-user', {
+      take: 20,
+      skip: 0,
+      verifiedOnly: true,
+    });
+    const where = repository.find.mock.calls[0][0].where;
+    expect(where.applicant.profile.verifiedAt).toEqual(
+      expect.objectContaining({ _type: 'not' }),
+    );
+  });
+
+  it('does not check the plan without the filter', async () => {
+    const { service, repository, planService } = serviceWith([], Plan.FREE);
+    await service.findByOrder('order-1', 'brand-user', { take: 20, skip: 0 });
+    expect(planService.forUser).not.toHaveBeenCalled();
+    expect(repository.find.mock.calls[0][0].where.applicant).toBeUndefined();
+  });
+
+  it('adds the verified flag and portfolio ids to each creator', async () => {
+    const verified = creator('verified', ['Food']);
+    Object.assign(verified.profile, { verifiedAt: new Date('2026-10-01') });
+    const files = filesStub();
+    files.portfolioIdsFor.mockResolvedValue(
+      new Map([['verified', ['img-1', 'img-2']]]),
+    );
+    const { service } = serviceWith(
+      [
+        app('a1', verified, '2026-10-01'),
+        app('a2', creator('plain', ['Food']), '2026-10-02'),
+      ],
+      Plan.FREE,
+      files,
+    );
+    const page = await service.findByOrder('order-1', 'brand-user', {
+      take: 20,
+      skip: 0,
+    });
+    expect(files.portfolioIdsFor).toHaveBeenCalledWith(['verified', 'plain']);
+    expect(
+      page.items.map((a) => [a.creator.verified, a.creator.portfolio]),
+    ).toEqual([
+      [true, ['img-1', 'img-2']],
+      [false, []],
+    ]);
+  });
+
   it("refuses another brand's applicants", async () => {
     const { service } = serviceWith([]);
     await expect(
@@ -531,6 +660,8 @@ describe('OrderApplicationsService.setShortlisted', () => {
       {} as any,
       {} as any,
       {} as any,
+      planStub() as any,
+      filesStub() as any,
       {} as any,
     );
     return { service, repository };

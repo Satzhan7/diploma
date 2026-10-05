@@ -10,7 +10,7 @@ import {
 } from '@chakra-ui/react';
 
 // Layout-matched skeletons — same dimensions as the content they replace,
-// so loading → loaded causes no layout shift (docs/UI_PERFORMANCE.md).
+// so loading → loaded causes no layout shift (docs/PROJECT.md).
 
 export const StatCardSkeleton: React.FC = () => (
   <Card>

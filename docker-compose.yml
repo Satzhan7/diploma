@@ -46,9 +46,15 @@ services:
       - SMTP_HOST=mailpit
       - SMTP_PORT=1025
       - MAIL_FROM=AdPartners <no-reply@adpartners.kz>
+      # Test period on by default: brands get Pro through a 0 ₸ checkout.
+      # FREE_TEST_PERIOD=false docker compose up closes the checkout (Pro then
+      # only after a Kaspi transfer and an admin setting the plan).
+      - FREE_TEST_PERIOD=${FREE_TEST_PERIOD:-true}
+      - UPLOAD_DIR=/data/uploads
     volumes:
       - ./backend:/usr/src/app
       - /usr/src/app/node_modules
+      - uploads_data:/data/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -85,6 +91,8 @@ services:
       # The dev build calls the API cross-origin on :3005, so the CSP must
       # allow it. Production keeps the Dockerfile default ('self' https: wss:).
       - CSP_CONNECT_SRC='self' http://localhost:3005 http://127.0.0.1:3005 ws://localhost:3005 ws://127.0.0.1:3005
+      # Portfolio images come from the API origin too.
+      - "CSP_IMG_SRC='self' data: blob: http://localhost:3005 http://127.0.0.1:3005"
     restart: always
     ports:
       - "3000:80"
@@ -99,3 +107,4 @@ networks:
 
 volumes:
   postgres_data:
+  uploads_data:

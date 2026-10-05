@@ -1,0 +1,47 @@
+{
+  "title": "Stats and portfolio",
+  "subtitle": "Checked stats and real work samples help brands choose you.",
+  "verification": {
+    "title": "Verified stats",
+    "status": {
+      "none": "Not sent",
+      "pending": "Under review",
+      "approved": "Verified",
+      "rejected": "Rejected"
+    },
+    "noneBody": "Send your follower count and engagement rate with a screenshot of your account insights. An admin checks them, usually within a day.",
+    "pendingBody": "We are checking the claim you sent on {{date}}. The result will appear here.",
+    "approvedBody": "Brands see the Verified badge next to your name.",
+    "rejectedReason": "Reason: {{reason}}",
+    "rejectedBody": "Fix it and send a new claim.",
+    "claimed": "{{followers}} followers · {{rate}} engagement"
+  },
+  "form": {
+    "followers": "Followers",
+    "engagementRate": "Engagement rate, %",
+    "screenshot": "Insights screenshot",
+    "screenshotHint": "JPEG, PNG or WebP up to 5 MB. Show the follower count and the engagement for the last 30 days.",
+    "choose": "Choose image",
+    "change": "Change image",
+    "submit": "Send for review",
+    "resubmitNote": "A new claim removes the Verified badge until an admin approves it.",
+    "required": "Attach a screenshot.",
+    "tooLarge": "The file is larger than 5 MB.",
+    "wrongType": "Choose a JPEG, PNG or WebP image.",
+    "newClaim": "Send a new claim"
+  },
+  "portfolio": {
+    "title": "Portfolio",
+    "subtitle": "Up to 6 images. Brands see them on your applications.",
+    "add": "Add image",
+    "remove": "Remove image {{n}}",
+    "count": "{{n}} of 6",
+    "empty": "No images yet. Add your best work.",
+    "alt": "Portfolio image {{n}}"
+  },
+  "toasts": {
+    "submitted": "Sent for review",
+    "added": "Image added",
+    "removed": "Image removed"
+  }
+}

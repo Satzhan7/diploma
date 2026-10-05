@@ -11,7 +11,8 @@ import {
 import { User } from '../../users/entities/user.entity';
 import { SocialMedia } from './social-media.entity';
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose, Transform } from 'class-transformer';
+import { Exclude, Expose, Transform } from 'class-transformer';
+import { Plan } from '../../plan/plan';
 
 export enum ProfileType {
   BRAND = 'brand',
@@ -151,6 +152,21 @@ export class Profile {
   })
   @Column({ default: false })
   isSubscribedToOrders: boolean;
+
+  // Brand subscription. Never read these directly for access checks: use
+  // effectivePlan() (src/plan/plan.ts), which applies the expiry. Excluded
+  // from serialization so other users never see them.
+  @Exclude()
+  @Column({ type: 'enum', enum: Plan, default: Plan.FREE })
+  plan: Plan;
+
+  @Exclude()
+  @Column({ type: 'timestamptz', nullable: true })
+  proExpiresAt: Date | null;
+
+  /** Creator stats approved by an admin (the Verified badge); null otherwise. */
+  @Column({ type: 'timestamptz', nullable: true })
+  verifiedAt: Date | null;
 
   @OneToOne(() => User, (user) => user.profile)
   @JoinColumn({ name: 'user_id' })

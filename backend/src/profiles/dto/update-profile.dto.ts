@@ -161,8 +161,7 @@ export class UpdateProfileDto {
   websiteUrl?: string;
 
   // NOTE: `type` deliberately not updatable — profile type is fixed at
-  // registration; allowing it here let users flip brand<->influencer
-  // (SECURITY_AUDIT H4).
+  // registration; allowing it here let users flip brand<->influencer.
 
   // Brand-specific fields
   @IsOptional()
