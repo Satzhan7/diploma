@@ -225,7 +225,8 @@
     "applied_other": "{{count}} applied",
     "apply": "Apply",
     "view": "View",
-    "openLabel": "Open brief {{title}}",
+    "applyLabel": "Apply: {{title}}",
+    "viewLabel": "View: {{title}}",
     "empty": {
       "title": "No briefs match",
       "description": "Try another niche or city, or check back later."

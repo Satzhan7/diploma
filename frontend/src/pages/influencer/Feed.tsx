@@ -113,7 +113,7 @@ export const Feed: React.FC = () => {
                     to={`/influencer/briefs/${brief.id}`}
                     colorScheme={brief.myApplication ? undefined : 'brand'}
                     variant={brief.myApplication ? 'outline' : 'solid'}
-                    aria-label={t('feed.openLabel', { title: brief.title })}
+                    aria-label={t(brief.myApplication ? 'feed.viewLabel' : 'feed.applyLabel', { title: brief.title })}
                   >
                     {t(brief.myApplication ? 'feed.view' : 'feed.apply')}
                   </Button>

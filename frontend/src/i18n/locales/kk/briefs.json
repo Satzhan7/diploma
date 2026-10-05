@@ -225,7 +225,8 @@
     "applied_other": "{{count}} өтінім",
     "apply": "Өтінім беру",
     "view": "Ашу",
-    "openLabel": "{{title}} брифін ашу",
+    "applyLabel": "Өтінім беру: {{title}}",
+    "viewLabel": "Ашу: {{title}}",
     "empty": {
       "title": "Сәйкес бриф жоқ",
       "description": "Басқа сала не қала таңдаңыз немесе кейінірек қараңыз."
