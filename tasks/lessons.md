@@ -62,3 +62,5 @@
 - **`w="fit-content"` defeats `overflowX="auto"`.** The element grows past its parent, so the page scrolls instead of the control. Add `maxW="full"` and `flexShrink={0}` on the children.
 - **`docker compose up -d --build frontend` also recreates `backend`** (depends_on), which reinstalls for about a minute. Use `--no-deps`, or wait for `healthy` before running QA.
 - **`waitForLoadState('networkidle')` after a client-side navigation returns at once.** The page load already happened. Wait for content of the new page instead (`getByText(...).waitFor()`).
+- **Postgres `to_date` raises on impossible days, and `AND` does not fix evaluation order.** `to_date('2026-02-31','YYYY-MM-DD')` errors ("field value out of range") instead of rolling over, so a round-trip guard cannot protect a cast. Validate inside a `CASE` (its branches run in order): pattern first, then the day against the month's last day. Seed bad rows on the scratch DB to prove it.
+- **`gh` here is an x86_64 build whose git call fails through `xcrun`.** Run it outside the repo with `-R Satzhan7/diploma` (`cd /tmp && gh pr view 10 -R …`); push with plain `git`.
