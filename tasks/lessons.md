@@ -51,3 +51,14 @@
 - **The TypeORM generator does not drop tables of removed entities.** Add the `DROP TABLE` / `DROP TYPE` statements by hand, with a `down` that recreates them from the Baseline migration, and prove the round trip.
 - **`@Column({ unique: true })` on a OneToOne join column duplicates the `REL_` unique constraint** TypeORM already creates. Leave `unique` off the join column of a OneToOne.
 - **Removing a static route can expose a dynamic sibling.** After `GET /users/influencers` was deleted, the path fell through to `GET /users/:id` and Postgres answered the non-UUID with a 500. Every `:id` param that maps to a uuid column gets `ParseUUIDPipe`; probe removed paths after deleting routes.
+
+## 2026-10-05 — Redesign R3
+
+- **An `aria-label` must contain the visible text, ideally at the start.** The feed's "Apply" link carried `aria-label="Open brief {{title}}"`, which replaced its name: it failed WCAG 2.5.3 (label in name) and broke the QA locator `getByRole('link', { name: 'Apply' })`. Write labels as `"<visible text>: <context>"`, or drop the `aria-label`.
+- **Changing a route mid-form remounts the component.** Navigating from `/brief/new` to `/brief/:id/edit` after the first draft save would reset the wizard's state and step. Keep the URL and hold the saved id in state.
+- **`prettier --write` on a touched legacy file reformats all of it.** Check `git diff -w --stat` before committing; if unrelated lines changed, revert and format only the new code.
+- **Postgres `FOR UPDATE` cannot lock the nullable side of an outer join.** TypeORM's `setLock('pessimistic_write')` on a query with `leftJoin` fails. Lock the bare row, then check ownership with the FK column.
+- **Scope QA selectors to `main` or `form`.** The shell also has language buttons ("Русский", "RU"), so page-level `getByRole('button', { name })` hits two elements.
+- **`w="fit-content"` defeats `overflowX="auto"`.** The element grows past its parent, so the page scrolls instead of the control. Add `maxW="full"` and `flexShrink={0}` on the children.
+- **`docker compose up -d --build frontend` also recreates `backend`** (depends_on), which reinstalls for about a minute. Use `--no-deps`, or wait for `healthy` before running QA.
+- **`waitForLoadState('networkidle')` after a client-side navigation returns at once.** The page load already happened. Wait for content of the new page instead (`getByText(...).waitFor()`).
