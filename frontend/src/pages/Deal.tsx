@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Box, Button, Flex, HStack, Heading, Link, Skeleton, Stack, Text, useToast } from '@chakra-ui/react';
+import { Box, Button, Flex, Grid, HStack, Heading, Link, Skeleton, Stack, Text, useToast } from '@chakra-ui/react';
+
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
@@ -10,7 +11,8 @@ import { DEAL_STEPS, DEAL_TONE, Deal as DealModel, dealStepIndex, dealsService }
 import { chatsService } from '../services/chats';
 import { formatDate, formatMoney } from '../i18n';
 import { getErrorCode, getErrorMessage } from '../i18n/errors';
-import { EmptyState, StatusPill, Stepper } from '../components/ui';
+import { EmptyState, PageContainer, StatusPill, Stepper } from '../components/ui';
+import { layout } from '../theme';
 
 const firstName = (name: string) => name.split(' ')[0] || name;
 
@@ -56,11 +58,11 @@ export const Deal: React.FC = () => {
 
   if (isPending) {
     return (
-      <Stack spacing={6} aria-busy="true">
-        <Skeleton h="56px" borderRadius="md" />
-        <Skeleton h="48px" borderRadius="md" />
-        <Skeleton h="220px" borderRadius="xl" />
-      </Stack>
+      <PageContainer aria-busy="true">
+        <Skeleton h={14} borderRadius="md" />
+        <Skeleton h={12} borderRadius="md" />
+        <Skeleton h={56} borderRadius="xl" />
+      </PageContainer>
     );
   }
 
@@ -116,7 +118,7 @@ export const Deal: React.FC = () => {
   };
 
   return (
-    <Stack spacing={6}>
+    <PageContainer>
       <Box>
         <HStack spacing={2} fontSize="sm" color="fg.muted" wrap="wrap">
           <Link as={RouterLink} to={`${base}/deals`} color="primary.ink">
@@ -130,7 +132,7 @@ export const Deal: React.FC = () => {
           </Text>
         </HStack>
         <Flex align="center" gap={3} wrap="wrap" mt={1.5}>
-          <Heading as="h1" textStyle="display" fontSize={{ base: '28px', md: '34px' }} lineHeight="1.1">
+          <Heading as="h1" textStyle="h1">
             {t('detail.heading', { name: other.name })}
           </Heading>
           <StatusPill tone={DEAL_TONE[deal.status]}>{t(`status.${deal.status}`)}</StatusPill>
@@ -143,19 +145,21 @@ export const Deal: React.FC = () => {
         steps={DEAL_STEPS.map((s, i) => ({ label: t(`detail.steps.${s}`), caption: caption(i, deal) }))}
       />
 
-      <Flex gap={5} wrap="wrap" align="flex-start">
-        <Stack flex="2 1 380px" minW={0} spacing={4}>
-          <Stack layerStyle="card" p={5} spacing={3} as="section" aria-labelledby="deal-state">
-            <Text id="deal-state" fontWeight="700" fontSize="md">
+      <Grid
+        templateColumns={{ base: 'minmax(0, 1fr)', lg: 'minmax(0, 2fr) minmax(0, 1fr)' }}
+        gap={layout.grid}
+        alignItems="start"
+      >
+        <Stack minW={0} spacing={4}>
+          <Stack layerStyle="card" p={layout.card} spacing={3} as="section" aria-labelledby="deal-state">
+            <Text id="deal-state" textStyle="h3">
               {state.title}
             </Text>
-            <Text fontSize="sm" color="fg.muted" lineHeight="1.5">
-              {state.body}
-            </Text>
+            <Text color="fg.muted">{state.body}</Text>
           </Stack>
         </Stack>
 
-        <Box flex="1 1 260px" minW={0} layerStyle="card" as="section" aria-label={t('detail.facts.label')}>
+        <Box minW={0} layerStyle="card" as="section" aria-label={t('detail.facts.label')}>
           <Box as="ul" listStyleType="none">
             <Fact label={t('detail.facts.price')}>{formatMoney(deal.agreedPrice)}</Fact>
             <Fact label={t('detail.facts.payment')}>{t('detail.facts.paymentValue')}</Fact>
@@ -170,7 +174,7 @@ export const Deal: React.FC = () => {
               w="full"
               justifyContent="space-between"
               borderTopRadius={0}
-              h="48px"
+              size="lg"
               px={4}
               rightIcon={<FiArrowRight aria-hidden="true" />}
               onClick={openChat}
@@ -180,7 +184,7 @@ export const Deal: React.FC = () => {
             </Button>
           )}
         </Box>
-      </Flex>
-    </Stack>
+      </Grid>
+    </PageContainer>
   );
 };

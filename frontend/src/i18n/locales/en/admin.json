@@ -42,7 +42,8 @@
     "empty": "No brands found.",
     "toasts": {
       "saved": "Plan saved for {{name}}"
-    }
+    },
+    "columnBrand": "Brand"
   },
   "list": {
     "more": "Show more",

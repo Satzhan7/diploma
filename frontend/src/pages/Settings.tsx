@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   Box,
-  Container,
+
   VStack,
   Heading,
   FormControl,
@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { getErrorMessage } from '../i18n/errors';
+import { PageContainer, PageHeader } from '../components/ui';
 
 const SETTINGS_STORAGE_KEY = 'adpartners.userSettings';
 
@@ -106,9 +107,9 @@ export const Settings: React.FC = () => {
   };
 
   return (
-    <Container maxW="container.md" py={8}>
+    <PageContainer size="narrow">
+      <PageHeader title={t('title')} />
       <VStack spacing={6} align="stretch">
-        <Heading size="lg">{t('title')}</Heading>
 
         <form onSubmit={handleSubmit}>
           <VStack spacing={6} align="stretch">
@@ -167,6 +168,6 @@ export const Settings: React.FC = () => {
           {t('common:actions.logout')}
         </Button>
       </VStack>
-    </Container>
+    </PageContainer>
   );
 };

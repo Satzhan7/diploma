@@ -11,7 +11,6 @@ import {
   Center,
   Flex,
   HStack,
-  Link,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -19,7 +18,6 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  SimpleGrid,
   Stack,
   Text,
   Tooltip,
@@ -28,7 +26,7 @@ import {
 } from '@chakra-ui/react';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink, Navigate, useNavigate, useParams } from 'react-router-dom';
-import { FiArrowLeft, FiCheck, FiLock, FiUsers } from 'react-icons/fi';
+import { FiCheck, FiLock, FiUsers } from 'react-icons/fi';
 import { Applicant, applicationsService } from '../../services/applications';
 import { Brief, briefsService } from '../../services/briefs';
 import { nextSkip } from '../../services/page';
@@ -38,6 +36,7 @@ import { formatMoney, formatNumber, formatPercent } from '../../i18n';
 import { getErrorCode, getErrorMessage } from '../../i18n/errors';
 import { useBriefText } from '../../components/useBriefText';
 import {
+  BackLink,
   CardGridSkeleton,
   CreatorCard,
   EmptyState,
@@ -46,6 +45,8 @@ import {
   SegmentedControl,
   StatusBadge,
   StatusPill,
+  PageContainer,
+  ResponsiveGrid,
 } from '../../components/ui';
 
 const PAGE_SIZE = 24;
@@ -208,59 +209,47 @@ export const Applicants: React.FC = () => {
     );
 
   const header = brief.data && (
-    <Stack spacing={1}>
-      <Link
-        as={RouterLink}
-        to="/brand/briefs"
-        fontSize="sm"
-        color="fg.muted"
-        display="inline-flex"
-        gap={1}
-        alignItems="center"
-      >
-        <FiArrowLeft aria-hidden /> {t('applicants.crumb')}
-      </Link>
-      <PageHeader
-        title={feed.isPending ? brief.data.title : t('applicants.title', { count: total })}
-        subtitle={[
-          brief.data.title,
-          brief.data.platform && t(`platform.${brief.data.platform}`),
-          text.budget(brief.data),
-          t('applicants.ranked'),
-        ]
-          .filter(Boolean)
-          .join(' · ')}
-        actions={
-          isPro ? (
+    <PageHeader
+      eyebrow={<BackLink to="/brand/briefs">{t('applicants.crumb')}</BackLink>}
+      title={feed.isPending ? brief.data.title : t('applicants.title', { count: total })}
+      subtitle={[
+        brief.data.title,
+        brief.data.platform && t(`platform.${brief.data.platform}`),
+        text.budget(brief.data),
+        t('applicants.ranked'),
+      ]
+        .filter(Boolean)
+        .join(' · ')}
+      actions={
+        isPro ? (
+          <Button
+            variant={verifiedOnly ? 'solid' : 'outline'}
+            aria-pressed={verifiedOnly}
+            leftIcon={verifiedOnly ? <FiCheck aria-hidden /> : undefined}
+            onClick={() => setVerifiedOnly((on) => !on)}
+          >
+            {t('applicants.verifiedOnly')}
+          </Button>
+        ) : (
+          <Tooltip label={t('applicants.proHint')} hasArrow>
             <Button
-              variant={verifiedOnly ? 'solid' : 'outline'}
-              aria-pressed={verifiedOnly}
-              leftIcon={verifiedOnly ? <FiCheck aria-hidden /> : undefined}
-              onClick={() => setVerifiedOnly((on) => !on)}
+              variant="outline"
+              leftIcon={<FiLock aria-hidden />}
+              isDisabled={plan.isPending}
+              onClick={() => setUpgradeOpen(true)}
+              rightIcon={<StatusPill tone="primary">{t('applicants.pro')}</StatusPill>}
             >
               {t('applicants.verifiedOnly')}
             </Button>
-          ) : (
-            <Tooltip label={t('applicants.proHint')} hasArrow>
-              <Button
-                variant="outline"
-                leftIcon={<FiLock aria-hidden />}
-                isDisabled={plan.isPending}
-                onClick={() => setUpgradeOpen(true)}
-                rightIcon={<StatusPill tone="primary">{t('applicants.pro')}</StatusPill>}
-              >
-                {t('applicants.verifiedOnly')}
-              </Button>
-            </Tooltip>
-          )
-        }
-      />
-    </Stack>
+          </Tooltip>
+        )
+      }
+    />
   );
 
   const renderFeed = () => (
     <>
-      <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} spacing={4}>
+      <ResponsiveGrid>
         {applicants.map((a) => (
           <CreatorCard
             key={a.id}
@@ -285,7 +274,7 @@ export const Applicants: React.FC = () => {
             actions={actionsFor(a)}
           />
         ))}
-      </SimpleGrid>
+      </ResponsiveGrid>
       <Center flexDirection="column" gap={2}>
         <Text fontSize="sm" color="fg.muted">
           {t('list.count', { shown: applicants.length, total })}
@@ -363,7 +352,7 @@ export const Applicants: React.FC = () => {
           </Box>
           <Box as="thead">
             <Box as="tr">
-              <Box as="th" scope="col" w="160px">
+              <Box as="th" scope="col" w={40}>
                 <VisuallyHidden>{t('applicants.compareMetric')}</VisuallyHidden>
               </Box>
               {list.map((a) => (
@@ -430,13 +419,13 @@ export const Applicants: React.FC = () => {
         layerStyle="card"
         direction={{ base: 'column', md: 'row' }}
         overflow="hidden"
-        maxW="880px"
+        maxW="container.narrow"
         w="full"
         mx="auto"
       >
         <Box
           flex="1"
-          minH={{ base: '220px', md: '360px' }}
+          minH={{ base: 56, md: 80 }}
           bg="bg.subtle"
           position="relative"
           p={5}
@@ -449,7 +438,7 @@ export const Applicants: React.FC = () => {
           </Text>
           <HStack justify="space-between" align="flex-end" spacing={3}>
             <Box minW={0}>
-              <Text textStyle="display" fontSize="2xl" noOfLines={1}>
+              <Text textStyle="h2" noOfLines={1}>
                 {a.creator.name}
               </Text>
               <Text fontSize="sm" color="fg.muted">
@@ -497,7 +486,7 @@ export const Applicants: React.FC = () => {
   };
 
   return (
-    <Stack spacing={6}>
+    <PageContainer>
       {header}
 
       <SegmentedControl<View>
@@ -579,7 +568,7 @@ export const Applicants: React.FC = () => {
           </AlertDialogContent>
         </AlertDialogOverlay>
       </AlertDialog>
-    </Stack>
+    </PageContainer>
   );
 };
 

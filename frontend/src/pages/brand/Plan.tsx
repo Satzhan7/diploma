@@ -24,7 +24,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Plan as PlanName, PlanInfo, planService } from '../../services/plan';
 import { formatDate, formatMoney } from '../../i18n';
 import { getErrorMessage } from '../../i18n/errors';
-import { PageHeader, StatusPill } from '../../components/ui';
+import { PageHeader, StatusPill, PageContainer } from '../../components/ui';
 
 const FEATURES: Record<PlanName, string[]> = {
   free: ['briefs', 'ranked', 'deals'],
@@ -40,16 +40,16 @@ export const Plan: React.FC = () => {
   const plan = useQuery({ queryKey: ['plan', 'me'], queryFn: planService.mine });
 
   return (
-    <Stack spacing={6} maxW="880px">
+    <PageContainer>
       <PageHeader title={t('title')} subtitle={t('subtitle')} />
       {plan.isPending ? (
-        <Skeleton h="320px" borderRadius="xl" />
+        <Skeleton h={80} borderRadius="xl" />
       ) : plan.isError ? (
         <Text color="danger">{getErrorMessage(plan.error)}</Text>
       ) : (
         <PlanBody info={plan.data} />
       )}
-    </Stack>
+    </PageContainer>
   );
 };
 
@@ -105,7 +105,7 @@ const PlanBody: React.FC<{ info: PlanInfo }> = ({ info }) => {
               borderColor={current ? 'primary' : undefined}
             >
               <HStack justify="space-between">
-                <Heading id={`plan-${name}`} as="h2" fontSize="xl">
+                <Heading id={`plan-${name}`} as="h2" textStyle="h3">
                   {t(`${name}.name`)}
                 </Heading>
                 {current && <StatusPill tone="primary">{t('currentBadge')}</StatusPill>}
@@ -169,7 +169,7 @@ const PaySteps: React.FC<{ info: PlanInfo }> = ({ info }) => {
   const { user } = useAuth();
   return (
     <Stack as="section" aria-labelledby="plan-pay" layerStyle="card" p={{ base: 5, md: 6 }} spacing={3}>
-      <Heading id="plan-pay" as="h2" fontSize="lg">
+      <Heading id="plan-pay" as="h2" textStyle="h3">
         {t('pay.title')}
       </Heading>
       <OrderedList spacing={2} pl={1}>

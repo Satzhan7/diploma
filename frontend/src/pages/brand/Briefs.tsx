@@ -9,8 +9,6 @@ import {
   Button,
   Center,
   HStack,
-  SimpleGrid,
-  Stack,
   Text,
   useToast,
 } from '@chakra-ui/react';
@@ -29,6 +27,8 @@ import {
   PageHeader,
   SegmentedControl,
   StatusBadge,
+  PageContainer,
+  ResponsiveGrid,
 } from '../../components/ui';
 
 const PAGE_SIZE = 20;
@@ -125,7 +125,7 @@ export const Briefs: React.FC = () => {
   };
 
   return (
-    <Stack spacing={6}>
+    <PageContainer>
       <PageHeader
         title={t('list.title')}
         subtitle={t('list.subtitle')}
@@ -167,7 +167,7 @@ export const Briefs: React.FC = () => {
         />
       ) : (
         <>
-          <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} spacing={4}>
+          <ResponsiveGrid>
             {briefs.map((brief) => (
               <BriefCard
                 key={brief.id}
@@ -182,7 +182,7 @@ export const Briefs: React.FC = () => {
                 action={actionsFor(brief)}
               />
             ))}
-          </SimpleGrid>
+          </ResponsiveGrid>
           <Center flexDirection="column" gap={2}>
             <Text fontSize="sm" color="fg.muted">
               {t('list.count', { shown: briefs.length, total })}
@@ -216,6 +216,6 @@ export const Briefs: React.FC = () => {
           </AlertDialogContent>
         </AlertDialogOverlay>
       </AlertDialog>
-    </Stack>
+    </PageContainer>
   );
 };

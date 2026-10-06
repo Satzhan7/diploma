@@ -9,9 +9,9 @@ import { formatNumber, formatPercent } from '../i18n';
 
 // Illustration only: the hero shows what an applicant list looks like.
 const EXAMPLE_APPLICANTS = [
-  { name: 'Dana Serikbay', followers: 24100, er: 0.068, match: 92, verified: true, shift: '0px' },
-  { name: 'Arman Tolegen', followers: 41000, er: 0.042, match: 87, verified: true, shift: '28px' },
-  { name: 'Aruzhan Bekova', followers: 12600, er: 0.079, match: 84, verified: false, shift: '10px' },
+  { name: 'Dana Serikbay', followers: 24100, er: 0.068, match: 92, verified: true, shift: 0 },
+  { name: 'Arman Tolegen', followers: 41000, er: 0.042, match: 87, verified: true, shift: 7 },
+  { name: 'Aruzhan Bekova', followers: 12600, er: 0.079, match: 84, verified: false, shift: 2.5 },
 ];
 
 const initials = (name: string) =>
@@ -26,10 +26,12 @@ const STEPS = ['post', 'apply', 'deal'] as const;
 const Landing: React.FC = () => {
   const { t } = useTranslation('landing');
   const padX = { base: 4, md: 10 };
+  // Public page: content capped at the wide container, backgrounds stay full-bleed.
+  const frame = { w: 'full', maxW: 'container.wide', mx: 'auto' } as const;
 
   return (
     <Flex direction="column" minH="100vh">
-      <Flex as="header" align="center" justify="space-between" gap={4} px={padX} py={5}>
+      <Flex as="header" align="center" justify="space-between" gap={4} px={padX} py={5} {...frame}>
         <RouterLink to="/" aria-label="AdPartners.kz">
           <Logo sx={{ svg: { height: '30px', width: 'auto' } }} />
         </RouterLink>
@@ -38,12 +40,14 @@ const Landing: React.FC = () => {
             as={RouterLink}
             to="/register?role=influencer"
             color="fg.muted"
-            display={{ base: 'none', md: 'inline' }}
+            display={{ base: 'none', md: 'inline-flex' }}
+            alignItems="center"
+            minH="control.md"
           >
             {t('nav.forCreators')}
           </Link>
           <LanguageSwitcher display={{ base: 'none', sm: 'flex' }} />
-          <Link as={RouterLink} to="/login" fontWeight="600">
+          <Link as={RouterLink} to="/login" fontWeight="600" display="inline-flex" alignItems="center" minH="control.md">
             {t('nav.logIn')}
           </Link>
         </HStack>
@@ -57,27 +61,26 @@ const Landing: React.FC = () => {
         px={padX}
         pt={{ base: 6, md: 14 }}
         pb={{ base: 10, md: 16 }}
+        {...frame}
       >
-        <Stack flex="1 1 420px" minW={0} spacing={5}>
+        <Stack flex="1 1 26rem" minW={0} spacing={5}>
           <Text fontSize="sm" fontWeight="600" color="primary.ink">
             {t('hero.eyebrow')}
           </Text>
-          <Heading as="h1" textStyle="display" fontSize={{ base: '38px', md: '64px' }} lineHeight="1.04" sx={{ textWrap: 'balance' }}>
+          <Heading as="h1" textStyle="display" sx={{ textWrap: 'balance' }}>
             {t('hero.title')}
           </Heading>
-          <Text fontSize="lg" lineHeight="1.55" color="fg.muted" maxW="520px">
+          <Text textStyle="lead" color="fg.muted" maxW="container.prose">
             {t('hero.text')}
           </Text>
           <Flex wrap="wrap" gap={3}>
-            <Button as={RouterLink} to="/register?role=brand" size="lg" h="52px" px={6}>
+            <Button as={RouterLink} to="/register?role=brand" size="lg">
               {t('hero.ctaBrand')}
             </Button>
             <Button
               as={RouterLink}
               to="/register?role=influencer"
               size="lg"
-              h="52px"
-              px={6}
               variant="outline"
               colorScheme="gray"
               bg="bg.surface"
@@ -91,7 +94,7 @@ const Landing: React.FC = () => {
           </Text>
         </Stack>
 
-        <Stack flex="1 1 360px" minW={0} spacing={2.5} aria-label={t('example.label')} role="figure">
+        <Stack flex="1 1 22rem" minW={0} spacing={2.5} aria-label={t('example.label')} role="figure">
           <Flex justify="space-between" fontSize="sm" color="fg.muted" gap={3}>
             <Text>
               {t('example.label')} · {t('example.title')}
@@ -105,11 +108,10 @@ const Landing: React.FC = () => {
               gap={3.5}
               p={3.5}
               layerStyle="card"
-              transform={{ base: 'none', md: `translateX(${a.shift})` }}
+              transform={{ base: 'none', md: `translateX(var(--chakra-space-${String(a.shift).replace('.', '-')}))` }}
             >
               <Box
-                w="52px"
-                h="52px"
+                boxSize={12}
                 flex="none"
                 borderRadius="full"
                 borderWidth="1px"
@@ -139,31 +141,26 @@ const Landing: React.FC = () => {
       </Flex>
 
       <Box as="section" aria-label={t('steps.label')}>
-        <SimpleGrid
-          columns={{ base: 1, md: 3 }}
-          gap="1px"
-          bg="border.default"
-          borderTopWidth="1px"
-          borderBottomWidth="1px"
-          borderColor="border.default"
-        >
+        <Box borderTopWidth="1px" borderBottomWidth="1px" borderColor="border.default">
+        <SimpleGrid columns={{ base: 1, md: 3 }} gap="1px" bg="border.default" {...frame}>
           {STEPS.map((key, i) => (
             <Stack key={key} bg="bg.canvas" px={padX} py={7} spacing={2}>
-              <Text textStyle="display" fontSize="36px" color="primary.ink" aria-hidden>
+              <Text textStyle="display" fontSize="4xl" color="primary.ink" aria-hidden>
                 {String(i + 1).padStart(2, '0')}
               </Text>
-              <Heading as="h2" fontSize="17px" fontWeight="600" letterSpacing="normal">
+              <Heading as="h2" textStyle="h3">
                 {t(`steps.${key}.title`)}
               </Heading>
-              <Text fontSize="sm" color="fg.muted" lineHeight="1.5">
+              <Text color="fg.muted" maxW="container.prose">
                 {t(`steps.${key}.text`)}
               </Text>
             </Stack>
           ))}
         </SimpleGrid>
+        </Box>
       </Box>
 
-      <Flex as="footer" justify="space-between" wrap="wrap" gap={3} px={padX} py={6} fontSize="sm" color="fg.muted" mt="auto">
+      <Flex as="footer" justify="space-between" wrap="wrap" gap={3} px={padX} py={6} fontSize="sm" color="fg.muted" mt="auto" {...frame}>
         <Text>{t('footer.copyright', { year: new Date().getFullYear() })}</Text>
         <LanguageSwitcher display={{ base: 'flex', sm: 'none' }} />
       </Flex>

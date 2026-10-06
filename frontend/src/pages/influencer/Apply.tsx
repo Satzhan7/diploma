@@ -11,7 +11,6 @@ import {
   Input,
   InputGroup,
   InputLeftAddon,
-  Link,
   SimpleGrid,
   Stack,
   Text,
@@ -19,13 +18,14 @@ import {
 } from '@chakra-ui/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink, useParams } from 'react-router-dom';
-import { FiArrowLeft, FiCheckCircle } from 'react-icons/fi';
+import { FiCheckCircle } from 'react-icons/fi';
+
 import { briefsService } from '../../services/briefs';
 import { applicationsService } from '../../services/applications';
 import { formatDate, formatMoney } from '../../i18n';
 import { getErrorMessage, getFieldErrors } from '../../i18n/errors';
 import { useBriefText } from '../../components/useBriefText';
-import { EmptyState, StatusBadge } from '../../components/ui';
+import { BackLink, EmptyState, StatusBadge, PageContainer } from '../../components/ui';
 import i18n from '../../i18n';
 
 const required = () => i18n.t('validation.isNotEmpty', { ns: 'errors' });
@@ -58,19 +58,7 @@ export const Apply: React.FC = () => {
     },
   });
 
-  const back = (
-    <Link
-      as={RouterLink}
-      to="/influencer/briefs"
-      fontSize="sm"
-      color="fg.muted"
-      display="inline-flex"
-      gap={1}
-      alignItems="center"
-    >
-      <FiArrowLeft aria-hidden /> {t('apply.back')}
-    </Link>
-  );
+  const back = <BackLink to="/influencer/briefs">{t('apply.back')}</BackLink>;
 
   if (brief.isPending) return <Text color="fg.muted">{t('common:state.loading')}</Text>;
   if (brief.isError) {
@@ -106,7 +94,7 @@ export const Apply: React.FC = () => {
   const sent = send.isSuccess || !!mine;
 
   return (
-    <Stack spacing={5} maxW="720px">
+    <PageContainer size="narrow" spacing={5}>
       {back}
       <HStack spacing={3}>
         <Avatar
@@ -128,7 +116,7 @@ export const Apply: React.FC = () => {
         </Box>
       </HStack>
 
-      <Text as="h1" textStyle="display" fontSize={{ base: '2xl', md: '3xl' }} lineHeight="1.15" overflowWrap="anywhere">
+      <Text as="h1" textStyle="h1" overflowWrap="anywhere">
         {b.title}
       </Text>
 
@@ -237,6 +225,6 @@ export const Apply: React.FC = () => {
           </Button>
         </Stack>
       )}
-    </Stack>
+    </PageContainer>
   );
 };

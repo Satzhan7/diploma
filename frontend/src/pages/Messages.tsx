@@ -26,6 +26,7 @@ import { Conversation, Message } from '../types/chat';
 import { User } from '../types/user';
 import { formatTime } from '../i18n';
 import { getErrorMessage } from '../i18n/errors';
+import { PageContainer } from '../components/ui';
 
 /** The API's page size limit (backend MAX_PAGE_SIZE). */
 const MAX_PAGE = 100;
@@ -295,9 +296,9 @@ export const Messages: React.FC = () => {
   }
 
   return (
-    <Box height={{ base: 'calc(100vh - 104px)', lg: 'calc(100vh - 64px)' }}>
+    <PageContainer size="wide" height={{ base: 'calc(100vh - 104px)', lg: 'calc(100vh - 64px)' }}>
       <Grid
-        templateColumns={{ base: '1fr', md: '300px 1fr' }}
+        templateColumns={{ base: '1fr', md: 'var(--chakra-sizes-xs) 1fr' }}
         templateRows={{ base: selectedChat ? '1fr' : 'auto', md: '1fr' }}
         gap={4}
         height="100%"
@@ -313,7 +314,9 @@ export const Messages: React.FC = () => {
         >
           <VStack spacing={0} align="stretch" height="100%" maxH="100%">
             <Box p={4} borderBottomWidth="1px" bg="bg.surface">
-              <Heading size="md">{t('title')}</Heading>
+              <Heading as="h1" size="md">
+                {t('title')}
+              </Heading>
             </Box>
 
             <Box overflowY="auto" height="calc(100% - 60px)">
@@ -520,7 +523,7 @@ export const Messages: React.FC = () => {
           )}
         </GridItem>
       </Grid>
-    </Box>
+    </PageContainer>
   );
 };
 

@@ -7,6 +7,7 @@ import {
   FormErrorMessage,
   FormHelperText,
   FormLabel,
+  Grid,
   HStack,
   Input,
   InputGroup,
@@ -37,7 +38,8 @@ import { getErrorCode, getErrorMessage, getFieldErrors } from '../../i18n/errors
 import { formatDate } from '../../i18n';
 import i18n from '../../i18n';
 import { useBriefText } from '../../components/useBriefText';
-import { BriefCard, EmptyState, PageHeader } from '../../components/ui';
+import { BriefCard, EmptyState, PageHeader, PageContainer } from '../../components/ui';
+import { layout } from '../../theme';
 
 const STEPS = ['goal', 'content', 'budget', 'creators', 'review'] as const;
 
@@ -125,8 +127,7 @@ const ChipGroup: React.FC<{
             <Button
               key={option.value}
               type="button"
-              size="sm"
-              h="40px"
+              fontSize="sm"
               borderRadius="full"
               variant="outline"
               aria-pressed={on}
@@ -320,7 +321,7 @@ export const BriefWizard: React.FC = () => {
   ];
 
   return (
-    <Stack spacing={6}>
+    <PageContainer>
       <PageHeader
         title={t(routeId ? 'wizard.titleEdit' : 'wizard.titleNew')}
         subtitle={t(`wizard.steps.${STEPS[step]}.hint`)}
@@ -331,8 +332,7 @@ export const BriefWizard: React.FC = () => {
           {STEPS.map((key, index) => (
             <Button
               key={key}
-              size="sm"
-              h="40px"
+              fontSize="sm"
               borderRadius="full"
               variant="ghost"
               flex="none"
@@ -343,8 +343,7 @@ export const BriefWizard: React.FC = () => {
               leftIcon={
                 <Box
                   as="span"
-                  w="22px"
-                  h="22px"
+                  boxSize={6}
                   borderRadius="full"
                   display="grid"
                   placeItems="center"
@@ -362,7 +361,11 @@ export const BriefWizard: React.FC = () => {
         </HStack>
       </Box>
 
-      <Flex gap={5} align="flex-start" wrap="wrap">
+      <Grid
+        templateColumns={{ base: 'minmax(0, 1fr)', lg: 'minmax(0, 3fr) minmax(0, 2fr)' }}
+        gap={layout.grid}
+        alignItems="start"
+      >
         <Stack
           as="form"
           noValidate
@@ -374,13 +377,10 @@ export const BriefWizard: React.FC = () => {
           layerStyle="card"
           p={{ base: 4, md: 6 }}
           spacing={5}
-          flex="3 1 380px"
           minW={0}
         >
           <Box>
-            <Text fontWeight="700" fontSize="lg">
-              {t(`wizard.steps.${STEPS[step]}.title`)}
-            </Text>
+            <Text textStyle="h3">{t(`wizard.steps.${STEPS[step]}.title`)}</Text>
           </Box>
 
           {step === 0 && (
@@ -582,8 +582,8 @@ export const BriefWizard: React.FC = () => {
           </Flex>
         </Stack>
 
-        <Stack flex="2 1 280px" minW={0} spacing={2} position={{ lg: 'sticky' }} top={{ lg: 4 }}>
-          <Text fontSize="xs" fontWeight="600" textTransform="uppercase" letterSpacing="wider" color="fg.muted">
+        <Stack minW={0} spacing={2} position={{ lg: 'sticky' }} top={{ lg: 4 }}>
+          <Text textStyle="caption" fontWeight="600" textTransform="uppercase" letterSpacing="wider" color="fg.muted">
             {t('wizard.preview')}
           </Text>
           <BriefCard
@@ -598,7 +598,7 @@ export const BriefWizard: React.FC = () => {
             amountCaption={fields.postBy ? t('list.postBy', { date: formatDate(fields.postBy) }) : t('list.noDate')}
           />
         </Stack>
-      </Flex>
-    </Stack>
+      </Grid>
+    </PageContainer>
   );
 };
