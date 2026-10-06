@@ -1,5 +1,6 @@
 import React from 'react';
 import { Avatar, Box, Flex, HStack, Text } from '@chakra-ui/react';
+import { layout } from '../../theme';
 
 interface BriefCardProps {
   /** Brand on a brief; the other side on a deal. */
@@ -28,7 +29,7 @@ export const BriefCard: React.FC<BriefCardProps> = ({
   amountCaption,
   action,
 }) => (
-  <Flex as="article" layerStyle="card" p={{ base: 4, md: 5 }} direction="column" gap={3} minW={0}>
+  <Flex as="article" layerStyle="card" p={layout.card} direction="column" gap={3} minW={0}>
     <HStack spacing={3} align="center">
       <Avatar
         size="sm"
@@ -51,7 +52,7 @@ export const BriefCard: React.FC<BriefCardProps> = ({
       {badge}
     </HStack>
 
-    <Text as="h3" textStyle="display" fontSize="xl" lineHeight="1.2" overflowWrap="anywhere">
+    <Text as="h3" textStyle="h3" overflowWrap="anywhere">
       {title}
     </Text>
 
@@ -61,7 +62,7 @@ export const BriefCard: React.FC<BriefCardProps> = ({
           <Box
             key={chip}
             as="span"
-            h="24px"
+            h={6}
             px={2.5}
             borderRadius="full"
             bg="bg.subtle"
@@ -78,9 +79,7 @@ export const BriefCard: React.FC<BriefCardProps> = ({
 
     <Flex align="center" gap={3} mt="auto" pt={1}>
       <Box flex="1" minW={0}>
-        <Text textStyle="display" fontSize="2xl" lineHeight="1.1">
-          {amount}
-        </Text>
+        <Text textStyle="h2">{amount}</Text>
         {amountCaption && (
           <Text fontSize="xs" color="fg.muted">
             {amountCaption}

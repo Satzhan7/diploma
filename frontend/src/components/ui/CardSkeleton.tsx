@@ -1,25 +1,22 @@
 import React from 'react';
-import {
-  Card,
-  CardBody,
-  SimpleGrid,
-  Skeleton,
-  SkeletonText,
-  Flex,
-  SimpleGridProps,
-} from '@chakra-ui/react';
+import { Card, CardBody, Skeleton, SkeletonText, Flex } from '@chakra-ui/react';
+import { ResponsiveGrid } from './Layout';
 
 // Layout-matched skeletons — same dimensions as the content they replace,
 // so loading → loaded causes no layout shift (docs/PROJECT.md).
 
 export const StatCardSkeleton: React.FC = () => (
   <Card>
-    <CardBody p={5}>
-      <Flex align="center" gap={4}>
-        <Skeleton boxSize="44px" borderRadius="lg" flexShrink={0} />
+    <CardBody>
+      <Flex
+        direction={{ base: 'column', sm: 'row' }}
+        align={{ base: 'flex-start', sm: 'center' }}
+        gap={{ base: 3, sm: 4 }}
+      >
+        <Skeleton boxSize="control.touch" borderRadius="lg" flexShrink={0} />
         <Flex direction="column" gap={2} flex={1}>
-          <Skeleton height="14px" maxW="120px" />
-          <Skeleton height="28px" maxW="80px" />
+          <Skeleton h={3.5} maxW={28} />
+          <Skeleton h={7} maxW={20} />
         </Flex>
       </Flex>
     </CardBody>
@@ -28,22 +25,19 @@ export const StatCardSkeleton: React.FC = () => (
 
 interface CardGridSkeletonProps {
   count?: number;
-  columns?: SimpleGridProps['columns'];
 }
 
-export const CardGridSkeleton: React.FC<CardGridSkeletonProps> = ({
-  count = 6,
-  columns = { base: 1, md: 2, xl: 3 },
-}) => (
-  <SimpleGrid columns={columns} spacing={6}>
+// Same auto-fill grid as the card lists it stands in for.
+export const CardGridSkeleton: React.FC<CardGridSkeletonProps> = ({ count = 6 }) => (
+  <ResponsiveGrid>
     {Array.from({ length: count }, (_, i) => (
       <Card key={i}>
-        <CardBody p={5}>
-          <Skeleton height="20px" maxW="60%" mb={4} />
-          <SkeletonText noOfLines={3} spacing={3} skeletonHeight="12px" />
-          <Skeleton height="32px" maxW="120px" mt={5} borderRadius="md" />
+        <CardBody>
+          <Skeleton h={5} maxW="60%" mb={4} />
+          <SkeletonText noOfLines={3} spacing={3} skeletonHeight={3} />
+          <Skeleton h={8} maxW={28} mt={5} borderRadius="md" />
         </CardBody>
       </Card>
     ))}
-  </SimpleGrid>
+  </ResponsiveGrid>
 );

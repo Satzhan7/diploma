@@ -74,6 +74,49 @@ const semanticTokens = {
   },
 };
 
+// Breakpoints (Tailwind/Primer-aligned, docs/PROJECT.md §7): the sidebar appears at lg.
+const breakpoints = {
+  base: '0em',
+  sm: '40em', // 640
+  md: '48em', // 768
+  lg: '64em', // 1024
+  xl: '80em', // 1280
+  '2xl': '96em', // 1536
+};
+
+// Chakra's 4 px space scale (1 = 4px … 20 = 80px) and Tailwind font-size keys
+// (xs 12, sm 14, md 16, lg 18, xl 20, 2xl 24, 3xl 30, 4xl 36) stay as they are.
+const lineHeights = {
+  display: 1.08,
+  heading: 1.2,
+  snug: 1.3,
+  body: 1.5,
+};
+
+const letterSpacings = {
+  display: '-0.022em',
+  heading: '-0.018em',
+  title: '-0.01em',
+  caption: '0.01em',
+};
+
+// Widths and heights. Containers: narrow = forms and reading, default = app
+// pages, wide = data tables and two-pane screens. Controls: sm / md / lg.
+const sizes = {
+  container: {
+    narrow: '720px',
+    default: '1120px',
+    wide: '1440px',
+    prose: '65ch',
+  },
+  // App shell chrome (AppShell): floating sidebar ≥ lg, top bar and tab bar < lg.
+  sidebar: '248px',
+  topbar: '56px',
+  tabbar: '64px',
+  navItem: '44px',
+  control: { sm: '32px', md: '40px', lg: '48px', touch: '44px' },
+};
+
 // Card 22, small 12, pills full; glass chrome 26, tab bar 32.
 const radii = {
   sm: '8px',
@@ -100,14 +143,52 @@ const layerStyles = {
   },
 };
 
+// The type scale (docs/PROJECT.md §7). Body never below 16, UI text never below 12.
 const textStyles = {
   display: {
     fontFamily: 'heading',
+    fontSize: { base: '40px', md: '56px' },
     fontWeight: 700,
-    letterSpacing: '-0.022em',
-    lineHeight: 1.08,
+    letterSpacing: 'display',
+    lineHeight: 'display',
   },
+  h1: {
+    fontFamily: 'heading',
+    fontSize: { base: '28px', md: '32px' },
+    fontWeight: 700,
+    letterSpacing: 'display',
+    lineHeight: 'heading',
+  },
+  h2: {
+    fontFamily: 'heading',
+    fontSize: { base: '22px', md: '24px' },
+    fontWeight: 700,
+    letterSpacing: 'heading',
+    lineHeight: 1.25,
+  },
+  h3: {
+    fontFamily: 'heading',
+    fontSize: { base: '18px', md: '20px' },
+    fontWeight: 600,
+    letterSpacing: 'title',
+    lineHeight: 'snug',
+  },
+  lead: { fontSize: 'lg', lineHeight: 1.55 },
+  body: { fontSize: 'md', lineHeight: 'body' },
+  small: { fontSize: 'sm', lineHeight: 1.43 },
+  label: { fontSize: 'sm', lineHeight: 1.43, fontWeight: 600 },
+  caption: { fontSize: 'xs', lineHeight: 1.33, fontWeight: 500, letterSpacing: 'caption' },
 };
+
+// Responsive layout spacing on the 4 px scale, used by the layout primitives.
+export const layout = {
+  pageX: { base: 4, md: 6, lg: 8 }, // 16 / 24 / 32
+  pageY: { base: 6, lg: 8 }, // 24 / 32
+  section: { base: 6, md: 8 }, // 24 / 32: page header → content and between sections
+  card: { base: 4, md: 6 }, // 16 / 24 card padding
+  grid: { base: 4, md: 6 }, // 16 / 24 between cards
+  stack: { sm: 2, md: 3, lg: 4 }, // 8 / 12 / 16
+} as const;
 
 // colorScheme="brand" maps to the semantic primary so dark mode gets the
 // dark-mode blue (Chakra's default would use brand.200 with dark text).
@@ -131,11 +212,40 @@ const brandVariant = (variant: string) => (props: StyleFunctionProps) => {
 
 const field = { focusBorderColor: 'primary' };
 
+// Control heights: sm 32, md 40 (44 on touch-sized screens), lg 48.
+const controlSizes = {
+  sm: { h: 8, minW: 8, fontSize: 'sm', px: 3 },
+  md: { h: { base: 'control.touch', md: 'control.md' }, minW: { base: 'control.touch', md: 'control.md' }, fontSize: 'md', px: 4 },
+  lg: { h: 12, minW: 12, fontSize: 'md', px: 6 },
+};
+const fieldSizes = {
+  sm: { field: { h: 8, fontSize: 'sm', px: 3, borderRadius: 'sm' }, addon: { h: 8, borderRadius: 'sm' } },
+  md: {
+    field: { h: { base: 'control.touch', md: 'control.md' }, fontSize: 'md', px: 4, borderRadius: 'md' },
+    addon: { h: { base: 'control.touch', md: 'control.md' }, borderRadius: 'md' },
+  },
+  lg: { field: { h: 12, fontSize: 'md', px: 4, borderRadius: 'md' }, addon: { h: 12, borderRadius: 'md' } },
+};
+// Heading sizes map onto the text styles, so `<Heading size>` cannot leave the scale.
+// Chakra's default sizes use [base, sm, md] arrays and extendTheme merges into them,
+// so ours are arrays too. Default size `auto`: an h2 unless a textStyle is given
+// (size styles beat textStyle, so a Heading with a textStyle must not get one).
+type Responsive = { base: string; md: string };
+const headingSize = (style: 'display' | 'h1' | 'h2' | 'h3') => {
+  const { fontSize, ...rest } = textStyles[style];
+  const { base, md } = fontSize as Responsive;
+  return { ...rest, fontSize: [base, null, md] };
+};
+
 const theme = extendTheme({
   config,
   fonts,
   colors,
   semanticTokens,
+  breakpoints,
+  lineHeights,
+  letterSpacings,
+  sizes,
   radii,
   layerStyles,
   textStyles,
@@ -153,15 +263,19 @@ const theme = extendTheme({
   components: {
     Button: {
       baseStyle: { fontWeight: '600', borderRadius: 'full' },
+      sizes: controlSizes,
       variants: {
         solid: brandVariant('solid'),
         outline: brandVariant('outline'),
         ghost: brandVariant('ghost'),
         link: brandVariant('link'),
       },
-      defaultProps: { colorScheme: 'brand' },
+      defaultProps: { colorScheme: 'brand', size: 'md' },
     },
+    IconButton: { defaultProps: { size: 'md' } },
     Card: {
+      // Card padding 16 / 24 (layout.card) for every CardBody/Header/Footer.
+      sizes: { md: { container: { '--card-padding': { base: '16px', md: '24px' } } } },
       baseStyle: {
         container: {
           bg: 'bg.surface',
@@ -173,24 +287,73 @@ const theme = extendTheme({
       },
     },
     Badge: {
-      baseStyle: { borderRadius: 'full', fontWeight: '600', textTransform: 'none', px: 2 },
+      baseStyle: {
+        borderRadius: 'full',
+        fontWeight: '600',
+        textTransform: 'none',
+        px: 2,
+        fontSize: 'xs',
+        lineHeight: 1.33,
+      },
     },
     Heading: {
-      baseStyle: { fontWeight: 700, letterSpacing: '-0.022em', lineHeight: '1.15' },
+      baseStyle: (props: StyleFunctionProps) =>
+        props.textStyle ? {} : { fontWeight: 700, letterSpacing: 'heading', lineHeight: 'heading' },
+      sizes: {
+        '4xl': headingSize('display'),
+        '3xl': headingSize('h1'),
+        '2xl': headingSize('h1'),
+        xl: headingSize('h1'),
+        lg: headingSize('h2'),
+        md: headingSize('h3'),
+        sm: { fontSize: 'lg', lineHeight: 'snug', fontWeight: 600, letterSpacing: 'title' },
+        xs: { fontSize: 'md', lineHeight: 'snug', fontWeight: 600, letterSpacing: 'normal' },
+        auto: (props: StyleFunctionProps) => (props.textStyle ? {} : headingSize('h2')),
+      },
+      defaultProps: { size: 'auto' },
     },
-    Input: { defaultProps: field },
-    Select: { defaultProps: field },
-    Textarea: { defaultProps: field },
-    NumberInput: { defaultProps: field },
-    Modal: { baseStyle: { dialog: { bg: 'bg.surface', borderRadius: 'xl' } } },
+    Input: { sizes: fieldSizes, defaultProps: { ...field, size: 'md' } },
+    Select: { sizes: fieldSizes, defaultProps: { ...field, size: 'md' } },
+    NumberInput: { sizes: fieldSizes, defaultProps: { ...field, size: 'md' } },
+    Textarea: {
+      sizes: {
+        sm: { fontSize: 'sm', px: 3, borderRadius: 'sm' },
+        md: { fontSize: 'md', px: 4, py: 2, borderRadius: 'md' },
+        lg: { fontSize: 'md', px: 4, py: 3, borderRadius: 'md' },
+      },
+      defaultProps: { ...field, size: 'md' },
+    },
+    Modal: {
+      baseStyle: {
+        dialog: { bg: 'bg.surface', borderRadius: 'xl' },
+        header: {
+          fontSize: { base: '18px', md: '20px' },
+          fontWeight: 600,
+          letterSpacing: 'title',
+          px: 6,
+          pt: 6,
+          pb: 2,
+        },
+        body: { px: 6, py: 2 },
+        footer: { px: 6, pt: 4, pb: 6, gap: 3 },
+      },
+    },
     Drawer: { baseStyle: { dialog: { bg: 'bg.surface' } } },
     Menu: {
       baseStyle: {
-        list: { bg: 'bg.surface', borderColor: 'border.default', borderRadius: 'md', py: 1 },
-        item: { bg: 'transparent', _hover: { bg: 'bg.subtle' }, _focus: { bg: 'bg.subtle' } },
+        list: { bg: 'bg.surface', borderColor: 'border.default', borderRadius: 'md', py: 1, boxShadow: 'md' },
+        item: {
+          bg: 'transparent',
+          minH: 10,
+          px: 3,
+          fontSize: 'sm',
+          _hover: { bg: 'bg.subtle' },
+          _focus: { bg: 'bg.subtle' },
+        },
       },
     },
-    Tabs: { defaultProps: { colorScheme: 'brand' } },
+    Tabs: { defaultProps: { colorScheme: 'brand', size: 'md' } },
+    Tooltip: { baseStyle: { fontSize: 'sm', lineHeight: 1.43, px: 3, py: 1.5, borderRadius: 'sm' } },
     Switch: { defaultProps: { colorScheme: 'brand' } },
     Checkbox: { defaultProps: { colorScheme: 'brand' } },
     Radio: { defaultProps: { colorScheme: 'brand' } },

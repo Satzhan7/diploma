@@ -43,7 +43,7 @@ export const PrivateImage: React.FC<PrivateImageProps> = ({ fileId, alt, errorTe
       ) : url ? (
         <Image src={url} alt={alt} objectFit="contain" w="full" h="full" />
       ) : (
-        <Skeleton w="full" h="full" minH="200px" />
+        <Skeleton w="full" h="full" minH={48} />
       )}
     </Box>
   );

@@ -22,7 +22,7 @@ export const StatusPill: React.FC<StatusPillProps> = ({ tone = 'neutral', childr
     as="span"
     display="inline-flex"
     alignItems="center"
-    h="22px"
+    h={6}
     px={2}
     borderRadius="full"
     fontSize="xs"
