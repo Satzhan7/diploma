@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Button, Center, Flex, HStack, Select, SimpleGrid, Stack, Text } from '@chakra-ui/react';
+import { Box, Button, Center, Flex, HStack, Select, Text } from '@chakra-ui/react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Link as RouterLink } from 'react-router-dom';
 import { FiSearch } from 'react-icons/fi';
@@ -7,7 +7,16 @@ import { Brief, BriefCity, briefsService, CATEGORIES, CITIES } from '../../servi
 import { nextSkip } from '../../services/page';
 import { getErrorMessage } from '../../i18n/errors';
 import { useBriefText } from '../../components/useBriefText';
-import { BriefCard, CardGridSkeleton, EmptyState, PageHeader, StatusBadge, StatusPill } from '../../components/ui';
+import {
+  BriefCard,
+  CardGridSkeleton,
+  EmptyState,
+  PageHeader,
+  StatusBadge,
+  StatusPill,
+  PageContainer,
+  ResponsiveGrid,
+} from '../../components/ui';
 
 const PAGE_SIZE = 20;
 
@@ -32,7 +41,6 @@ export const Feed: React.FC = () => {
       <Button
         key={value ?? 'all'}
         size="sm"
-        h="36px"
         flex="none"
         borderRadius="full"
         variant="outline"
@@ -56,14 +64,14 @@ export const Feed: React.FC = () => {
   };
 
   return (
-    <Stack spacing={6}>
+    <PageContainer>
       <PageHeader
         title={t('feed.title')}
         subtitle={query.isSuccess ? t('feed.subtitle', { count: total }) : undefined}
       />
 
       <Flex gap={3} wrap="wrap" align="center">
-        <Box flex="1 1 280px" minW={0} overflowX="auto">
+        <Box flex="1 1 17.5rem" minW={0} overflowX="auto">
           <HStack spacing={2} role="group" aria-label={t('feed.nicheLabel')} pb={1}>
             {chip(undefined, t('feed.all'))}
             {CATEGORIES.map((value) => chip(value, text.category(value)))}
@@ -71,7 +79,8 @@ export const Feed: React.FC = () => {
         </Box>
         <Select
           aria-label={t('feed.cityLabel')}
-          w={{ base: 'full', sm: '200px' }}
+          w={{ base: 'full', sm: 52 }}
+
           value={city ?? ''}
           onChange={(e) => setCity((e.target.value || undefined) as BriefCity | undefined)}
         >
@@ -95,7 +104,7 @@ export const Feed: React.FC = () => {
         <EmptyState icon={FiSearch} title={t('feed.empty.title')} description={t('feed.empty.description')} />
       ) : (
         <>
-          <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} spacing={4}>
+          <ResponsiveGrid>
             {briefs.map((brief) => (
               <BriefCard
                 key={brief.id}
@@ -120,7 +129,7 @@ export const Feed: React.FC = () => {
                 }
               />
             ))}
-          </SimpleGrid>
+          </ResponsiveGrid>
           <Center flexDirection="column" gap={2}>
             <Text fontSize="sm" color="fg.muted">
               {t('list.count', { shown: briefs.length, total })}
@@ -133,6 +142,6 @@ export const Feed: React.FC = () => {
           </Center>
         </>
       )}
-    </Stack>
+    </PageContainer>
   );
 };

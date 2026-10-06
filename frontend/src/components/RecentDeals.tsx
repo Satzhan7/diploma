@@ -1,12 +1,12 @@
 import React from 'react';
-import { Button, Flex, Heading, SimpleGrid, Stack } from '@chakra-ui/react';
+import { Button, Flex, Heading, Stack } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router-dom';
 import { FiCheckCircle } from 'react-icons/fi';
 import { dealsService } from '../services/deals';
 import { DealCard } from './DealCard';
-import { CardGridSkeleton, EmptyState } from './ui';
+import { CardGridSkeleton, EmptyState, ResponsiveGrid } from './ui';
 
 interface RecentDealsProps {
   viewer: 'brand' | 'influencer';
@@ -23,7 +23,7 @@ export const RecentDeals: React.FC<RecentDealsProps> = ({ viewer }) => {
   return (
     <Stack as="section" spacing={4} aria-labelledby="recent-deals">
       <Flex justify="space-between" align="center" gap={3}>
-        <Heading as="h2" id="recent-deals" size="md">
+        <Heading as="h2" id="recent-deals" textStyle="h2">
           {t('recent')}
         </Heading>
         {!!data?.total && (
@@ -43,11 +43,11 @@ export const RecentDeals: React.FC<RecentDealsProps> = ({ viewer }) => {
           description={t(viewer === 'brand' ? 'empty.brand' : 'empty.influencer')}
         />
       ) : (
-        <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} spacing={4}>
+        <ResponsiveGrid>
           {data.items.map((deal) => (
             <DealCard key={deal.id} deal={deal} viewer={viewer} />
           ))}
-        </SimpleGrid>
+        </ResponsiveGrid>
       )}
     </Stack>
   );

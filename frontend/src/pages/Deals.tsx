@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Center, SimpleGrid, Stack, Text } from '@chakra-ui/react';
+import { Button, Center, Text } from '@chakra-ui/react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router-dom';
@@ -9,7 +9,14 @@ import { UserRole } from '../types/user';
 import { dealsService } from '../services/deals';
 import { nextSkip } from '../services/page';
 import { DealCard } from '../components/DealCard';
-import { CardGridSkeleton, EmptyState, PageHeader, SegmentedControl } from '../components/ui';
+import {
+  CardGridSkeleton,
+  EmptyState,
+  PageContainer,
+  PageHeader,
+  ResponsiveGrid,
+  SegmentedControl,
+} from '../components/ui';
 
 const PAGE_SIZE = 20;
 
@@ -37,7 +44,7 @@ export const Deals: React.FC = () => {
   const total = query.data?.pages[0]?.total ?? 0;
 
   return (
-    <Stack spacing={6}>
+    <PageContainer>
       <PageHeader title={t('title')} subtitle={t(isBrand ? 'subtitle.brand' : 'subtitle.influencer')} />
 
       <SegmentedControl<Filter>
@@ -68,11 +75,11 @@ export const Deals: React.FC = () => {
         />
       ) : (
         <>
-          <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} spacing={4}>
+          <ResponsiveGrid>
             {deals.map((deal) => (
               <DealCard key={deal.id} deal={deal} viewer={isBrand ? 'brand' : 'influencer'} />
             ))}
-          </SimpleGrid>
+          </ResponsiveGrid>
           <Center flexDirection="column" gap={2}>
             <Text fontSize="sm" color="fg.muted">
               {t('count', { shown: deals.length, total })}
@@ -85,6 +92,6 @@ export const Deals: React.FC = () => {
           </Center>
         </>
       )}
-    </Stack>
+    </PageContainer>
   );
 };

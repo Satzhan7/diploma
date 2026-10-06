@@ -79,3 +79,10 @@
 - **When a flag stops granting a capability, re-test the gate with the real service, not a stub.** The paywall spec stubbed `planService.forUser`, so it could not notice that the test period no longer means Pro; the new spec drives the real `PlanService` (stored Free → 403 → checkout → allowed).
 - **Never hard-code a currency format in copy.** `formatMoney(0)` is "0 ₸" in RU but "₸0" in EN and "₸ 0" in KZ; interpolate `{{price}}` from `formatMoney` and assert in QA with `\s` (Intl uses U+00A0).
 - **A badge next to a note must not repeat it.** "Тестовый период" as a pill followed by "Тестовый период: …" reads twice; check alerts in a screenshot, not only by text.
+
+## 2026-10-06 — Design system
+
+- **Sizes and proportions were never a system.** `theme.ts` set only colours, radii and fonts, so every page picked its own widths and font sizes and the result looked off. Define type, spacing, control and container tokens before building screens, and ban raw px in pages.
+- **Chakra `extendTheme` merges component `sizes` into the defaults, and size styles beat `textStyle`.** Heading's default sizes are `[base, sm, md]` arrays; an object `{ base, md }` merged into them kept the old 30/36 px, and the default `size="xl"` overrode `textStyle="h1"`. Give overrides in the default's shape (arrays), and make the default size and `baseStyle` functions that return nothing when `props.textStyle` is set. Measure computed styles after a theme change — tsc and tests pass either way.
+- **Chakra's space/size scale has gaps (no 11, 13, 15, 30, …).** A missing key is used as raw px: `h={{ base: 11 }}` rendered 11 px buttons on mobile. Use named size tokens (`control.touch`) for odd values.
+- **zsh: never name a shell variable `path`.** It is tied to `$PATH`; `path=${k#*:}` inside a loop made every later command "not found". Use another name (`kp`).

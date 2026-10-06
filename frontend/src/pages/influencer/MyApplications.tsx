@@ -9,8 +9,6 @@ import {
   Button,
   Center,
   HStack,
-  SimpleGrid,
-  Stack,
   Text,
   useToast,
 } from '@chakra-ui/react';
@@ -22,7 +20,15 @@ import { nextSkip } from '../../services/page';
 import { formatDate, formatMoney } from '../../i18n';
 import { getErrorMessage } from '../../i18n/errors';
 import { useBriefText } from '../../components/useBriefText';
-import { BriefCard, CardGridSkeleton, EmptyState, PageHeader, StatusBadge } from '../../components/ui';
+import {
+  BriefCard,
+  CardGridSkeleton,
+  EmptyState,
+  PageHeader,
+  StatusBadge,
+  PageContainer,
+  ResponsiveGrid,
+} from '../../components/ui';
 
 const PAGE_SIZE = 20;
 
@@ -74,7 +80,7 @@ export const MyApplications: React.FC = () => {
   );
 
   return (
-    <Stack spacing={6}>
+    <PageContainer>
       <PageHeader title={t('mine.title')} subtitle={t('mine.subtitle')} />
 
       {query.isPending ? (
@@ -97,7 +103,7 @@ export const MyApplications: React.FC = () => {
         />
       ) : (
         <>
-          <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} spacing={4}>
+          <ResponsiveGrid>
             {applications.map((a) => (
               <BriefCard
                 key={a.id}
@@ -112,7 +118,7 @@ export const MyApplications: React.FC = () => {
                 action={actionsFor(a)}
               />
             ))}
-          </SimpleGrid>
+          </ResponsiveGrid>
           <Center flexDirection="column" gap={2}>
             <Text fontSize="sm" color="fg.muted">
               {t('list.count', { shown: applications.length, total })}
@@ -146,6 +152,6 @@ export const MyApplications: React.FC = () => {
           </AlertDialogContent>
         </AlertDialogOverlay>
       </AlertDialog>
-    </Stack>
+    </PageContainer>
   );
 };

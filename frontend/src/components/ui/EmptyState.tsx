@@ -23,7 +23,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         <IconWrapper icon={icon} size="1.75em" />
       </Box>
     )}
-    <Heading as="h2" size="md" fontWeight="600">
+    <Heading as="h2" textStyle="h3">
       {title}
     </Heading>
     {description && (

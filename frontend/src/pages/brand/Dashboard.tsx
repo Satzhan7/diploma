@@ -1,12 +1,12 @@
 import React from 'react';
-import { Button, Heading, SimpleGrid, Stack } from '@chakra-ui/react';
+import { Button, Heading, Stack } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router-dom';
 import { FiActivity, FiCheckCircle, FiInbox, FiList, FiPlus } from 'react-icons/fi';
 import { briefsService } from '../../services/briefs';
 import { dealsService } from '../../services/deals';
-import { PageHeader, StatCard, StatCardSkeleton, EmptyState } from '../../components/ui';
+import { PageContainer, PageHeader, ResponsiveGrid, StatCard, StatCardSkeleton, EmptyState } from '../../components/ui';
 import { RecentDeals } from '../../components/RecentDeals';
 
 // Interim home until R6 rebuilds it from the mockup: real counts from the
@@ -29,7 +29,7 @@ export const BrandDashboard: React.FC = () => {
   const pending = sum('pendingCount');
 
   return (
-    <Stack spacing={8}>
+    <PageContainer>
       <PageHeader
         title={t('dashboard.title')}
         subtitle={t('dashboard.subtitle')}
@@ -41,13 +41,13 @@ export const BrandDashboard: React.FC = () => {
       />
 
       <Stack as="section" spacing={4} aria-labelledby="overview">
-        <Heading as="h2" id="overview" size="md">
+        <Heading as="h2" id="overview" textStyle="h2">
           {t('dashboard.overview.title')}
         </Heading>
         {orders.isError ? (
           <EmptyState title={t('dashboard.loadError')} />
         ) : (
-          <SimpleGrid columns={{ base: 1, sm: 2, xl: 4 }} spacing={4}>
+          <ResponsiveGrid min="kpi">
             {orders.isPending || activeDeals.isPending ? (
               <>
                 <StatCardSkeleton />
@@ -76,12 +76,12 @@ export const BrandDashboard: React.FC = () => {
                 />
               </>
             )}
-          </SimpleGrid>
+          </ResponsiveGrid>
         )}
       </Stack>
 
       <RecentDeals viewer="brand" />
-    </Stack>
+    </PageContainer>
   );
 };
 

@@ -22,8 +22,12 @@ interface StatCardProps {
 // KPI card for dashboards: icon chip + label + large tabular number.
 export const StatCard: React.FC<StatCardProps> = ({ label, value, icon, helpText }) => (
   <Card>
-    <CardBody p={5}>
-      <Flex align="center" gap={4}>
+    <CardBody>
+      <Flex
+        direction={{ base: 'column', sm: 'row' }}
+        align={{ base: 'flex-start', sm: 'center' }}
+        gap={{ base: 3, sm: 4 }}
+      >
         {icon && (
           <Box
             bg="bg.subtle"

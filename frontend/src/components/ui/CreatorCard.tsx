@@ -3,6 +3,7 @@ import { Avatar, Box, Flex, HStack, Image, SimpleGrid, Text } from '@chakra-ui/r
 import { FiImage } from 'react-icons/fi';
 import { ScoreRing } from './ScoreRing';
 import { VerifiedBadge } from './VerifiedBadge';
+import { layout } from '../../theme';
 
 export interface CreatorStat {
   label: string;
@@ -56,7 +57,7 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({
     overflow="hidden"
     borderColor={highlighted ? 'primary' : undefined}
   >
-    <HStack spacing={3} p={{ base: 4, md: 5 }} pb={3}>
+    <HStack spacing={3} p={layout.card} pb={3}>
       <Avatar size="md" name={name} src={avatarUrl ?? undefined} bg="primary.soft" color="primary.ink" />
       <Box flex="1" minW={0}>
         <Text fontWeight="700" noOfLines={1}>
@@ -77,7 +78,7 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({
     </HStack>
 
     {images.length ? (
-      <SimpleGrid columns={3} spacing={1} px={{ base: 4, md: 5 }} as="ul" listStyleType="none" aria-label={stripLabel}>
+      <SimpleGrid columns={3} spacing={1} px={layout.card} as="ul" listStyleType="none" aria-label={stripLabel}>
         {images.slice(0, 3).map((image) => (
           <Box as="li" key={image.src} aspectRatio={4 / 5} borderRadius="md" overflow="hidden" bg="bg.subtle">
             <Image src={image.src} alt={image.alt} loading="lazy" objectFit="cover" w="full" h="full" />
@@ -85,7 +86,7 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({
         ))}
       </SimpleGrid>
     ) : (
-      <SimpleGrid columns={3} spacing={1} px={{ base: 4, md: 5 }} role="img" aria-label={stripLabel}>
+      <SimpleGrid columns={3} spacing={1} px={layout.card} role="img" aria-label={stripLabel}>
         {[0, 1, 2].map((i) => (
           <Box
             key={i}
@@ -103,7 +104,7 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({
       </SimpleGrid>
     )}
 
-    <Flex direction="column" gap={3} p={{ base: 4, md: 5 }} pt={3} flex="1">
+    <Flex direction="column" gap={3} p={layout.card} pt={3} flex="1">
       <HStack spacing={4} wrap="wrap" fontSize="sm">
         {stats.map((stat) => (
           <Text key={stat.label}>
@@ -122,8 +123,8 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({
         </Text>
       )}
       <Flex align="center" gap={2} mt="auto" wrap="wrap">
-        <Box flex="1" minW="96px">
-          <Text textStyle="display" fontSize="lg" sx={{ fontVariantNumeric: 'tabular-nums' }}>
+        <Box flex="1" minW={24}>
+          <Text textStyle="h3" sx={{ fontVariantNumeric: 'tabular-nums' }}>
             {price}
           </Text>
           {priceCaption && (

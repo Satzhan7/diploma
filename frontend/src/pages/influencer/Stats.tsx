@@ -28,7 +28,7 @@ import { filesService, IMAGE_ACCEPT, MAX_IMAGE_BYTES, MAX_PORTFOLIO_IMAGES, publ
 import { MyVerification, verificationService, VerificationStatus } from '../../services/verification';
 import { formatDate, formatNumber, formatPercent } from '../../i18n';
 import { getErrorMessage, getFieldErrors } from '../../i18n/errors';
-import { PageHeader, PillTone, StatusPill } from '../../components/ui';
+import { PageHeader, PillTone, StatusPill, PageContainer } from '../../components/ui';
 
 const STATUS_TONE: Record<VerificationStatus, PillTone> = {
   none: 'neutral',
@@ -47,11 +47,11 @@ const imageProblem = (file: File): 'tooLarge' | 'wrongType' | null =>
 export const Stats: React.FC = () => {
   const { t } = useTranslation('stats');
   return (
-    <Stack spacing={8} maxW="880px">
+    <PageContainer size="narrow">
       <PageHeader title={t('title')} subtitle={t('subtitle')} />
       <VerificationCard />
       <PortfolioCard />
-    </Stack>
+    </PageContainer>
   );
 };
 
@@ -111,11 +111,11 @@ const VerificationCard: React.FC = () => {
   return (
     <Stack as="section" aria-labelledby="verification-title" layerStyle="card" p={{ base: 4, md: 6 }} spacing={5}>
       <HStack justify="space-between" align="flex-start" wrap="wrap" gap={2}>
-        <Heading id="verification-title" as="h2" fontSize="xl">
+        <Heading id="verification-title" as="h2" textStyle="h2">
           {t('verification.title')}
         </Heading>
         {mine.isPending ? (
-          <Skeleton h="22px" w="90px" borderRadius="full" />
+          <Skeleton h={6} w={24} borderRadius="full" />
         ) : (
           <StatusPill tone={STATUS_TONE[status]}>{t(`verification.status.${status}`)}</StatusPill>
         )}
@@ -276,7 +276,7 @@ const PortfolioCard: React.FC = () => {
     <Stack as="section" aria-labelledby="portfolio-title" layerStyle="card" p={{ base: 4, md: 6 }} spacing={5}>
       <HStack justify="space-between" align="flex-start" wrap="wrap" gap={2}>
         <Box>
-          <Heading id="portfolio-title" as="h2" fontSize="xl">
+          <Heading id="portfolio-title" as="h2" textStyle="h2">
             {t('portfolio.title')}
           </Heading>
           <Text color="fg.muted" mt={1}>

@@ -65,10 +65,10 @@ const RoleCard: React.FC<UseRadioProps & { title: string; text: string }> = ({ t
           outlineOffset: '2px',
         }}
       >
-        <Text id={`${id}-title`} fontWeight="700" fontSize="15px">
+        <Text id={`${id}-title`} fontWeight="700">
           {title}
         </Text>
-        <Text id={`${id}-text`} fontSize="13px" color="fg.muted" lineHeight="1.4" mt={1}>
+        <Text id={`${id}-text`} textStyle="small" color="fg.muted" mt={1}>
           {text}
         </Text>
       </Box>
@@ -165,9 +165,9 @@ const CodeStep: React.FC<{ email: string; password: string; onChangeEmail: () =>
                   key={i}
                   aria-label={t('code.digit', { n: i + 1 })}
                   bg="bg.surface"
-                  h="54px"
-                  w={{ base: '44px', sm: '52px' }}
-                  fontSize="22px"
+                  h={14}
+                  w={{ base: 'control.touch', sm: 'control.lg' }}
+                  fontSize="2xl"
                   fontWeight="600"
                 />
               ))}
@@ -187,7 +187,7 @@ const CodeStep: React.FC<{ email: string; password: string; onChangeEmail: () =>
           </Text>
         )}
 
-        <Button type="submit" size="lg" h="50px" isLoading={isSubmitting} isDisabled={code.length !== CODE_LENGTH}>
+        <Button type="submit" size="lg" isLoading={isSubmitting} isDisabled={code.length !== CODE_LENGTH}>
           {t('code.submit')}
         </Button>
 
@@ -283,7 +283,7 @@ export const Auth: React.FC<{ mode: Mode }> = ({ mode }) => {
     <Flex minH="100vh" wrap="wrap">
       <Stack
         as="main"
-        flex="1 1 360px"
+        flex="1 1 22.5rem"
         minW={0}
         justify="center"
         spacing={6}
@@ -297,9 +297,9 @@ export const Auth: React.FC<{ mode: Mode }> = ({ mode }) => {
           <LanguageSwitcher />
         </Flex>
 
-        <Box maxW="440px" w="full">
+        <Box maxW="md" w="full">
           <Stack spacing={6}>
-            <Heading as="h1" textStyle="display" fontSize="34px">
+            <Heading as="h1" textStyle="h1">
               {t(pendingEmail ? 'code.title' : isRegister ? 'register.title' : 'login.title')}
             </Heading>
 
@@ -342,7 +342,7 @@ export const Auth: React.FC<{ mode: Mode }> = ({ mode }) => {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         bg="bg.surface"
-                        h="46px"
+                        size="lg"
                       />
                       <FormErrorMessage>{fieldErrors.name}</FormErrorMessage>
                     </FormControl>
@@ -359,7 +359,7 @@ export const Auth: React.FC<{ mode: Mode }> = ({ mode }) => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       bg="bg.surface"
-                      h="46px"
+                      size="lg"
                     />
                     <FormErrorMessage>{fieldErrors.email}</FormErrorMessage>
                   </FormControl>
@@ -373,7 +373,7 @@ export const Auth: React.FC<{ mode: Mode }> = ({ mode }) => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       bg="bg.surface"
-                      h="46px"
+                      size="lg"
                     />
                     {fieldErrors.password ? (
                       <FormErrorMessage>{fieldErrors.password}</FormErrorMessage>
@@ -389,7 +389,7 @@ export const Auth: React.FC<{ mode: Mode }> = ({ mode }) => {
                     </Alert>
                   )}
 
-                  <Button type="submit" size="lg" h="50px" isLoading={isSubmitting}>
+                  <Button type="submit" size="lg" isLoading={isSubmitting}>
                     {t(isRegister ? 'register.submit' : 'login.submit')}
                   </Button>
                 </Stack>
@@ -401,7 +401,7 @@ export const Auth: React.FC<{ mode: Mode }> = ({ mode }) => {
 
       <Box
         display={{ base: 'none', md: 'flex' }}
-        flex="1 1 340px"
+        flex="1 1 21rem"
         minW={0}
         minH="100vh"
         position="relative"
@@ -420,13 +420,11 @@ export const Auth: React.FC<{ mode: Mode }> = ({ mode }) => {
           h="full"
           objectFit="cover"
         />
-        <Stack position="relative" layerStyle="glass" borderRadius="xl" p={5} spacing={1.5} maxW="320px">
+        <Stack position="relative" layerStyle="glass" borderRadius="xl" p={5} spacing={1.5} maxW="xs">
           <Text fontSize="sm" color="fg.muted">
             {t('panel.label')}
           </Text>
-          <Text textStyle="display" fontSize="24px">
-            {t('panel.text')}
-          </Text>
+          <Text textStyle="h2">{t('panel.text')}</Text>
         </Stack>
       </Box>
     </Flex>

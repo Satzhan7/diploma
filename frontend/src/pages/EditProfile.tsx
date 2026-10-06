@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Container,
   VStack,
   Heading,
   Button,
@@ -26,6 +25,7 @@ import { User, UserRole } from '../types/user';
 import { usersService } from '../services/users';
 import api from '../services/api';
 import { getErrorMessage } from '../i18n/errors';
+import { PageContainer } from '../components/ui';
 
 interface ProfileFormData {
   name: string;
@@ -155,9 +155,9 @@ export const EditProfile: React.FC = () => {
   }
 
   return (
-    <Container maxW="container.md" py={{ base: 8, md: 12 }}>
+    <PageContainer size="narrow">
       <VStack spacing={8} align="stretch">
-        <Heading size="lg">Edit Profile</Heading>
+        <Heading as="h1" textStyle="h1">Edit Profile</Heading>
         
         <form onSubmit={handleSubmit(onSubmit)}>
           <Stack spacing={4}>
@@ -262,6 +262,6 @@ export const EditProfile: React.FC = () => {
           </Stack>
         </form>
       </VStack>
-    </Container>
+    </PageContainer>
   );
 }; 

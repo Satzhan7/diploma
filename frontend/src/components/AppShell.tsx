@@ -39,6 +39,7 @@ import { IconWrapper } from './IconWrapper';
 import Logo from './Logo';
 import LanguageSwitcher from './LanguageSwitcher';
 import ColorModeToggle from './ColorModeToggle';
+import { layout } from '../theme';
 
 interface NavItem {
   /** `common:nav.<key>` (sidebar) and `common:nav.short.<key>` (tab bar). */
@@ -73,11 +74,12 @@ const NAV: Partial<Record<UserRole, NavItem[]>> = {
   ],
 };
 
-const SIDEBAR_W = 232;
-const INSET = 12;
-const TOPBAR_H = 56;
-const TABBAR_H = 64;
-const TABBAR_BOTTOM = 18;
+// Shell geometry comes from theme `sizes` (sidebar, topbar, tabbar, navItem);
+// chrome floats 12 px (space 3) from the viewport edges, the tab bar 18 px above the safe area.
+const INSET = 3;
+const TABBAR_BOTTOM = '18px';
+const SIZE = (name: string) => `var(--chakra-sizes-${name})`;
+const SPACE = (n: number) => `var(--chakra-space-${n})`;
 
 /** Longest matching prefix, so "New brief" wins over "Briefs" on /briefs/new. */
 function activeItem(items: NavItem[], pathname: string) {
@@ -199,10 +201,10 @@ const AppShell: React.FC<{ children: React.ReactNode; role?: UserRole }> = ({ ch
         as="aside"
         display={{ base: 'none', lg: 'flex' }}
         position="fixed"
-        top={`${INSET}px`}
-        bottom={`${INSET}px`}
-        left={`${INSET}px`}
-        w={`${SIDEBAR_W}px`}
+        top={INSET}
+        bottom={INSET}
+        left={INSET}
+        w="sidebar"
         direction="column"
         gap={6}
         px={3}
@@ -226,7 +228,7 @@ const AppShell: React.FC<{ children: React.ReactNode; role?: UserRole }> = ({ ch
                 display="flex"
                 alignItems="center"
                 gap={3}
-                minH="42px"
+                minH="navItem"
                 px={3}
                 borderRadius="md"
                 fontSize="sm"
@@ -239,7 +241,7 @@ const AppShell: React.FC<{ children: React.ReactNode; role?: UserRole }> = ({ ch
                   bg: on ? 'primary.soft' : 'bg.subtle',
                 }}
               >
-                <IconWrapper icon={item.icon} size="18px" />
+                <IconWrapper icon={item.icon} size="20px" />
                 <Text as="span">{t(`nav.${item.key}`)}</Text>
               </Link>
             );
@@ -259,10 +261,10 @@ const AppShell: React.FC<{ children: React.ReactNode; role?: UserRole }> = ({ ch
         as="header"
         display={{ base: 'flex', lg: 'none' }}
         position="fixed"
-        top={`${INSET}px`}
-        left={`${INSET}px`}
-        right={`${INSET}px`}
-        h={`${TOPBAR_H}px`}
+        top={INSET}
+        left={INSET}
+        right={INSET}
+        h="topbar"
         align="center"
         justify="space-between"
         px={3}
@@ -271,7 +273,7 @@ const AppShell: React.FC<{ children: React.ReactNode; role?: UserRole }> = ({ ch
         zIndex="sticky"
       >
         <AccountMenu role={role} compact />
-        <Text fontSize="17px" fontWeight="600" noOfLines={1}>
+        <Text textStyle="label" fontSize="md" noOfLines={1}>
           {active ? t(`nav.${active.key}`) : 'AdPartners'}
         </Text>
         <ColorModeToggle size="md" />
@@ -284,11 +286,11 @@ const AppShell: React.FC<{ children: React.ReactNode; role?: UserRole }> = ({ ch
           aria-label={t('nav.main')}
           display={{ base: 'flex', lg: 'none' }}
           position="fixed"
-          bottom={`calc(${TABBAR_BOTTOM}px + env(safe-area-inset-bottom))`}
-          left="20px"
-          right="20px"
-          h={`${TABBAR_H}px`}
-          px="6px"
+          bottom={`calc(${TABBAR_BOTTOM} + env(safe-area-inset-bottom))`}
+          left={5}
+          right={5}
+          h="tabbar"
+          px={1.5}
           layerStyle="glass"
           borderRadius="3xl"
           zIndex="sticky"
@@ -304,14 +306,14 @@ const AppShell: React.FC<{ children: React.ReactNode; role?: UserRole }> = ({ ch
                 aria-label={t(`nav.${item.key}`)}
                 flex={1}
                 minW={0}
-                my="6px"
-                borderRadius="26px"
+                my={1.5}
+                borderRadius="2xl"
                 display="flex"
                 flexDirection="column"
                 alignItems="center"
                 justifyContent="center"
-                gap={1}
-                fontSize="11px"
+                gap={0.5}
+                textStyle="caption"
                 fontWeight="600"
                 bg={on ? 'primary.soft' : 'transparent'}
                 color={on ? 'primary.ink' : 'fg.default'}
@@ -331,10 +333,15 @@ const AppShell: React.FC<{ children: React.ReactNode; role?: UserRole }> = ({ ch
         as="main"
         id="main"
         tabIndex={-1}
-        ml={{ base: 0, lg: `${SIDEBAR_W + INSET * 2}px` }}
-        pt={{ base: `${TOPBAR_H + INSET * 2 + 8}px`, lg: 8 }}
-        pb={{ base: `calc(${TABBAR_H + TABBAR_BOTTOM + 24}px + env(safe-area-inset-bottom))`, lg: 10 }}
-        px={{ base: 4, md: 8 }}
+        // Content starts after the sidebar + its inset; page padding (layout.pageX) is then
+        // the same on both sides. Below lg it clears the top bar and the tab bar.
+        ml={{ base: 0, lg: `calc(${SIZE('sidebar')} + ${SPACE(INSET)})` }}
+        pt={{
+          base: `calc(${SIZE('topbar')} + 2 * ${SPACE(INSET)} + ${SPACE(layout.pageY.base)})`,
+          lg: layout.pageY.lg,
+        }}
+        pb={{ base: `calc(${SIZE('tabbar')} + ${TABBAR_BOTTOM} + ${SPACE(6)} + env(safe-area-inset-bottom))`, lg: 10 }}
+        px={layout.pageX}
         minW={0}
         _focus={{ outline: 'none' }}
       >

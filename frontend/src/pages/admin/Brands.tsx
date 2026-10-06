@@ -6,16 +6,16 @@ import {
   Box,
   Button,
   Center,
-  Flex,
   FormControl,
   FormErrorMessage,
   FormLabel,
+  Grid,
+  HStack,
   Heading,
   Input,
   InputGroup,
   InputLeftElement,
   Select,
-  Stack,
   Text,
   useToast,
 } from '@chakra-ui/react';
@@ -26,9 +26,25 @@ import { AdminBrand, adminService } from '../../services/admin';
 import type { Plan } from '../../services/plan';
 import { nextSkip } from '../../services/page';
 import { getErrorMessage, getFieldErrors } from '../../i18n/errors';
-import { CardGridSkeleton, EmptyState, PageHeader, StatusPill } from '../../components/ui';
+import { CardGridSkeleton, EmptyState, PageContainer, PageHeader, StatusPill } from '../../components/ui';
 
 const PAGE_SIZE = 20;
+
+// Compact admin density (docs/PROJECT.md §7): one header row, 32 px controls on desktop.
+// Columns: brand, plan, Pro until, save.
+const COLUMNS = { base: 'minmax(0, 1fr)', lg: 'minmax(0, 1fr) 8rem 11rem auto' };
+// Field labels stay for screen readers on desktop, where the header row shows them.
+const srOnlyOnDesktop = {
+  '@media screen and (min-width: 64em)': {
+    position: 'absolute',
+    width: '1px',
+    height: '1px',
+    margin: '-1px',
+    overflow: 'hidden',
+    clip: 'rect(0 0 0 0)',
+    whiteSpace: 'nowrap',
+  },
+};
 
 /** yyyy-mm-dd for a date input; the end of that day in the browser's zone goes to the API. */
 const toDateInput = (iso: string | null) => (iso ? iso.slice(0, 10) : '');
@@ -57,7 +73,7 @@ export const Brands: React.FC = () => {
   const testPeriod = items[0]?.freeTestPeriod;
 
   return (
-    <Stack spacing={6}>
+    <PageContainer>
       <PageHeader title={t('brands.title')} subtitle={t('brands.subtitle')} />
       {testPeriod && (
         <Alert status="info" borderRadius="lg">
@@ -65,7 +81,7 @@ export const Brands: React.FC = () => {
           <AlertDescription>{t('brands.testNote')}</AlertDescription>
         </Alert>
       )}
-      <InputGroup maxW="420px">
+      <InputGroup maxW={{ md: 'md' }}>
         <InputLeftElement pointerEvents="none" color="fg.muted">
           <FiSearch aria-hidden />
         </InputLeftElement>
@@ -89,11 +105,26 @@ export const Brands: React.FC = () => {
         <EmptyState icon={FiBriefcase} title={t('brands.empty')} />
       ) : (
         <>
-          <Stack spacing={3}>
+          <Box layerStyle="card" overflow="hidden">
+            <Grid
+              display={{ base: 'none', lg: 'grid' }}
+              templateColumns={COLUMNS}
+              gap={4}
+              px={4}
+              py={2}
+              bg="bg.subtle"
+              textStyle="label"
+              color="fg.muted"
+              aria-hidden
+            >
+              <Text>{t('brands.columnBrand')}</Text>
+              <Text>{t('brands.plan')}</Text>
+              <Text>{t('brands.until')}</Text>
+            </Grid>
             {items.map((brand) => (
               <BrandRow key={brand.profileId} brand={brand} />
             ))}
-          </Stack>
+          </Box>
           <Center flexDirection="column" gap={2}>
             <Text fontSize="sm" color="fg.muted">
               {t('list.count', { shown: items.length, total })}
@@ -106,7 +137,7 @@ export const Brands: React.FC = () => {
           </Center>
         </>
       )}
-    </Stack>
+    </PageContainer>
   );
 };
 
@@ -141,7 +172,7 @@ const BrandRow: React.FC<{ brand: AdminBrand }> = ({ brand }) => {
 
   const name = brand.companyName || brand.name;
   return (
-    <Flex
+    <Grid
       as="form"
       noValidate
       aria-labelledby={`${idBase}-name`}
@@ -149,47 +180,63 @@ const BrandRow: React.FC<{ brand: AdminBrand }> = ({ brand }) => {
         e.preventDefault();
         save.mutate();
       }}
-      layerStyle="card"
-      p={{ base: 4, md: 5 }}
-      gap={4}
-      direction={{ base: 'column', lg: 'row' }}
-      align={{ base: 'stretch', lg: 'flex-end' }}
+      templateColumns={COLUMNS}
+      gap={{ base: 3, lg: 4 }}
+      alignItems={{ lg: 'center' }}
+      px={4}
+      py={{ base: 4, lg: 2 }}
+      borderTopWidth="1px"
+      borderColor="border.default"
+      _first={{ borderTopWidth: { base: 0, lg: '1px' } }}
     >
-      <Box flex="1" minW={0}>
-        <Heading id={`${idBase}-name`} as="h2" fontSize="md" noOfLines={1}>
-          {name}
-        </Heading>
-        <Text fontSize="sm" color="fg.muted" noOfLines={1}>
+      <Box minW={0}>
+        <HStack spacing={2} minW={0}>
+          <Heading id={`${idBase}-name`} as="h2" size="xs" noOfLines={1}>
+            {name}
+          </Heading>
+          <StatusPill tone={brand.plan === 'pro' ? 'primary' : 'neutral'} flexShrink={0}>
+            {t('brands.now', { plan: brand.plan === 'pro' ? 'Pro' : 'Free' })}
+          </StatusPill>
+        </HStack>
+        <Text textStyle="small" color="fg.muted" noOfLines={1}>
           {brand.email}
         </Text>
-        <StatusPill tone={brand.plan === 'pro' ? 'primary' : 'neutral'} mt={2}>
-          {t('brands.now', { plan: brand.plan === 'pro' ? 'Pro' : 'Free' })}
-        </StatusPill>
       </Box>
-      <FormControl w={{ base: 'full', lg: '140px' }}>
-        <FormLabel htmlFor={`${idBase}-plan`} fontSize="sm">
+      <FormControl>
+        <FormLabel htmlFor={`${idBase}-plan`} textStyle="label" sx={srOnlyOnDesktop}>
           {t('brands.plan')}
         </FormLabel>
-        <Select id={`${idBase}-plan`} value={plan} onChange={(e) => setPlan(e.target.value as Plan)}>
+        <Select
+          id={`${idBase}-plan`}
+          size={{ base: 'md', lg: 'sm' }}
+          value={plan}
+          onChange={(e) => setPlan(e.target.value as Plan)}
+        >
           <option value="free">Free</option>
           <option value="pro">Pro</option>
         </Select>
       </FormControl>
-      <FormControl w={{ base: 'full', lg: '200px' }} isDisabled={plan !== 'pro'} isInvalid={!!errors.proExpiresAt}>
-        <FormLabel htmlFor={`${idBase}-until`} fontSize="sm">
+      <FormControl isDisabled={plan !== 'pro'} isInvalid={!!errors.proExpiresAt}>
+        <FormLabel htmlFor={`${idBase}-until`} textStyle="label" sx={srOnlyOnDesktop}>
           {t('brands.until')}
         </FormLabel>
-        <Input id={`${idBase}-until`} type="date" value={until} onChange={(e) => setUntil(e.target.value)} />
+        <Input
+          id={`${idBase}-until`}
+          type="date"
+          size={{ base: 'md', lg: 'sm' }}
+          value={until}
+          onChange={(e) => setUntil(e.target.value)}
+        />
         {!errors.proExpiresAt && plan === 'pro' && !until && (
-          <Text fontSize="xs" color="fg.muted" mt={1}>
+          <Text textStyle="caption" color="fg.muted" mt={1}>
             {t('brands.noEnd')}
           </Text>
         )}
         <FormErrorMessage>{errors.proExpiresAt}</FormErrorMessage>
       </FormControl>
-      <Button type="submit" colorScheme="brand" isLoading={save.isPending} flexShrink={0}>
+      <Button type="submit" colorScheme="brand" size={{ base: 'md', lg: 'sm' }} isLoading={save.isPending}>
         {t('brands.save')}
       </Button>
-    </Flex>
+    </Grid>
   );
 };

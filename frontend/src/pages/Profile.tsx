@@ -34,6 +34,7 @@ import { IconWrapper } from '../components/IconWrapper';
 import { User, Profile as ProfileType } from '../types/user';
 import { formatDate, formatNumber } from '../i18n';
 import { getErrorMessage } from '../i18n/errors';
+import { PageContainer } from '../components/ui';
 
 interface ProfileProps {
   isViewMode?: boolean;
@@ -187,7 +188,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
   const createdAt = targetUser?.createdAt || user?.createdAt;
 
   return (
-    <Container maxW="container.md" py={{ base: '12', md: '16' }}>
+    <PageContainer size="narrow">
       <VStack spacing={8} align="stretch">
         <Box textAlign="center">
           <Avatar 
@@ -197,7 +198,7 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
             mb={6} 
           />
           <VStack spacing={3} mt={4}>
-            <Heading size="lg">{displayName}</Heading>
+            <Heading as="h1" textStyle="h1">{displayName}</Heading>
             {role && (
               <Text 
                 color="fg.muted"
@@ -363,6 +364,6 @@ export const Profile: React.FC<ProfileProps> = ({ isViewMode }) => {
           </AlertDialogContent>
         </AlertDialogOverlay>
       </AlertDialog>
-    </Container>
+    </PageContainer>
   );
 }; 

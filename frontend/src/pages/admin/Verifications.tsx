@@ -29,7 +29,16 @@ import { nextSkip } from '../../services/page';
 import { formatDate, formatNumber, formatPercent } from '../../i18n';
 import { getErrorMessage, getFieldErrors } from '../../i18n/errors';
 import { PrivateImage } from '../../components/PrivateImage';
-import { CardGridSkeleton, EmptyState, PageHeader, PillTone, SegmentedControl, StatusPill } from '../../components/ui';
+import {
+  CardGridSkeleton,
+  EmptyState,
+  PageHeader,
+  PillTone,
+  SegmentedControl,
+  StatusPill,
+  PageContainer,
+} from '../../components/ui';
+import { layout } from '../../theme';
 
 const PAGE_SIZE = 10;
 
@@ -69,7 +78,7 @@ export const Verifications: React.FC = () => {
   });
 
   return (
-    <Stack spacing={6}>
+    <PageContainer>
       <PageHeader title={t('verifications.title')} subtitle={t('verifications.subtitle')} />
       <SegmentedControl<ClaimStatus>
         label={t('verifications.title')}
@@ -100,25 +109,25 @@ export const Verifications: React.FC = () => {
                 aria-labelledby={`claim-${v.id}`}
                 layerStyle="card"
                 columns={{ base: 1, md: 2 }}
-                spacing={5}
-                p={{ base: 4, md: 5 }}
+                spacing={layout.grid}
+                p={layout.card}
               >
                 {v.screenshotId ? (
                   <PrivateImage
                     fileId={v.screenshotId}
                     alt={t('verifications.screenshot', { name: v.creator.name })}
                     errorText={t('verifications.screenshotError')}
-                    h={{ base: '320px', md: '420px' }}
+                    h={{ base: 80, md: 96 }}
                   />
                 ) : (
-                  <Center bg="bg.subtle" borderRadius="md" minH="200px" color="fg.muted">
+                  <Center bg="bg.subtle" borderRadius="md" minH={52} color="fg.muted">
                     {t('verifications.screenshotError')}
                   </Center>
                 )}
                 <Stack spacing={4} minW={0}>
                   <HStack justify="space-between" align="flex-start" gap={2}>
                     <Box minW={0}>
-                      <Heading id={`claim-${v.id}`} as="h2" fontSize="lg" noOfLines={1}>
+                      <Heading id={`claim-${v.id}`} as="h2" textStyle="h3" noOfLines={1}>
                         {v.creator.name}
                       </Heading>
                       <Text fontSize="sm" color="fg.muted" noOfLines={1}>
@@ -213,7 +222,7 @@ export const Verifications: React.FC = () => {
           refresh();
         }}
       />
-    </Stack>
+    </PageContainer>
   );
 };
 

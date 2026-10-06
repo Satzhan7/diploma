@@ -233,6 +233,23 @@ Rules for every PR:
 - Review (one reviewer agent): approve with comments, no high-severity items. Fixed in `8ce25fc`: (4) a metrics patch without a rate compared `NaN !== NaN` and cleared the badge, and replaced `metrics` wholesale — skips unset fields and merges; (5) the upgrade prompt also reacts to a refused shortlist query; (3) the `jsonb_set` approve SQL checked on Postgres with null and existing `metrics`; (7) the `/files/:id` matrix is covered in `files.service.spec`.
 - Known, not fixed here: (1) account deletion would leave stored bytes on disk — today `DELETE /users/:id` cannot delete a user with a profile (FK `NO ACTION`), so nothing orphans; whoever builds account deletion must remove the keys; (2) a crash between the disk write and the commit leaves an unreferenced file — a sweep script with D2 storage; (6) the badge is not cached elsewhere on the frontend, nothing to invalidate; a 5 MB image can decode to a very large bitmap in the viewer's browser (decompression bomb; no server-side decoding).
 
+### PR R4b — Design system: type, spacing, layout and control tokens (2026-10-06)
+Branch `redesign/4b-design-system` on `redesign/4-plan`, PR against #11 ("merge after #11"). Spec, standards and measurements: docs/PROJECT.md §7. R5 cuts from this branch and uses the primitives.
+- [x] Standards research (Primer, Carbon, Material 3, Tailwind, Radix, shadcn/ui, Apple HIG, WCAG 2.2, readability), comparison table with sources in §7.
+- [x] Measure the current site: 18 views × 390 / 768 / 1280 / 1440 / 1920 × light / dark (180 loads) with computed styles; "Current state" table and five worst problems in §7.
+- [x] Proposal + decisions (2026-10-06): body 16, centred containers, default 1120, glass sidebar kept at 248, compact admin.
+- [x] theme.ts: breakpoints, line heights, letter spacings, `sizes` (containers, shell, controls), text styles (display, h1–h3, lead, body, small, label, caption), `layout` spacing, component sizes (Button, IconButton, Input, Select, NumberInput, Textarea, Heading, Badge, Card padding, Modal, Menu, Tabs, Tooltip). Colour variables and semantic tokens unchanged.
+- [x] Primitives: `PageContainer`, `Section`, `ResponsiveGrid`, `PageHeader` (text styles, eyebrow), `BackLink`.
+- [x] AppShell on tokens; symmetric page padding; 12 px tab labels; 44 px nav rows.
+- [x] Every page and kit component migrated; admin Brands as a compact table (one new string `admin:brands.columnBrand`, RU/KZ/EN).
+- [x] Guard: ESLint `no-restricted-syntax` rejects raw px in size props and raw line heights in pages/components.
+- [x] `/dev/design` (dev-only lazy route), absent from the production build.
+- [x] Checks, re-measure, R4 QA, cleanup, docs, PR.
+- As built: see docs/PROJECT.md §3 ("Type, spacing, layout and control tokens") and §7. One vertical rhythm: `PageContainer` is a Stack with `layout.section` (24 / 32) between the header and every section, so pages no longer set their own header margins. Headings take `textStyle`; `<Heading size>` maps onto the same scale. Controls are 44 px below 768 px (`control.touch`), 40 above.
+- Checks: frontend `tsc` ok · eslint 0 errors / 1 warning (AuthContext, pre-existing) · Vitest `7 passed` / `28 passed` · `vite build` ok · first-load JS 807 292 → 809 315 bytes · `/dev/design` absent from `build/` (no chunk, no route string) · `git diff --stat redesign/4-plan -- backend` empty.
+- Browser QA: 119/119 (qa-r4.mjs, both FREE_TEST_PERIOD values, no script changes needed); 216 measurement loads clean
+- Known: Plan's one-line test-period notice is 79 characters (status line, accepted). Messages keeps its two-pane layout; its h1 is the list title at `h3` size until R6 rebuilds the screen. Settings, Profile and EditProfile only moved onto containers/headings (R6 rebuilds them; EditProfile's English copy stays for R6). Admin Brands' test-period note still says every brand is Pro, which the 2026-10-05 revision made untrue — copy fix for R6 (copy is out of scope here). R6 gets the tokens for its a11y/mobile pass: `control.touch`, `caption` floor, `navItem`.
+
 ### PR R5 — Deal proof, confirm or dispute, two-way ratings (old 6.1–6.3)
 - [ ] Creator submits a proof link + optional screenshot (R4 storage) → PROOF_SUBMITTED. Brand: Confirm Completion → COMPLETED, Report a Problem → DISPUTED (admin moderation list).
 - [ ] Ratings (1–5 + comment), one per deal per side after COMPLETED; averages on profiles.

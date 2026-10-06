@@ -33,7 +33,7 @@ export function SegmentedControl<T extends string>({
       spacing={0}
       bg="bg.subtle"
       borderRadius="md"
-      p="3px"
+      p={0.5}
       w="fit-content"
       maxW="full"
       {...props}
@@ -49,7 +49,9 @@ export function SegmentedControl<T extends string>({
             aria-pressed={on}
             onClick={() => onChange(s.value)}
             size={size === 'sm' ? 'xs' : 'sm'}
-            h={size === 'sm' ? '26px' : '34px'}
+            // 28 / 36 + 2 px track padding = control.sm 32 / control.md 40;
+            // inner radius = track radius (md 12) − padding.
+            h={size === 'sm' ? 7 : 9}
             px={size === 'sm' ? 2.5 : 4}
             borderRadius="10px"
             flexShrink={0}
