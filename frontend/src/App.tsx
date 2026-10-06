@@ -34,6 +34,8 @@ const Plan = page(() => import('./pages/brand/Plan'), 'Plan');
 const Stats = page(() => import('./pages/influencer/Stats'), 'Stats');
 const Verifications = page(() => import('./pages/admin/Verifications'), 'Verifications');
 const AdminBrands = page(() => import('./pages/admin/Brands'), 'Brands');
+// Design-token reference; DEV is false in production builds, so the chunk is never emitted.
+const DesignSystem = import.meta.env.DEV ? page(() => import('./pages/dev/DesignSystem'), 'DesignSystem') : null;
 
 /** Where each role lands after login. */
 const homeFor = (role?: UserRole) =>
@@ -141,6 +143,7 @@ function AppRoutes() {
       <Route path="/" element={!isAuthenticated ? <Landing /> : <Navigate to={homeFor(user?.role)} replace />} />
       <Route path="/login" element={!isAuthenticated ? <Auth mode="login" /> : <Navigate to="/" replace />} />
       <Route path="/register" element={!isAuthenticated ? <Auth mode="register" /> : <Navigate to="/" replace />} />
+      {DesignSystem && <Route path="/dev/design" element={<DesignSystem />} />}
 
       <Route
         path="/brand/*"

@@ -56,6 +56,16 @@ export default tseslint.config(
           selector: "JSXAttribute[name.name='colorScheme'] Literal[value=/^(purple|teal|green|blue)$/]",
           message: 'Use colorScheme "brand", "accent", "gray" or "red".',
         },
+        // Sizes come from the design-system tokens (theme.ts, docs/PROJECT.md §7).
+        {
+          selector:
+            'JSXAttribute[name.name=/^(fontSize|lineHeight|letterSpacing|w|width|minW|maxW|maxWidth|h|height|minH|maxH|boxSize)$/] Literal[value=/^-?[0-9.]+px$/]',
+          message: 'Use a size token (textStyle, fontSize key, container.*, control.*, or the 4 px space scale) instead of raw px.',
+        },
+        {
+          selector: "JSXAttribute[name.name='lineHeight'] Literal[raw=/^['\"]?[0-9.]+/]",
+          message: 'Use a textStyle (h1, h2, h3, body, small, caption, …) instead of a raw line height.',
+        },
       ],
     },
   },
